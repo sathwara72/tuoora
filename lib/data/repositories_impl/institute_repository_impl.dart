@@ -15,6 +15,7 @@ import 'package:tuoora/data/models/notification_model.dart';
 import 'package:tuoora/data/models/white_label_model.dart';
 import 'package:tuoora/presentation/institute/models/birthday_model.dart';
 import 'package:tuoora/presentation/institute/models/add_on_model.dart';
+import 'package:tuoora/presentation/institute/models/school_class_model.dart';
 
 abstract class InstituteRepositoryImpl {
   Future<InstituteProfile> getProfile();
@@ -149,6 +150,12 @@ abstract class InstituteRepositoryImpl {
   // Resources
   Future<List<ResourceModel>> getResources(int batchId);
   Future<dynamic> uploadResource(Map<String, dynamic> data);
+
+  // Classes (subjects + teacher assignment within a batch)
+  Future<List<SchoolClassModel>> listClasses(int batchId);
+  Future<SchoolClassModel> createClass(Map<String, dynamic> data);
+  Future<SchoolClassModel> updateClass(int id, Map<String, dynamic> data);
+  Future<void> deleteClass(int id);
   Future<List<int>> downloadResource(
     int resourceId, {
     Function(double)? onProgress,
@@ -175,6 +182,10 @@ abstract class InstituteRepositoryImpl {
     Map<String, dynamic> data,
     String? imagePath,
   );
+  Future<String> sendStaffPassword(int id);
+  Future<void> resetStaffPassword(int id, String password);
+  Future<Staff> changeStaffEmail(int id, String email);
+  Future<Staff> toggleStaffBlock(int id, bool blocked);
   Future<SalaryListResponse> getStaffSalaries(int staffId, {int page = 1});
   Future<SalaryPreview> getSalaryPreview(int staffId);
   Future<AttendanceListResponse> getStaffAttendance(

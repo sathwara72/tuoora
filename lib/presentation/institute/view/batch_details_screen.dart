@@ -221,15 +221,25 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
             ),
           ),
           AppSpacing.v24,
-          InstituteInfoRow(
-            icon: Icons.access_time_filled_rounded,
-            text: batch.time,
-          ),
-          AppSpacing.v12,
+          if (_hasSchedule(batch.time)) ...[
+            InstituteInfoRow(
+              icon: Icons.access_time_filled_rounded,
+              text: batch.time,
+            ),
+            AppSpacing.v12,
+          ],
           InstituteInfoRow(
             icon: Icons.calendar_month_rounded,
             text: batch.days.join(', '),
           ),
+          if (batch.feesLastDate != null &&
+              batch.feesLastDate!.trim().isNotEmpty) ...[
+            AppSpacing.v12,
+            InstituteInfoRow(
+              icon: Icons.event_busy_rounded,
+              text: 'Fees due by ${batch.feesLastDate}',
+            ),
+          ],
           if (batch.classroom != null &&
               batch.classroom!.trim().isNotEmpty) ...[
             AppSpacing.v12,
@@ -251,6 +261,14 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
     );
   }
 
+  // Batches created after the time-slot field was removed have empty
+  // start/end times, which [Batch.time] renders as a bare " - ". Hide the
+  // row entirely rather than show that.
+  bool _hasSchedule(String time) {
+    final cleaned = time.replaceAll('-', '').trim();
+    return cleaned.isNotEmpty;
+  }
+
   static const List<Color> _accentPalette = <Color>[
     AppColors.primaryBrand,
     AppColors.successGreen,
@@ -265,6 +283,14 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
         title: AppStrings.instNavStudents,
         onTap: () => Get.toNamed(
           AppRoutes.instituteBatchStudents,
+          arguments: controller.batch,
+        ),
+      ),
+      _ManagementTileData(
+        icon: Icons.class_rounded,
+        title: 'Classes',
+        onTap: () => Get.toNamed(
+          AppRoutes.instituteBatchClasses,
           arguments: controller.batch,
         ),
       ),
@@ -337,6 +363,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
             final accent = _accentPalette[index % _accentPalette.length];
             return _buildManagementTile(
               svgAsset: tile.svgAsset,
+              icon: tile.icon,
               title: tile.title,
               onTap: tile.onTap,
               accent: accent,
@@ -348,7 +375,8 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
   }
 
   Widget _buildManagementTile({
-    required String svgAsset,
+    String? svgAsset,
+    IconData? icon,
     required String title,
     required VoidCallback onTap,
     required Color accent,
@@ -371,13 +399,15 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              svgAsset,
-              width: 48,
-              height: 48,
-              theme: SvgTheme(currentColor: accent),
-              colorFilter: ColorFilter.mode(accent, BlendMode.srcIn),
-            ),
+            icon != null
+                ? Icon(icon, size: 48, color: accent)
+                : SvgPicture.asset(
+                    svgAsset!,
+                    width: 48,
+                    height: 48,
+                    theme: SvgTheme(currentColor: accent),
+                    colorFilter: ColorFilter.mode(accent, BlendMode.srcIn),
+                  ),
 
             AppSpacing.v12,
             FittedBox(
@@ -403,12 +433,14 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
 }
 
 class _ManagementTileData {
-  final String svgAsset;
+  final String? svgAsset;
+  final IconData? icon;
   final String title;
   final VoidCallback onTap;
 
   const _ManagementTileData({
-    required this.svgAsset,
+    this.svgAsset,
+    this.icon,
     required this.title,
     required this.onTap,
   });

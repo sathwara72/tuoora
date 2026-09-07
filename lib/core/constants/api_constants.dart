@@ -59,6 +59,7 @@ class ApiConstants {
   static String instituteDeleteDeviceSession(int sessionId) =>
       '/institute/profile/device-sessions/$sessionId';
   static const String instituteBatches = '/institute/batches';
+  static const String instituteClasses = '/institute/classes';
   static const String instituteChangePassword =
       '/institute/profile/change-password';
   static const String instituteWhatsAppSettings =

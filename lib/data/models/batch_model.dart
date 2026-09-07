@@ -10,6 +10,7 @@ class Batch {
   final String subject;
   final String description;
   final String fees;
+  final String? feesLastDate;
   final String startTime;
   final String endTime;
   final List<String> days;
@@ -40,6 +41,7 @@ class Batch {
     required this.subject,
     required this.description,
     required this.fees,
+    this.feesLastDate,
     required this.startTime,
     required this.endTime,
     required this.days,
@@ -96,6 +98,7 @@ class Batch {
       leftBorderColor: AppColors.primaryBrand,
       statusTextColor: textColor,
       baseFee: double.tryParse(fees.toString()) ?? 0.0,
+      feesLastDate: feesLastDate,
       description: description,
       totalExpected: totalExpected,
       totalPaid: totalPaid,
@@ -128,6 +131,7 @@ class Batch {
       subject: json['subject']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       fees: json['fees']?.toString() ?? '0.00',
+      feesLastDate: json['fees_last_date']?.toString(),
       startTime: json['start_time']?.toString() ?? '',
       endTime: json['end_time']?.toString() ?? '',
       days: (json['days'] as List?)?.map((d) => d.toString()).toList() ?? const [],
@@ -159,6 +163,7 @@ class Batch {
       'subject': subject,
       'description': description,
       'fees': fees,
+      'fees_last_date': feesLastDate,
       'start_time': startTime,
       'end_time': endTime,
       'days': days,

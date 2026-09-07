@@ -3,6 +3,9 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/validation_utils.dart';
+import 'package:tuoora/core/widgets/app_button.dart';
+import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/presentation/institute/controllers/staff_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
@@ -57,7 +60,9 @@ class StaffProfileScreen extends GetView<StaffController> {
                       _buildProfileHeader(staff),
                       const Divider(height: 1, color: AppColors.background),
                       _buildInfoSection(staff),
-                      AppSpacing.v40,
+                      AppSpacing.v24,
+                      _buildAccountActions(staff),
+                      AppSpacing.v32,
                       _buildActionButtons(),
                     ],
                   ),
@@ -157,7 +162,7 @@ class StaffProfileScreen extends GetView<StaffController> {
             child: _buildSimpleInfo(
               Icons.business,
               'DEPARTMENT',
-              staff.department?.name ?? 'N/A',
+              staff.departmentNames,
             ),
           ),
           Container(
@@ -281,6 +286,218 @@ class StaffProfileScreen extends GetView<StaffController> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAccountActions(Staff staff) {
+    return Padding(
+      padding: AppSpacing.x16,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Obx(
+                  () => AppButton(
+                    label: 'Email Password',
+                    onPressed: controller.isSendingPassword.value
+                        ? null
+                        : () => controller.sendStaffPassword(),
+                    isLoading: controller.isSendingPassword.value,
+                    icon: Icons.email_outlined,
+                    backgroundColor: AppColors.white,
+                    foregroundColor: AppColors.warningAmber,
+                    borderColor: AppColors.warningAmber,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.s14,
+                    ),
+                  ),
+                ),
+              ),
+              AppSpacing.h16,
+              Expanded(
+                child: AppButton(
+                  label: 'Reset Password',
+                  onPressed: () => _showResetPasswordDialog(staff),
+                  icon: Icons.lock_outline,
+                  backgroundColor: AppColors.white,
+                  foregroundColor: AppColors.studentProgressBlue,
+                  borderColor: AppColors.studentProgressBlue,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.s14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          AppSpacing.v16,
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'Change Email',
+                  onPressed: () => _showChangeEmailDialog(staff),
+                  icon: Icons.alternate_email_rounded,
+                  backgroundColor: AppColors.white,
+                  foregroundColor: AppColors.primaryBrand,
+                  borderColor: AppColors.primaryBrand,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.s14,
+                  ),
+                ),
+              ),
+              AppSpacing.h16,
+              Expanded(
+                child: Obx(
+                  () => AppButton(
+                    label: staff.isLoginBlocked ? 'Unblock Login' : 'Block Login',
+                    onPressed: controller.isTogglingBlock.value
+                        ? null
+                        : () => _showBlockLoginConfirmation(staff),
+                    isLoading: controller.isTogglingBlock.value,
+                    icon: staff.isLoginBlocked
+                        ? Icons.lock_open_rounded
+                        : Icons.block_rounded,
+                    backgroundColor: AppColors.white,
+                    foregroundColor: staff.isLoginBlocked
+                        ? AppColors.successGreen
+                        : AppColors.bohoRed,
+                    borderColor: staff.isLoginBlocked
+                        ? AppColors.successGreen
+                        : AppColors.bohoRed,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.s14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showResetPasswordDialog(Staff staff) {
+    final passwordController = TextEditingController();
+    final obscurePassword = true.obs;
+
+    CommonDialog.show(
+      title: 'Reset Staff Password',
+      description:
+          'Set a new password for ${staff.fullName} directly. It must be 8-15 characters and include an uppercase letter, a lowercase letter, a number, and a special character.',
+      confirmText: 'Save Password',
+      confirmButtonColor: AppColors.studentProgressBlue,
+      body: Obx(
+        () => Container(
+          decoration: BoxDecoration(
+            color: AppColors.fieldBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.fieldBorder),
+          ),
+          child: TextField(
+            controller: passwordController,
+            obscureText: obscurePassword.value,
+            style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Enter new password',
+              hintStyle: AppTextStyles.outfit(
+                fontSize: 14,
+                color: AppColors.textMuted,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscurePassword.value
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
+                onPressed: () => obscurePassword.toggle(),
+              ),
+            ),
+          ),
+        ),
+      ),
+      onConfirm: () {
+        final password = passwordController.text;
+        if (password.isEmpty) {
+          AppSnackBar.error('Please enter a new password');
+          return;
+        }
+        controller.resetStaffPassword(password);
+      },
+    );
+  }
+
+  void _showChangeEmailDialog(Staff staff) {
+    final emailController = TextEditingController(text: staff.email);
+
+    CommonDialog.show(
+      title: 'Change Login Email',
+      description:
+          'Update the email address ${staff.fullName} uses to log in and receive notifications.',
+      confirmText: 'Update Email',
+      confirmButtonColor: AppColors.primaryBrand,
+      body: Container(
+        decoration: BoxDecoration(
+          color: AppColors.fieldBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.fieldBorder),
+        ),
+        child: TextField(
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
+          decoration: InputDecoration(
+            hintText: 'Enter new email',
+            hintStyle: AppTextStyles.outfit(
+              fontSize: 14,
+              color: AppColors.textMuted,
+            ),
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+          ),
+        ),
+      ),
+      onConfirm: () {
+        final email = emailController.text.trim();
+        final error = ValidationUtils.validateEmail(email);
+        if (error != null) {
+          AppSnackBar.error(error);
+          return;
+        }
+        controller.changeStaffEmail(email);
+      },
+    );
+  }
+
+  void _showBlockLoginConfirmation(Staff staff) {
+    final willBlock = !staff.isLoginBlocked;
+    CommonDialog.show(
+      title: willBlock ? 'Block Staff Login' : 'Unblock Staff Login',
+      description: willBlock
+          ? '${staff.fullName} will not be able to log in to the app until unblocked. Any active session will be signed out immediately.'
+          : '${staff.fullName} will be able to log in again.',
+      confirmText: willBlock ? 'Block Login' : 'Unblock Login',
+      confirmButtonColor: willBlock ? AppColors.bohoRed : AppColors.successGreen,
+      onConfirm: () => controller.toggleStaffBlock(),
     );
   }
 

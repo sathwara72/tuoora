@@ -10,8 +10,10 @@ class Staff {
   final String baseSalary;
   final String status;
   final String? profileUrl;
+  final bool isLoginBlocked;
   final StaffRole? role;
   final StaffDepartment? department;
+  final List<StaffDepartment> departments;
   final DateTime? createdAt;
 
   Staff({
@@ -26,10 +28,24 @@ class Staff {
     required this.baseSalary,
     required this.status,
     this.profileUrl,
+    this.isLoginBlocked = false,
     this.role,
     this.department,
+    this.departments = const [],
     this.createdAt,
   });
+
+  /// All department ids this staff member belongs to. Falls back to the
+  /// single [staffDepartmentId] when the backend hasn't returned the
+  /// `departments` relation (e.g. older cached responses).
+  List<int> get departmentIds => departments.isNotEmpty
+      ? departments.map((d) => d.id).toList()
+      : (staffDepartmentId != 0 ? [staffDepartmentId] : []);
+
+  /// Comma-separated department names for display.
+  String get departmentNames => departments.isNotEmpty
+      ? departments.map((d) => d.name).join(', ')
+      : (department?.name ?? 'N/A');
 
   factory Staff.fromJson(Map<String, dynamic> json) {
     return Staff(
@@ -45,10 +61,17 @@ class Staff {
       baseSalary: json['base_salary']?.toString() ?? '0.00',
       status: json['status'] ?? 'active',
       profileUrl: json['profile_url'],
+      isLoginBlocked: json['is_login_blocked'] == true ||
+          json['is_login_blocked']?.toString() == '1',
       role: json['role'] != null ? StaffRole.fromJson(json['role']) : null,
       department: json['department'] != null
           ? StaffDepartment.fromJson(json['department'])
           : null,
+      departments: json['departments'] != null
+          ? (json['departments'] as List)
+              .map((d) => StaffDepartment.fromJson(d))
+              .toList()
+          : const [],
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
     );
   }

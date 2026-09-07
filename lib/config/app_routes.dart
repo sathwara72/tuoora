@@ -93,6 +93,7 @@ class AppRoutes {
   static const String instituteAddTimetableSlot =
       '/institute/batches/timetable/add';
   static const String instituteBatchResources = '/institute/batches/resources';
+  static const String instituteBatchClasses = '/institute/batches/classes';
   static const String instituteResourceDetail =
       '/institute/batches/resources/detail';
   static const String instituteLeads = '/institute/leads';
