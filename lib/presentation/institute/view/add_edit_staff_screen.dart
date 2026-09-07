@@ -76,7 +76,9 @@ class AddEditStaffScreen extends GetView<StaffController> {
           ),
         ),
         AppSpacing.v8,
-        Obx(() => _buildDepartmentMultiSelect(controller.deptError.value)),
+        Obx(
+          () => _buildDepartmentMultiSelect(context, controller.deptError.value),
+        ),
         AppSpacing.v20,
         Obx(
           () => AppInputField(
@@ -247,95 +249,233 @@ class AddEditStaffScreen extends GetView<StaffController> {
     );
   }
 
-  Widget _buildDepartmentMultiSelect(String? errorText) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.fieldBg,
-            borderRadius: BorderRadius.circular(12),
-            border: errorText != null
-                ? Border.all(color: Colors.redAccent, width: 1.5)
-                : null,
-          ),
-          child: controller.departments.isEmpty
-              ? Text(
-                  AppStrings.selectDepartment,
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    color: AppColors.textTertiary,
+  Widget _buildDepartmentMultiSelect(BuildContext context, String? errorText) {
+    return Obx(() {
+      final isOpen = controller.isDepartmentPickerOpen.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () => controller.isDepartmentPickerOpen.toggle(),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 48),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.fieldBg,
+                borderRadius: isOpen
+                    ? const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      )
+                    : BorderRadius.circular(12),
+                border: Border.all(
+                  color: isOpen
+                      ? AppColors.primaryBrand
+                      : (errorText != null
+                            ? Colors.redAccent
+                            : AppColors.fieldBorder),
+                  width: isOpen || errorText != null ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      controller.selectedDepartmentIds.isEmpty
+                          ? AppStrings.selectDepartment
+                          : controller.departments
+                                .where(
+                                  (d) => controller.selectedDepartmentIds
+                                      .contains(d.id),
+                                )
+                                .map((d) => d.name)
+                                .join(', '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: controller.selectedDepartmentIds.isEmpty
+                            ? AppColors.textTertiary
+                            : AppColors.textPrimary,
+                      ),
+                    ),
                   ),
-                )
-              : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: controller.departments.map((dept) {
-                    final isSelected = controller.selectedDepartmentIds
-                        .contains(dept.id);
-                    return GestureDetector(
-                      onTap: () => controller.toggleDepartment(dept.id),
+                  Icon(
+                    isOpen
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: isOpen
+                        ? AppColors.primaryBrand
+                        : AppColors.fieldLabel,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isOpen)
+            _buildDepartmentPanel()
+          else if (errorText != null) ...[
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                errorText,
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    });
+  }
+
+  Widget _buildDepartmentPanel() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        border: Border.all(color: AppColors.primaryBrand, width: 1.5),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'CHOOSE DEPARTMENTS',
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textTertiary,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => controller.selectedDepartmentIds.clear(),
+                      child: Text(
+                        'Clear',
+                        style: AppTextStyles.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.bohoRed,
+                        ),
+                      ),
+                    ),
+                    AppSpacing.h16,
+                    GestureDetector(
+                      onTap: () =>
+                          controller.isDepartmentPickerOpen.value = false,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primaryBrand
-                              : AppColors.white,
+                          color: AppColors.primaryBrand,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primaryBrand
-                                : AppColors.fieldBorder,
-                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (isSelected) ...[
-                              const Icon(
-                                Icons.check_rounded,
-                                size: 14,
-                                color: AppColors.white,
-                              ),
-                              AppSpacing.h4,
-                            ],
+                            const Icon(
+                              Icons.check_rounded,
+                              size: 14,
+                              color: AppColors.white,
+                            ),
+                            AppSpacing.h4,
                             Text(
-                              dept.name,
+                              'Done',
                               style: AppTextStyles.outfit(
                                 fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: isSelected
-                                    ? AppColors.white
-                                    : AppColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.white,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  ],
                 ),
-        ),
-        if (errorText != null) ...[
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Text(
-              errorText,
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                color: Colors.redAccent,
-                fontWeight: FontWeight.w500,
-              ),
+              ],
             ),
           ),
+          Divider(height: 1, color: AppColors.background),
+          if (controller.departments.isEmpty)
+            Padding(
+              padding: AppSpacing.all16,
+              child: Text(
+                'No departments found',
+                style: AppTextStyles.outfit(
+                  fontSize: 13,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            )
+          else
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 260),
+              child: Material(
+                type: MaterialType.transparency,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: controller.departments.length,
+                  itemBuilder: (context, index) {
+                    final dept = controller.departments[index];
+                    return Obx(() {
+                      final isSelected = controller.selectedDepartmentIds
+                          .contains(dept.id);
+                      return CheckboxListTile(
+                        value: isSelected,
+                        onChanged: (_) =>
+                            controller.toggleDepartment(dept.id),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        activeColor: AppColors.primaryBrand,
+                        tileColor: isSelected
+                            ? AppColors.primaryBrandLight
+                            : Colors.transparent,
+                        title: Text(
+                          dept.name,
+                          style: AppTextStyles.outfit(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      );
+                    });
+                  },
+                ),
+              ),
+            ),
         ],
-      ],
+      ),
     );
   }
 

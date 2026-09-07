@@ -68,8 +68,8 @@ class AppStrings {
   static const String instBatchSubjectHint = 'Enter subject';
   static const String instBatchDescLabel = 'Description';
   static const String instBatchDescHint = 'Enter batch description';
-  static const String instBatchFeeLabelAlt = 'Fees (₹)';
-  static const String instBatchFeeHint = 'Enter fee';
+  static const String instBatchFeeLabelAlt = 'Monthly Fees (₹)';
+  static const String instBatchFeeHint = 'Enter monthly fee amount';
   static const String instTimeSlot = 'Time Slot';
   static const String instChangeBtn = 'Change';
   static const String instActiveDaysLabel = 'Days';

@@ -183,7 +183,6 @@ abstract class InstituteRepositoryImpl {
     String? imagePath,
   );
   Future<String> sendStaffPassword(int id);
-  Future<void> resetStaffPassword(int id, String password);
   Future<Staff> changeStaffEmail(int id, String email);
   Future<Staff> toggleStaffBlock(int id, bool blocked);
   Future<SalaryListResponse> getStaffSalaries(int staffId, {int page = 1});

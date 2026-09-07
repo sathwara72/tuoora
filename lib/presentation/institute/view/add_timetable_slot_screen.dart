@@ -45,7 +45,7 @@ class AddTimetableSlotScreen extends StatelessWidget {
                     AppSpacing.v24,
                     const InstituteLabel('DAY'),
                     AppSpacing.v8,
-                    _buildDayChips(controller),
+                    _buildDayDropdown(controller),
                     AppSpacing.v24,
                     Row(
                       children: [
@@ -85,12 +85,12 @@ class AddTimetableSlotScreen extends StatelessWidget {
                       );
                     }),
                     AppSpacing.v24,
-                    const InstituteLabel('ASSIGN STAFF (OPTIONAL)'),
+                    const InstituteLabel('ASSIGN STAFF'),
                     AppSpacing.v8,
                     _buildStaffDropdown(controller),
                     AppSpacing.v24,
                     AppInputField(
-                      label: 'ROOM / CLASSROOM (OPTIONAL)',
+                      label: 'ROOM / CLASSROOM',
                       controller: controller.roomNoController,
                       hint: 'e.g. A-2',
                     ),
@@ -113,39 +113,50 @@ class AddTimetableSlotScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDayChips(TimetableController controller) {
-    return Obx(
-      () => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: DayOfWeek.values.map((day) {
-          final isSelected = controller.formDay.value == day;
-          return GestureDetector(
-            onTap: () => controller.formDay.value = day,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryBrand : AppColors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryBrand
-                      : AppColors.fieldBorder,
-                ),
-              ),
-              child: Text(
-                DayOfWeek.labelFor(day),
-                style: AppTextStyles.outfit(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? AppColors.white : AppColors.textPrimary,
-                ),
-              ),
+  Widget _buildDayDropdown(TimetableController controller) {
+    return Obx(() {
+      // Include the currently-set day even if it's since fallen outside the
+      // batch's active days (e.g. editing a slot from before the batch's
+      // schedule changed), so the dropdown never holds a value missing from
+      // its own item list.
+      final days = {controller.formDay.value, ...controller.availableDays}.toList();
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.fieldBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primaryBrand, width: 1.5),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            isExpanded: true,
+            value: controller.formDay.value,
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.primaryBrand,
             ),
-          );
-        }).toList(),
-      ),
-    );
+            items: days
+                .map(
+                  (day) => DropdownMenuItem<String>(
+                    value: day,
+                    child: Text(
+                      DayOfWeek.labelFor(day),
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: (day) {
+              if (day != null) controller.formDay.value = day;
+            },
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildTimeField(

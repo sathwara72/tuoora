@@ -117,6 +117,7 @@ class StaffController extends GetxController {
 
   // Add/Edit Staff Reactive State
   final selectedDepartmentIds = <int>[].obs;
+  final isDepartmentPickerOpen = false.obs;
   final employmentType = 'Salary'.obs;
 
   final staffNameController = TextEditingController();
@@ -721,21 +722,6 @@ class StaffController extends GetxController {
     }
   }
 
-  Future<void> resetStaffPassword(String password) async {
-    final staff = selectedStaff.value;
-    if (staff == null) return;
-    try {
-      isSaving.value = true;
-      await _repository.resetStaffPassword(staff.id, password);
-      Get.back();
-      AppSnackBar.success('Staff password has been reset successfully!');
-    } catch (e) {
-      AppSnackBar.error(_firstErrorMessage(e, 'Failed to reset password'));
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
   Future<void> changeStaffEmail(String email) async {
     final staff = selectedStaff.value;
     if (staff == null) return;
@@ -792,6 +778,7 @@ class StaffController extends GetxController {
     staffPhoneController.clear();
     staffSalaryController.clear();
     selectedDepartmentIds.clear();
+    isDepartmentPickerOpen.value = false;
     employmentType.value = 'Salary';
     selectedImagePath.value = null;
     selectedStaff.value = null;

@@ -4,7 +4,6 @@ import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/widgets/app_pickers.dart';
 import 'package:tuoora/presentation/institute/controllers/exam_controller.dart';
-import 'package:tuoora/presentation/institute/models/exam_model.dart';
 import 'package:tuoora/core/widgets/app_input_field.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_label.dart';
@@ -45,14 +44,10 @@ class AddExamScreen extends StatelessWidget {
                     ),
                     AppSpacing.v24,
                     AppInputField(
-                      label: 'SUBJECT (OPTIONAL)',
+                      label: 'SUBJECT',
                       controller: controller.subjectController,
                       hint: 'Defaults to batch subject',
                     ),
-                    AppSpacing.v24,
-                    const InstituteLabel('EXAM TYPE'),
-                    AppSpacing.v8,
-                    _buildExamTypeChips(controller),
                     AppSpacing.v24,
                     const InstituteLabel('EXAM DATE'),
                     _buildDatePicker(context, controller),
@@ -99,41 +94,6 @@ class AddExamScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildExamTypeChips(ExamController controller) {
-    return Obx(
-      () => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: ExamType.values.map((type) {
-          final isSelected = controller.examType.value == type;
-          return GestureDetector(
-            onTap: () => controller.examType.value = type,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryBrand : AppColors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isSelected
-                      ? AppColors.primaryBrand
-                      : AppColors.fieldBorder,
-                ),
-              ),
-              child: Text(
-                ExamType.labelFor(type),
-                style: AppTextStyles.outfit(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? AppColors.white : AppColors.textPrimary,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }

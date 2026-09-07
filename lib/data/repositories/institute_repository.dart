@@ -1294,17 +1294,6 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<void> resetStaffPassword(int id, String password) async {
-    final response = await _apiClient.post(
-      '${ApiConstants.instituteStaff}/$id/reset-password',
-      {'password': password},
-    );
-    if (response.status.hasError) {
-      _handleError(response, 'Failed to reset password');
-    }
-  }
-
-  @override
   Future<Staff> changeStaffEmail(int id, String email) async {
     final response = await _apiClient.post(
       '${ApiConstants.instituteStaff}/$id/change-email',

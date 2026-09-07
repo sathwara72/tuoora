@@ -20,11 +20,33 @@ class BatchClassesController extends GetxController {
   final staffList = <Staff>[].obs;
   final isLoadingStaff = false.obs;
 
+  // Class teacher assignment only makes sense for teaching staff — mirrors
+  // the backend's Staff::scopeFaculty() keyword matching so the dropdown
+  // stays in sync with who the "Faculty / Teacher" department actually is.
+  static const _facultyKeywords = [
+    'faculty / teacher',
+    'faculty/teacher',
+    'faculty',
+    'teacher',
+  ];
+
+  List<Staff> get eligibleTeachers {
+    return staffList.where((s) {
+      final names = s.departments.isNotEmpty
+          ? s.departments.map((d) => d.name.toLowerCase())
+          : [s.department?.name.toLowerCase() ?? ''];
+      return names.any(
+        (name) => _facultyKeywords.any((kw) => name.contains(kw)),
+      );
+    }).toList();
+  }
+
   // Add/Edit Class dialog state
   final editingClassId = Rxn<int>();
   final nameController = TextEditingController();
   final descriptionController = TextEditingController();
   final selectedTeacherIds = <int>[].obs;
+  final isTeacherPickerOpen = false.obs;
   final triedToSave = false.obs;
   final nameError = RxnString();
 
@@ -72,6 +94,7 @@ class BatchClassesController extends GetxController {
     nameController.clear();
     descriptionController.clear();
     selectedTeacherIds.clear();
+    isTeacherPickerOpen.value = false;
     triedToSave.value = false;
     nameError.value = null;
   }
@@ -81,6 +104,7 @@ class BatchClassesController extends GetxController {
     nameController.text = schoolClass.name;
     descriptionController.text = schoolClass.description ?? '';
     selectedTeacherIds.assignAll(schoolClass.teachers.map((t) => t.id));
+    isTeacherPickerOpen.value = false;
     triedToSave.value = false;
     nameError.value = null;
   }

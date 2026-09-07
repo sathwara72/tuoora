@@ -17,7 +17,6 @@ class TimetableController extends GetxController {
   final slots = <TimetableSlot>[].obs;
   final isLoading = false.obs;
   final isSaving = false.obs;
-  final selectedDay = DayOfWeek.today().obs;
 
   TimetableController(this.batch);
 
@@ -45,15 +44,41 @@ class TimetableController extends GetxController {
     }
   }
 
-  List<TimetableSlot> get slotsForSelectedDay {
-    final filtered = slots
-        .where((s) => s.dayOfWeek == selectedDay.value)
-        .toList();
-    filtered.sort((a, b) => a.startTime.compareTo(b.startTime));
-    return filtered;
+  /// All slots across every day, ordered by day-of-week then start time —
+  /// used now that the schedule list shows the whole week at once instead
+  /// of being filtered by a day tab.
+  List<TimetableSlot> get sortedSlots {
+    final sorted = [...slots];
+    sorted.sort((a, b) {
+      final dayCompare = DayOfWeek.values
+          .indexOf(a.dayOfWeek)
+          .compareTo(DayOfWeek.values.indexOf(b.dayOfWeek));
+      if (dayCompare != 0) return dayCompare;
+      return a.startTime.compareTo(b.startTime);
+    });
+    return sorted;
   }
 
-  void selectDay(String day) => selectedDay.value = day;
+  static const Map<String, String> _shortDayToDayOfWeek = {
+    'Mon': DayOfWeek.monday,
+    'Tue': DayOfWeek.tuesday,
+    'Wed': DayOfWeek.wednesday,
+    'Thu': DayOfWeek.thursday,
+    'Fri': DayOfWeek.friday,
+    'Sat': DayOfWeek.saturday,
+    'Sun': DayOfWeek.sunday,
+  };
+
+  /// Days this batch actually runs on (from its "Active Days" setting),
+  /// so the schedule form can't create a slot on a day the batch is closed.
+  /// Falls back to every day if the batch has none configured.
+  List<String> get availableDays {
+    final mapped = batch.days
+        .map((d) => _shortDayToDayOfWeek[d])
+        .whereType<String>()
+        .toList();
+    return mapped.isEmpty ? DayOfWeek.values : mapped;
+  }
 
   // ── Staff picker (for assigning a faculty member to a slot) ────────────
   final staffList = <Staff>[].obs;
@@ -92,7 +117,7 @@ class TimetableController extends GetxController {
 
   void startCreate() {
     clearForm();
-    formDay.value = selectedDay.value;
+    formDay.value = availableDays.first;
     fetchStaffForAssignment();
   }
 
@@ -174,9 +199,7 @@ class TimetableController extends GetxController {
         await _repository.createTimetableSlot(data);
       }
 
-      final savedDay = formDay.value;
       await fetchTimetable();
-      selectedDay.value = savedDay;
 
       final wasEditing = isEditing;
       clearForm();

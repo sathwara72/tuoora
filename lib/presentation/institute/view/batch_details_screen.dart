@@ -287,7 +287,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
         ),
       ),
       _ManagementTileData(
-        icon: Icons.class_rounded,
+        icon: Icons.school_rounded,
         title: 'Classes',
         onTap: () => Get.toNamed(
           AppRoutes.instituteBatchClasses,
@@ -295,7 +295,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
         ),
       ),
       _ManagementTileData(
-        svgAsset: AppImages.icBatchHomework,
+        icon: Icons.menu_book_rounded,
         title: AppStrings.homework,
         onTap: () => Get.toNamed(
           AppRoutes.instituteBatchHomework,
@@ -311,7 +311,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
         ),
       ),
       _ManagementTileData(
-        svgAsset: AppImages.icBatchExam,
+        svgAsset: AppImages.icBatchHomework,
         title: AppStrings.exams,
         onTap: () => Get.toNamed(
           AppRoutes.instituteBatchExams,
@@ -408,7 +408,6 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                     theme: SvgTheme(currentColor: accent),
                     colorFilter: ColorFilter.mode(accent, BlendMode.srcIn),
                   ),
-
             AppSpacing.v12,
             FittedBox(
               fit: BoxFit.scaleDown,

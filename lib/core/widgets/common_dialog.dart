@@ -106,155 +106,175 @@ class CommonDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    // Cap the dialog to the space actually left once the keyboard (and the
+    // Dialog's own insetPadding) are accounted for, and let the content
+    // scroll within that — otherwise a body with variable-height content
+    // (an expandable picker, say) can overflow the Column once it grows
+    // past what's available, which silently breaks the dialog rather than
+    // just clipping the excess.
+    final maxDialogHeight =
+        media.size.height - media.viewInsets.bottom - AppSpacing.s24 * 2;
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s16,
         vertical: AppSpacing.s24,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Container(
-        padding: AppSpacing.all16,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: maxDialogHeight.clamp(200, double.infinity),
         ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: body != null
-                  ? CrossAxisAlignment.stretch
-                  : CrossAxisAlignment.center,
-              children: [
-                if (icon != null || svgAsset != null) ...[
-                  Center(
-                    child: Container(
-                      padding: AppSpacing.all16,
-                      decoration: BoxDecoration(
-                        color: iconBgColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: svgAsset != null
-                          ? AppActionIcon(
-                              asset: svgAsset!,
-                              color: iconColor,
-                              size: 32,
-                            )
-                          : Icon(icon, color: iconColor, size: 32),
-                    ),
-                  ),
-                  AppSpacing.v24,
-                ],
-                Padding(
-                  // Reserve right-side space so the title doesn't run
-                  // underneath the X close icon when it's shown.
-                  padding: showCloseIcon
-                      ? const EdgeInsets.only(right: 32)
-                      : EdgeInsets.zero,
-                  child: Text(
-                    title,
-                    textAlign:
-                        body != null ? TextAlign.left : TextAlign.center,
-                    style: AppTextStyles.outfit(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                if (description != null) ...[
-                  AppSpacing.v12,
-                  Text(
-                    description!,
-                    textAlign:
-                        body != null ? TextAlign.left : TextAlign.center,
-                    style: AppTextStyles.outfit(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-                if (body != null) ...[AppSpacing.v24, body!],
-                if (showButtons) ...[
-                  AppSpacing.v32,
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: onCancel ?? () => Get.back(),
-                          style: OutlinedButton.styleFrom(
-                            padding: AppSpacing.y16,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            side: BorderSide(color: Colors.grey.shade300),
+        child: Container(
+          padding: AppSpacing.all16,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: body != null
+                      ? CrossAxisAlignment.stretch
+                      : CrossAxisAlignment.center,
+                  children: [
+                    if (icon != null || svgAsset != null) ...[
+                      Center(
+                        child: Container(
+                          padding: AppSpacing.all16,
+                          decoration: BoxDecoration(
+                            color: iconBgColor,
+                            shape: BoxShape.circle,
                           ),
-                          child: Text(
-                            cancelText,
-                            style: AppTextStyles.outfit(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
+                          child: svgAsset != null
+                              ? AppActionIcon(
+                                  asset: svgAsset!,
+                                  color: iconColor,
+                                  size: 32,
+                                )
+                              : Icon(icon, color: iconColor, size: 32),
                         ),
                       ),
-                      AppSpacing.h12,
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (body == null) Get.back();
-                            onConfirm();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: confirmButtonColor ??
-                                (icon != null
-                                    ? iconColor
-                                    : AppColors.primaryBrand),
-                            padding: AppSpacing.y16,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            confirmText,
-                            style: AppTextStyles.outfit(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.white,
-                            ),
-                          ),
+                      AppSpacing.v24,
+                    ],
+                    Padding(
+                      // Reserve right-side space so the title doesn't run
+                      // underneath the X close icon when it's shown.
+                      padding: showCloseIcon
+                          ? const EdgeInsets.only(right: 32)
+                          : EdgeInsets.zero,
+                      child: Text(
+                        title,
+                        textAlign: body != null
+                            ? TextAlign.left
+                            : TextAlign.center,
+                        style: AppTextStyles.outfit(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (description != null) ...[
+                      AppSpacing.v12,
+                      Text(
+                        description!,
+                        textAlign: body != null
+                            ? TextAlign.left
+                            : TextAlign.center,
+                        style: AppTextStyles.outfit(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ],
-            ),
-            if (showCloseIcon)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: () => Get.back(),
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: AppColors.textTertiary,
+                    if (body != null) ...[AppSpacing.v24, body!],
+                    if (showButtons) ...[
+                      AppSpacing.v32,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: onCancel ?? () => Get.back(),
+                              style: OutlinedButton.styleFrom(
+                                padding: AppSpacing.y16,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              child: Text(
+                                cancelText,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          AppSpacing.h12,
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                if (body == null) Get.back();
+                                onConfirm();
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    confirmButtonColor ??
+                                    (icon != null
+                                        ? iconColor
+                                        : AppColors.primaryBrand),
+                                padding: AppSpacing.y16,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                confirmText,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (showCloseIcon)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () => Get.back(),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.fieldBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
