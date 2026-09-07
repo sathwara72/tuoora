@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:tuoora/core/api/api_client.dart';
+import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/services/institute_account_status_handler.dart';
@@ -45,6 +46,17 @@ class AuthRepository implements AuthRepositoryImpl {
       'password': password,
     });
     final user = _handleResponse(response, 'STUDENT');
+    await Get.find<AuthService>().setSubscription(null);
+    return user;
+  }
+
+  @override
+  Future<User> loginTeacher(String email, String password) async {
+    final response = await _apiClient.post(ApiConstants.teacherLogin, {
+      'email': email,
+      'password': password,
+    });
+    final user = _handleResponse(response, 'TEACHER');
     await Get.find<AuthService>().setSubscription(null);
     return user;
   }
@@ -104,6 +116,8 @@ class AuthRepository implements AuthRepositoryImpl {
   Future<void> logout(String role) async {
     final endpoint = role == 'INSTITUTE'
         ? ApiConstants.instituteLogout
+        : role == 'TEACHER'
+        ? ApiConstants.teacherLogout
         : ApiConstants.studentLogout;
     final response = await _apiClient.post(endpoint, {});
     if (response.status.hasError) {
@@ -139,5 +153,50 @@ class AuthRepository implements AuthRepositoryImpl {
     }
 
     return response.body['message'] ?? 'Success';
+  }
+
+  @override
+  Future<String> teacherForgotPassword(String email) async {
+    final response = await _apiClient.post(
+      ApiConstants.teacherForgotPassword,
+      {'email': email},
+    );
+    if (response.status.hasError) {
+      final message = response.body?['message'] ?? 'Failed to send reset OTP';
+      throw Exception(message);
+    }
+    return response.body['message'] ?? 'Success';
+  }
+
+  @override
+  Future<String> teacherResetPassword(Map<String, dynamic> data) async {
+    final response = await _apiClient.post(
+      ApiConstants.teacherResetPassword,
+      data,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to reset password');
+    }
+    return response.body['message'] ?? 'Success';
+  }
+
+  @override
+  Future<void> teacherChangePassword(Map<String, dynamic> data) async {
+    final response = await _apiClient.post(
+      ApiConstants.teacherChangePassword,
+      data,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to change password');
+    }
+  }
+
+  void _handleError(dynamic response, String defaultMessage) {
+    if (response.statusCode == 422 && response.body?['errors'] != null) {
+      throw ValidationException(
+        Map<String, dynamic>.from(response.body['errors']),
+      );
+    }
+    throw Exception(response.body?['message'] ?? defaultMessage);
   }
 }

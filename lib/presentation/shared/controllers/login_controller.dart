@@ -60,6 +60,8 @@ class LoginController extends GetxController {
         );
       } else if (role == 'STUDENT') {
         user = await _authRepository.loginStudent(email, password);
+      } else if (role == 'TEACHER') {
+        user = await _authRepository.loginTeacher(email, password);
       }
 
       if (user != null) {
@@ -190,6 +192,14 @@ class LoginController extends GetxController {
       }
     } else if (role == 'STUDENT') {
       Get.offAllNamed(AppRoutes.studentDashboard);
+    } else if (role == 'TEACHER') {
+      final mustChangePassword =
+          _authService.currentUser?.mustChangePassword ?? false;
+      if (mustChangePassword) {
+        Get.offAllNamed(AppRoutes.teacherChangePassword, arguments: true);
+      } else {
+        Get.offAllNamed(AppRoutes.teacherDashboard);
+      }
     }
   }
 

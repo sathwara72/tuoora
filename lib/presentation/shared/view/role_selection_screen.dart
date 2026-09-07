@@ -44,6 +44,17 @@ class RoleSelectionScreen extends StatelessWidget {
                   Get.toNamed(AppRoutes.login, arguments: 'STUDENT');
                 },
               ),
+              AppSpacing.v16,
+              _buildRoleCard(
+                title: AppStrings.loginAsTeacher,
+                subtitle: AppStrings.manageYourBatchesAttendanceAndGrades,
+                icon: Icons.co_present_rounded,
+                iconColor: AppColors.primaryBrand,
+                onTap: () {
+                  GetStorage().write('last_selected_role', 'TEACHER');
+                  Get.toNamed(AppRoutes.login, arguments: 'TEACHER');
+                },
+              ),
               AppSpacing.v48,
             ],
           ),

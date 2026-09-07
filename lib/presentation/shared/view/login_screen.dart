@@ -175,11 +175,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   letterSpacing: 1.0,
                                 ),
                               ),
-                              if (_selectedRole == 'INSTITUTE')
+                              if (_selectedRole == 'INSTITUTE' ||
+                                  _selectedRole == 'TEACHER')
                                 TextButton(
                                   onPressed: () {
                                     Get.toNamed(
-                                      AppRoutes.instituteForgotPassword,
+                                      _selectedRole == 'TEACHER'
+                                          ? AppRoutes.teacherForgotPassword
+                                          : AppRoutes.instituteForgotPassword,
                                     );
                                   },
                                   style: TextButton.styleFrom(

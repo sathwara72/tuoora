@@ -35,6 +35,27 @@ class AppRoutes {
       '/student/study-material/detail';
   static const String studentFeedback = '/student/feedback';
 
+  static const String teacherDashboard = '/teacher/dashboard';
+  static const String teacherForgotPassword = '/teacher/forgot-password';
+  static const String teacherResetPassword = '/teacher/reset-password';
+  static const String teacherChangePassword = '/teacher/change-password';
+  static const String teacherProfile = '/teacher/profile';
+  static const String teacherBatches = '/teacher/batches';
+  static const String teacherBatchDetails = '/teacher/batches/details';
+  static const String teacherMarkAttendance = '/teacher/batches/attendance';
+  static const String teacherSelfAttendance = '/teacher/self-attendance';
+  static const String teacherBatchHomework = '/teacher/batches/homework';
+  static const String teacherAddHomework = '/teacher/batches/homework/add';
+  static const String teacherHomeworkGrading = '/teacher/batches/homework/grade';
+  static const String teacherBatchExams = '/teacher/batches/exams';
+  static const String teacherAddExam = '/teacher/batches/exams/add';
+  static const String teacherExamMarks = '/teacher/batches/exams/marks';
+  static const String teacherBatchTimetable = '/teacher/batches/timetable';
+  static const String teacherAddTimetableSlot =
+      '/teacher/batches/timetable/add';
+  static const String teacherFees = '/teacher/batches/fees';
+  static const String teacherSalaries = '/teacher/salaries';
+
   static const String instituteDashboard = '/institute/dashboard';
   static const String instituteStudents = '/institute/students';
   static const String instituteStudentProfile = '/institute/students/profile';

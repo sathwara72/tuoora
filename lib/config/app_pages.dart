@@ -47,6 +47,27 @@ import 'package:tuoora/presentation/institute/view/add_timetable_slot_screen.dar
 import 'package:tuoora/presentation/institute/view/batch_resources_screen.dart';
 import 'package:tuoora/presentation/institute/view/resource_detail_screen.dart';
 import 'package:tuoora/presentation/institute/view/students_registry_screen.dart';
+import 'package:tuoora/presentation/teacher/bindings/teacher_binding.dart';
+import 'package:tuoora/presentation/teacher/bindings/teacher_auth_binding.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_dashboard_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_forgot_password_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_reset_password_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_change_password_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_batches_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_batch_details_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_profile_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_mark_attendance_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_self_attendance_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_batch_homework_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_add_homework_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_homework_grading_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_batch_exams_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_add_exam_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_exam_marks_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_batch_timetable_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_add_timetable_slot_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_fees_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_salary_screen.dart';
 import 'package:tuoora/presentation/student/bindings.dart';
 import 'package:tuoora/presentation/student/view/payment_history_screen.dart';
 import 'package:tuoora/presentation/shared/bindings/auth_binding.dart';
@@ -282,6 +303,102 @@ class AppPages {
           () => StudentFeedbackController(),
         );
       }),
+    ),
+    // Teacher routes
+    GetPage(
+      name: AppRoutes.teacherDashboard,
+      page: () => const TeacherDashboardScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherForgotPassword,
+      page: () => const TeacherForgotPasswordScreen(),
+      binding: TeacherAuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherResetPassword,
+      page: () => const TeacherResetPasswordScreen(),
+      binding: TeacherAuthBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherChangePassword,
+      page: () => const TeacherChangePasswordScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherBatches,
+      page: () => const TeacherBatchesScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherBatchDetails,
+      page: () => const TeacherBatchDetailsScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherProfile,
+      page: () => const TeacherProfileScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherMarkAttendance,
+      page: () => const TeacherMarkAttendanceScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherSelfAttendance,
+      page: () => const TeacherSelfAttendanceScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherBatchHomework,
+      page: () => const TeacherBatchHomeworkScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherAddHomework,
+      page: () => const TeacherAddHomeworkScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherHomeworkGrading,
+      page: () => const TeacherHomeworkGradingScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherBatchExams,
+      page: () => const TeacherBatchExamsScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherAddExam,
+      page: () => const TeacherAddExamScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherExamMarks,
+      page: () => const TeacherExamMarksScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherBatchTimetable,
+      page: () => const TeacherBatchTimetableScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherAddTimetableSlot,
+      page: () => const TeacherAddTimetableSlotScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherFees,
+      page: () => const TeacherFeesScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherSalaries,
+      page: () => const TeacherSalaryScreen(),
+      binding: TeacherBinding(),
     ),
     // Institute routes
     GetPage(
