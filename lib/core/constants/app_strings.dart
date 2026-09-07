@@ -256,7 +256,6 @@ class AppStrings {
   // Student — Pay Fees screen.
   static const String studentPayFeesTitle = 'Pay fees';
   static const String studentPayFeesOutstanding = 'TOTAL OUTSTANDING';
-  static const String studentPayFeesScanWith = 'SCAN WITH ANY UPI APP';
   static const String studentPayFeesOpenInAnyUpi = 'Open in Any UPI App';
   static const String studentPayFeesHowItWorks = 'HOW IT WORKS';
   static const String studentPayFeesStep1 =
@@ -312,7 +311,6 @@ class AppStrings {
   static const String hintSelectCategory = 'Select Category';
   static const String labelState = 'State';
   static const String labelStudyMaterial = 'Study material';
-  static const String labelSubmitPaymentProof = 'Submit Payment Proof';
   static const String labelTapToRetry = 'Tap to retry';
   static const String hintTypeMessage = 'Type a message...';
 
@@ -381,6 +379,7 @@ class AppStrings {
   static const String failedToLoadPerformanceReport =
       'Failed to load performance report';
   static const String failedToLoadBatchDetails = 'Failed to load batch details';
+  static const String failedToLoadAnalytics = 'Failed to load analytics';
   static const String resourceDeletedSuccessfully = 'Resource deleted';
   static const String onlyImageVideoAndDocumentFiles =
       'Only image, video and document files are allowed.';
@@ -402,12 +401,6 @@ class AppStrings {
   static const String staffCreatedSuccessfully = 'Staff created';
   static const String staffDeletedSuccessfully = 'Staff deleted';
   static const String reminderSent = 'Reminder Sent';
-  static const String onceYouHaveCompletedThePayment =
-      'Once you have completed the payment, submit your transaction ';
-  static const String submitDetails = 'Submit Details';
-  static const String notYet = 'Not Yet';
-  static const String yourRenewalRequestHasBeenSubmitted =
-      'Your renewal request has been submitted. We will review it shortly.';
   static const String pleaseSelectABatchForThis =
       'Please select a batch for this update.';
   static const String updateBroadcastedSuccessfully = 'Update broadcasted';
@@ -453,6 +446,13 @@ class AppStrings {
   static const String overallAttendancePercentage =
       'Overall Attendance Percentage';
   static const String homework = 'Homework';
+  static const String exams = 'Exams';
+  static const String labelExams = 'Exams';
+  static const String timetable = 'Timetable';
+  static const String labelTimetable = 'Timetable';
+  static const String birthdays = 'Birthdays';
+  static const String labelBirthdays = 'Birthdays';
+  static const String labelIdCard = 'ID Card';
   static const String resources = 'Resources';
   static const String studentBreakdown = 'Student Breakdown';
   static const String attendanceRate = 'Attendance Rate';
@@ -551,6 +551,9 @@ class AppStrings {
   static const String subscriptionManageOnWebMessage =
       'For subscription plans, renewal, and billing, please visit our website. We will open it in your default browser.';
   static const String subscriptionOpenWebButton = 'Open in Browser';
+  static const String whiteLabelManageOnWebTitle = 'Purchase on Web';
+  static const String whiteLabelManageOnWebMessage =
+      'The White Label add-on is currently available for purchase from our website. We will open it in your default browser.';
   static const String signOutOfYourAccount = 'Sign out of your account';
   static const String instituteProfileAreYouSureYouWantTo =
       'Are you sure you want to log out from your account?';
@@ -613,6 +616,9 @@ class AppStrings {
   static const String deepDiveIntoExaminationResultsAssignment =
       'Deep dive into examination results, assignment completion rates, and individual student growth curves.';
   static const String studentPerformanceReports = 'Student Performance Reports';
+  static const String labelBusinessAnalytics = 'Business Analytics';
+  static const String revenueFeeCollectionAndDropoutTrends =
+      'Revenue trends, fee collection rate, and batch-wise attendance & dropout.';
   static const String academicProgressAverageGradesAndPerformance =
       'Academic progress, average grades, and performance analysis across batches.';
   static const String setNewPassword = 'Set New Password';
@@ -649,24 +655,7 @@ class AppStrings {
   static const String feesHistory = 'Fees History';
   static const String studentIdentityCard = 'STUDENT IDENTITY CARD';
   static const String deleteStudent = 'Delete Student';
-  static const String enterYourTransactionDetailsSoOur =
-      'Enter your transaction details so our billing team can verify and activate your subscription.';
-  static const String transactionIdRefNumber = 'TRANSACTION ID / REF NUMBER';
-  static const String enterUtrRefNoOrTxn = 'Enter UTR, Ref No. or Txn ID';
-  static const String messageOptional = 'MESSAGE (OPTIONAL)';
-  static const String enterAnySpecificNote = 'Enter any specific note...';
-  static const String submitProof = 'Submit Proof';
-  static const String paymentScreenshot = 'PAYMENT SCREENSHOT';
-  static const String uploadScreenshotJpgPng = 'Upload screenshot (JPG, PNG)';
-  static const String offlineSubscriptionRenewal =
-      'Offline Subscription Renewal';
-  static const String payUsingTheDetailsBelowThen =
-      'Pay using the details below, then submit your transaction proof to restore access.';
-  static const String iVeCompletedPayment = 'I\'ve Completed Payment';
-  static const String qrCodeWillAppearHere = 'QR code will appear here';
-  static const String bankTransferDetails = 'BANK TRANSFER DETAILS';
   static const String export = 'Export';
-  static const String upiIdCopy = 'UPI ID copied';
   static const String renewalRequestPendingReview =
       'Renewal Request Pending Review';
   static const String yourSubscriptionHasBeenExpired =
@@ -929,24 +918,14 @@ class AppStrings {
   static const String addPaymentDetails = 'Add Payment Details';
   static const String editSettings = 'Edit Settings';
 
-  // IAP (Apple In-App Purchase) — institute subscription
+  // Institute subscription — Razorpay
   static const String iapPayDirect = 'Pay Direct';
   static const String iapSelectPlanTitle = 'Choose Your Plan';
-  static const String iapSelectPlanSubtitle =
-      'Payments are processed securely through Apple';
-  static const String iapProcessing = 'Processing…';
   static const String iapPurchaseSuccess =
       'Subscription activated successfully!';
   static const String iapPurchaseFailed = 'Purchase failed. Please try again.';
-  static const String iapNotAvailable =
-      'In-App Purchase is not available on this device.';
   static const String iapActivationFailed =
       'Purchase successful but activation failed. Please contact support.';
-  static const String iapProcessedByApple = 'Payments managed by Apple';
-  static const String iapProcessedByGoogle = 'Payments managed by Google Play';
   static const String iapPlanUnavailable =
       'This plan is currently unavailable. Please try again later.';
-  static const String iapPayManually = 'Manually';
-  static const String iapPayDirectDesc = 'Instant · via Apple';
-  static const String iapPayManuallyDesc = 'UPI / Bank Transfer';
 }

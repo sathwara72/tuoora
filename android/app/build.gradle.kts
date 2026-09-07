@@ -32,11 +32,16 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.app.tuoora"
+        // Overridable per white-label build via `-PappId=...` / `-PappLabel=...`
+        // (see tool/build_white_label.sh). Every normal `flutter build`/`flutter run`
+        // omits both and gets the shared Tuoora app unchanged.
+        applicationId = (project.findProperty("appId") as String?) ?: "com.app.tuoora"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["appLabel"] =
+            (project.findProperty("appLabel") as String?) ?: "Tuoora"
     }
 
     signingConfigs {

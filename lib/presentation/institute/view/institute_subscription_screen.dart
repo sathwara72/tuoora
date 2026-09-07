@@ -4,13 +4,12 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/data/models/institute_subscription_model.dart';
-import 'package:tuoora/config/app_routes.dart';
-import 'package:tuoora/presentation/institute/controllers/iap_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/razorpay_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_subscription_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
+import 'package:tuoora/core/widgets/subscription_manage_on_web_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -21,6 +20,23 @@ class InstituteSubscriptionScreen
 
   @override
   Widget build(BuildContext context) {
+    if (Platform.isIOS) {
+      return Scaffold(
+        backgroundColor: AppColors.scaffoldBg,
+        body: SafeArea(
+          child: Column(
+            children: [
+              const InstituteAppBar(
+                title: AppStrings.subscriptionPlans,
+                isRoot: false,
+              ),
+              const Expanded(child: SubscriptionManageOnWebView()),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
@@ -80,9 +96,8 @@ class InstituteSubscriptionScreen
             ),
             Positioned.fill(
               child: Obx(() {
-                final bool busy = Platform.isAndroid
-                    ? Get.find<RazorpayController>().isPurchasing.value
-                    : Get.find<IAPController>().isPurchasing.value;
+                final bool busy =
+                    Get.find<RazorpayController>().isPurchasing.value;
                 if (!busy) return const SizedBox.shrink();
                 return AbsorbPointer(
                   child: Container(
@@ -223,28 +238,7 @@ class InstituteSubscriptionScreen
         AppSpacing.v20,
         _buildPlanSelector(activePlans),
         AppSpacing.v16,
-        if (Platform.isIOS) _buildIosButtons() else _buildAndroidButtons(),
-        if (Platform.isIOS) ...[
-          AppSpacing.v12,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.apple_rounded,
-                size: 14,
-                color: AppColors.textTertiary,
-              ),
-              AppSpacing.h6,
-              Text(
-                AppStrings.iapProcessedByApple,
-                style: AppTextStyles.outfit(
-                  fontSize: 11,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ],
+        _buildAndroidButtons(),
       ],
     );
   }
@@ -263,9 +257,7 @@ class InstituteSubscriptionScreen
         ),
         AppSpacing.v8,
         Text(
-          Platform.isIOS
-              ? AppStrings.iapSelectPlanSubtitle
-              : 'Payments are processed securely via Razorpay',
+          'Payments are processed securely via Razorpay',
           textAlign: TextAlign.center,
           style: AppTextStyles.outfit(
             fontSize: 13,
@@ -405,74 +397,21 @@ class InstituteSubscriptionScreen
     );
   }
 
-  // ── iOS action buttons ────────────────────────────────────────────────────
-  Widget _buildIosButtons() {
-    final iapCtrl = Get.find<IAPController>();
-    return Obx(() {
-      final isAvailable = iapCtrl.isAvailable.value;
-      final isLoadingProducts = iapCtrl.isLoadingProducts.value;
-      final selected = controller.selectedPlan.value;
-      // Only disable Pay Direct when IAP is genuinely unavailable or no plan selected.
-      // isPurchasing is NOT used here — the screen overlay blocks interaction instead.
-      final payDirectBlocked =
-          !isAvailable || isLoadingProducts || selected == null;
-
-      return Row(
-        children: [
-          Expanded(
-            child: _buildPayOption(
-              label: AppStrings.iapPayDirect,
-              description: 'Instant · via Apple',
-              icon: Icons.apple_rounded,
-              isPrimary: true,
-              onTap: payDirectBlocked
-                  ? null
-                  : () => iapCtrl.purchasePlan(selected),
-            ),
-          ),
-          AppSpacing.h12,
-          Expanded(
-            child: _buildPayOption(
-              label: AppStrings.iapPayManually,
-              description: AppStrings.iapPayManuallyDesc,
-              icon: Icons.account_balance_rounded,
-              isPrimary: false,
-              onTap: () => Get.toNamed(AppRoutes.instituteSubscriptionRenew),
-            ),
-          ),
-        ],
-      );
-    });
-  }
-
   Widget _buildAndroidButtons() {
     final razorpayCtrl = Get.find<RazorpayController>();
     return Obx(() {
       final selected = controller.selectedPlan.value;
-      return Row(
-        children: [
-          Expanded(
-            child: _buildPayOption(
-              label: AppStrings.iapPayDirect,
-              description: 'Instant · via Razorpay',
-              icon: Icons.currency_rupee_rounded,
-              isPrimary: true,
-              onTap: selected == null
-                  ? null
-                  : () => razorpayCtrl.startPayment(selected),
-            ),
-          ),
-          AppSpacing.h12,
-          Expanded(
-            child: _buildPayOption(
-              label: AppStrings.iapPayManually,
-              description: AppStrings.iapPayManuallyDesc,
-              icon: Icons.account_balance_rounded,
-              isPrimary: false,
-              onTap: () => Get.toNamed(AppRoutes.instituteSubscriptionRenew),
-            ),
-          ),
-        ],
+      return SizedBox(
+        width: double.infinity,
+        child: _buildPayOption(
+          label: AppStrings.iapPayDirect,
+          description: 'Instant · via Razorpay',
+          icon: Icons.currency_rupee_rounded,
+          isPrimary: true,
+          onTap: selected == null
+              ? null
+              : () => razorpayCtrl.startPayment(selected),
+        ),
       );
     });
   }

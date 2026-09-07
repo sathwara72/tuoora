@@ -80,10 +80,21 @@ class StudentHomeworkRepository implements StudentHomeworkRepositoryImpl {
   }
 
   @override
-  Future<void> submitHomework(int id) async {
+  Future<void> submitHomework(int id, {String? note, String? attachmentPath}) async {
+    final fields = <String, dynamic>{if (note != null) 'note': note};
+    final formData = FormData(fields);
+    if (attachmentPath != null && attachmentPath.isNotEmpty) {
+      formData.files.add(
+        MapEntry(
+          'attachment',
+          MultipartFile(attachmentPath, filename: attachmentPath.split('/').last),
+        ),
+      );
+    }
+
     final response = await _apiClient.post(
       '${ApiConstants.studentHomeworks}/$id/submit',
-      {},
+      formData,
     );
     if (response.status.hasError) {
       final message = response.body?['message'] ?? 'Failed to submit homework';

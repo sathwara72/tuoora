@@ -33,6 +33,10 @@ class ReportsController extends GetxController {
   final batchAttendanceDetail = Rxn<BatchAttendanceDetailResponse>();
   final batchPerformanceDetail = Rxn<BatchPerformanceDetailResponse>();
 
+  final analytics = Rxn<AnalyticsResponse>();
+  final isAnalyticsLoading = false.obs;
+  final analyticsMonths = 6.obs;
+
   final isBatchDetailLoading = false.obs;
   final overallAttendance = '92%'.obs;
   final attendanceTrend = '2% decrease from last week'.obs;
@@ -83,6 +87,20 @@ class ReportsController extends GetxController {
       AppSnackBar.error(AppStrings.failedToLoadPerformanceReport);
     } finally {
       isPerformanceLoading.value = false;
+    }
+  }
+
+  Future<void> loadAnalytics({int? months}) async {
+    try {
+      if (months != null) analyticsMonths.value = months;
+      isAnalyticsLoading.value = true;
+      analytics.value = await _repository.getAnalytics(
+        months: analyticsMonths.value,
+      );
+    } catch (e) {
+      AppSnackBar.error(AppStrings.failedToLoadAnalytics);
+    } finally {
+      isAnalyticsLoading.value = false;
     }
   }
 

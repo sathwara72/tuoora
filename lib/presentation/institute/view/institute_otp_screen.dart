@@ -1,7 +1,7 @@
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:tuoora/core/constants/app_images.dart';
+import 'package:tuoora/core/widgets/app_logo.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/institute/controllers/signup_controller.dart';
 import 'package:flutter/material.dart';
@@ -125,7 +125,7 @@ class InstituteOtpScreen extends GetView<SignupController> {
   Widget _buildHeader() {
     return Column(
       children: [
-        Image.asset(AppImages.logoWithName, height: AppSpacing.s48),
+        AppLogo(height: AppSpacing.s48),
         AppSpacing.v32,
         Text(
           AppStrings.checkYourEmail,

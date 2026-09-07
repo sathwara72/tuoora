@@ -442,7 +442,55 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
               ),
             ),
             const SizedBox(width: 8),
-            Expanded(child: SizedBox()),
+            Expanded(
+              child: ProfileGridAction(
+                icon: Icons.fact_check_outlined,
+                label: AppStrings.labelExams,
+                iconBgColor: AppColors.successBg,
+                iconColor: AppColors.successGreen,
+                onTap: () => Get.toNamed(AppRoutes.studentExams),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: ProfileGridAction(
+                icon: Icons.calendar_view_week_rounded,
+                label: AppStrings.labelTimetable,
+                iconBgColor: AppColors.skyBlueLight,
+                iconColor: AppColors.studentProgressBlue,
+                onTap: () => Get.toNamed(AppRoutes.studentTimetable),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ProfileGridAction(
+                icon: Icons.cake_outlined,
+                label: AppStrings.labelBirthdays,
+                iconBgColor: AppColors.primaryBrandLight,
+                iconColor: AppColors.primaryBrand,
+                onTap: () => Get.toNamed(AppRoutes.studentBirthdays),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: ProfileGridAction(
+                icon: Icons.badge_outlined,
+                label: AppStrings.labelIdCard,
+                iconBgColor: AppColors.successBg,
+                iconColor: AppColors.successGreen,
+                onTap: () => Get.toNamed(AppRoutes.studentIdCard),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Expanded(child: SizedBox()),
           ],
         ),
       ],

@@ -1,7 +1,7 @@
 import 'package:tuoora/core/widgets/app_pickers.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
-import 'package:tuoora/data/models/staff_model.dart';
 import 'package:tuoora/presentation/institute/models/batch_model.dart';
+import 'package:intl/intl.dart';
 import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +30,6 @@ class BatchController extends GetxController {
   void onInit() {
     super.onInit();
     batchNameController.addListener(() => _clearError(batchNameError));
-    subjectController.addListener(() => _clearError(subjectError));
     batchFeeController.addListener(() => _clearError(feeError));
     debounce(
       batchSearchQuery,
@@ -51,31 +50,23 @@ class BatchController extends GetxController {
 
   final isEditMode = false.obs;
   final batchNameController = TextEditingController();
-  final subjectController = TextEditingController();
   final descriptionController = TextEditingController();
   final batchFeeController = TextEditingController();
-  final classroomController = TextEditingController();
-  final startTime = const TimeOfDay(hour: 0, minute: 0).obs;
-  final endTime = const TimeOfDay(hour: 0, minute: 0).obs;
   final selectedDays = <String>[].obs;
   final selectedStudentIds = <String>[].obs;
   final searchQuery = ''.obs;
   final currentEditingBatchId = ''.obs;
   final allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  // Assigned staff dropdown state — list is fetched on demand each time the
-  // add/edit form is opened so it picks up newly-added staff without needing
-  // a controller restart.
-  final staffList = <Staff>[].obs;
-  final isLoadingStaff = false.obs;
-  final selectedStaffId = Rxn<int>();
+  // Last date fees are due for this batch — drives the automated fee
+  // reminder emails (see backend SendFeeReminders command).
+  final selectedFeesLastDate = Rxn<DateTime>();
 
   final triedToSave = false.obs;
   final batchNameError = RxnString();
-  final subjectError = RxnString();
   final feeError = RxnString();
   final daysError = RxnString();
-  final staffError = RxnString();
+  final feesLastDateError = RxnString();
 
   bool validateForm() {
     bool isValid = true;
@@ -86,13 +77,6 @@ class BatchController extends GetxController {
     );
     batchNameError.value = nameVal;
     if (nameVal != null) isValid = false;
-
-    final subjectVal = ValidationUtils.validateRequired(
-      subjectController.text,
-      'Subject',
-    );
-    subjectError.value = subjectVal;
-    if (subjectVal != null) isValid = false;
 
     final feeVal = ValidationUtils.validateAmount(
       batchFeeController.text,
@@ -107,11 +91,11 @@ class BatchController extends GetxController {
     daysError.value = daysVal;
     if (daysVal != null) isValid = false;
 
-    if (selectedStaffId.value == null) {
-      staffError.value = 'Please select a staff member';
+    if (selectedFeesLastDate.value == null) {
+      feesLastDateError.value = 'Please select the fees last date';
       isValid = false;
     } else {
-      staffError.value = null;
+      feesLastDateError.value = null;
     }
 
     return isValid;
@@ -158,101 +142,50 @@ class BatchController extends GetxController {
   void initAddMode() {
     isEditMode.value = false;
     batchNameController.clear();
-    subjectController.clear();
     descriptionController.clear();
     batchFeeController.clear();
-    classroomController.clear();
-    startTime.value = const TimeOfDay(hour: 0, minute: 0);
-    endTime.value = const TimeOfDay(hour: 0, minute: 0);
     selectedDays.clear();
     selectedStudentIds.clear();
     searchQuery.value = '';
     currentEditingBatchId.value = '';
+    selectedFeesLastDate.value = null;
     triedToSave.value = false;
     batchNameError.value = null;
-    subjectError.value = null;
     feeError.value = null;
     daysError.value = null;
-    staffError.value = null;
-    selectedStaffId.value = null;
-    fetchStaffForAssignment();
+    feesLastDateError.value = null;
   }
 
   void initEditMode(BatchModel batch) {
     isEditMode.value = true;
     currentEditingBatchId.value = batch.id;
     batchNameController.text = batch.title;
-    subjectController.text = batch.subject;
     descriptionController.text = batch.description;
     batchFeeController.text = batch.baseFee.toStringAsFixed(0);
-    classroomController.text = batch.classroom ?? '';
-
-    final times = batch.time.split(' - ');
-    if (times.length == 2) {
-      startTime.value = _parseTime(times[0]);
-      endTime.value = _parseTime(times[1]);
-    }
+    selectedFeesLastDate.value = batch.feesLastDate != null
+        ? DateTime.tryParse(batch.feesLastDate!)
+        : null;
 
     selectedDays.assignAll(batch.days);
     searchQuery.value = '';
     triedToSave.value = false;
     batchNameError.value = null;
-    subjectError.value = null;
     feeError.value = null;
     daysError.value = null;
-    staffError.value = null;
-    selectedStaffId.value = batch.staffId;
-    fetchStaffForAssignment();
+    feesLastDateError.value = null;
   }
 
-  Future<void> fetchStaffForAssignment() async {
-    try {
-      isLoadingStaff.value = true;
-      final response = await _repository.listStaff();
-      staffList.assignAll(response.items);
-    } catch (e) {
-      AppSnackBar.error(AppStrings.failedToLoadStaffList);
-    } finally {
-      isLoadingStaff.value = false;
+  Future<void> selectFeesLastDate(BuildContext context) async {
+    final DateTime? picked = await AppPickers.date(
+      context,
+      initialDate: selectedFeesLastDate.value ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 3)),
+    );
+    if (picked != null) {
+      selectedFeesLastDate.value = picked;
+      _clearError(feesLastDateError);
     }
-  }
-
-  void selectStaff(int? id) {
-    selectedStaffId.value = id;
-    if (triedToSave.value && id != null) {
-      staffError.value = null;
-    }
-  }
-
-  TimeOfDay _parseTime(String timeStr) {
-    try {
-      // Handle "18:00" or "06:00 PM" etc.
-      final cleanTime = timeStr.trim();
-      final hasAmPm =
-          cleanTime.toUpperCase().contains('AM') ||
-          cleanTime.toUpperCase().contains('PM');
-
-      if (hasAmPm) {
-        final timeParts = cleanTime.split(' ');
-        final hourMin = timeParts[0].split(':');
-        int hour = int.parse(hourMin[0]);
-        int minute = int.parse(hourMin[1]);
-
-        if (cleanTime.toUpperCase().contains('PM') && hour < 12) hour += 12;
-        if (cleanTime.toUpperCase().contains('AM') && hour == 12) hour = 0;
-
-        return TimeOfDay(hour: hour, minute: minute);
-      } else {
-        final parts = cleanTime.split(':');
-        if (parts.length >= 2) {
-          return TimeOfDay(
-            hour: int.parse(parts[0]),
-            minute: int.parse(parts[1]),
-          );
-        }
-      }
-    } catch (_) {}
-    return const TimeOfDay(hour: 8, minute: 0);
   }
 
   void toggleDay(String day) {
@@ -270,22 +203,6 @@ class BatchController extends GetxController {
     } else {
       selectedStudentIds.add(id);
     }
-  }
-
-  Future<void> selectStartTime(BuildContext context) async {
-    final TimeOfDay? picked = await AppPickers.time(
-      context,
-      initialTime: startTime.value,
-    );
-    if (picked != null) startTime.value = picked;
-  }
-
-  Future<void> selectEndTime(BuildContext context) async {
-    final TimeOfDay? picked = await AppPickers.time(
-      context,
-      initialTime: endTime.value,
-    );
-    if (picked != null) endTime.value = picked;
   }
 
   void deleteBatchWithConfirmation(String id) {
@@ -325,16 +242,12 @@ class BatchController extends GetxController {
 
     final data = {
       'name': batchNameController.text.trim(),
-      'subject': subjectController.text.trim(),
       'description': descriptionController.text.trim(),
       'fees': batchFeeController.text.trim(),
-      'start_time':
-          '${startTime.value.hour.toString().padLeft(2, '0')}:${startTime.value.minute.toString().padLeft(2, '0')}',
-      'end_time':
-          '${endTime.value.hour.toString().padLeft(2, '0')}:${endTime.value.minute.toString().padLeft(2, '0')}',
+      'fees_last_date': DateFormat(
+        'yyyy-MM-dd',
+      ).format(selectedFeesLastDate.value!),
       'days': selectedDays.toList(),
-      'classroom': classroomController.text.trim(),
-      'staff_id': selectedStaffId.value,
     };
 
     try {
@@ -385,17 +298,16 @@ class BatchController extends GetxController {
     if (errors.containsKey('name')) {
       batchNameError.value = (errors['name'] as List).first.toString();
     }
-    if (errors.containsKey('subject')) {
-      subjectError.value = (errors['subject'] as List).first.toString();
-    }
     if (errors.containsKey('fees')) {
       feeError.value = (errors['fees'] as List).first.toString();
     }
     if (errors.containsKey('days')) {
       daysError.value = (errors['days'] as List).first.toString();
     }
-    if (errors.containsKey('staff_id')) {
-      staffError.value = (errors['staff_id'] as List).first.toString();
+    if (errors.containsKey('fees_last_date')) {
+      feesLastDateError.value = (errors['fees_last_date'] as List)
+          .first
+          .toString();
     }
   }
 
@@ -412,10 +324,8 @@ class BatchController extends GetxController {
   @override
   void onClose() {
     batchNameController.dispose();
-    subjectController.dispose();
     descriptionController.dispose();
     batchFeeController.dispose();
-    classroomController.dispose();
     super.onClose();
   }
 }

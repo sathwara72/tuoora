@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color primary = Color(0xFF003F87);
-  static const Color primaryContainer = Color(0xFF0056B3);
+  // Mirrors AppColors.primaryBrand (the actual brand color used pervasively
+  // throughout the app) rather than its own separate hardcoded value, so the
+  // few default-Material-styled widgets that read the ColorScheme (rather
+  // than an explicit AppColors.primaryBrand) pick up white-label builds too.
+  static const Color primary = AppColors.primaryBrand;
+  static const Color primaryContainer = AppColors.primaryBrandLight;
   static const Color surface = Color(0xFFF9F9FF);
   static const Color surfaceContainerLow = Color(0xFFF2F3FC);
   static const Color background = Color(0xFFFFFFFF);

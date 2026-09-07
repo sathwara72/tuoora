@@ -60,7 +60,7 @@ class SubscriptionGuard {
       confirmText: AppStrings.renewNow,
       cancelText: AppStrings.labelNotNow,
       confirmButtonColor: AppColors.primaryBrand,
-      onConfirm: () => Get.toNamed(AppRoutes.instituteSubscriptionRenew),
+      onConfirm: () => Get.toNamed(AppRoutes.instituteSubscription),
     );
   }
 }

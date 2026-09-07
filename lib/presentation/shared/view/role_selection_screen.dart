@@ -1,7 +1,7 @@
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:tuoora/core/constants/app_images.dart';
+import 'package:tuoora/core/widgets/app_logo.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:flutter/material.dart';
@@ -54,17 +54,7 @@ class RoleSelectionScreen extends StatelessWidget {
 
   Widget _buildLogo() {
     return Center(
-      child: Image.asset(
-        AppImages.logoWithName,
-        height: AppSpacing.s64,
-        errorBuilder: (context, error, stackTrace) {
-          return const Icon(
-            Icons.school,
-            color: AppColors.primaryBrand,
-            size: AppSpacing.s64,
-          );
-        },
-      ),
+      child: AppLogo(height: AppSpacing.s64),
     );
   }
 

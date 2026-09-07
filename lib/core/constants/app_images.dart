@@ -29,4 +29,7 @@ class AppImages {
   static const String icBatchHomework = '$_iconsPath/batch-homework.svg';
   static const String icBatchAttendance = '$_iconsPath/batch-attendance.svg';
   static const String icBatchResource = '$_iconsPath/batch-resource.svg';
+  static const String icBatchExam = '$_iconsPath/batch-exam.svg';
+  static const String icBatchTimetable = '$_iconsPath/batch-timetable.svg';
+  static const String icBirthdayCake = '$_iconsPath/birthday-cake.svg';
 }

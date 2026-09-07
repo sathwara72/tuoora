@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
+  // --- White-label brand colors ---
+  // Baked at BUILD TIME via --dart-define (not fetched at runtime): this app
+  // is compiled per-institute (one build = one institute, per the white-label
+  // flavor process — see tool/build_white_label.sh), so the brand color is
+  // known before compilation and can stay a real compile-time constant.
+  // int.fromEnvironment is itself a const expression, so every one of the
+  // hundreds of `AppColors.primaryBrand` call sites across the app —
+  // including ones inside `const` widgets — keeps working unchanged; only
+  // this default value changes per build.
+  static const Color primaryBrand = Color(
+    int.fromEnvironment('BRAND_PRIMARY_COLOR', defaultValue: 0xFFF97316),
+  );
+  static const Color primaryBrandLight = Color(
+    int.fromEnvironment('BRAND_PRIMARY_COLOR_LIGHT', defaultValue: 0xFFFEF4E8),
+  );
+
   // --- Layout & Backgrounds ---
   static const Color scaffoldBg = Colors.transparent;
   static const Color surfaceBg = Color(0xFFF8F9FB);
   static const Color white = Colors.white;
   static const Color background = Color(0xFFF5F5F5);
-  static const Color primaryBrand = Color(0xFFF97316);
   static const Color fieldLabel = Color(0xFFA1A8B3);
   static const Color fieldBg = Color(0xFFF1F5F9);
   static const Color fieldBorder = Color(0xFFE2E8F0);
-  static const Color primaryBrandLight = Color(0xFFFEF4E8);
   static const Color darkSlate = Color(0xFF1E293B);
   static const Color brandAppBarColor = Color(0xFF663322);
   static const Color instBrandOrange = Color(0xFFFF6600);

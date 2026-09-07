@@ -1,5 +1,5 @@
 import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:tuoora/core/constants/app_images.dart';
+import 'package:tuoora/core/widgets/app_logo.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
@@ -31,7 +31,7 @@ class SplashScreen extends GetView<SplashController> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(AppImages.logoWithName, height: 80),
+              AppLogo(height: 80),
               AppSpacing.v24,
               Text(
                 AppStrings.tagLine,

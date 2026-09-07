@@ -5,6 +5,7 @@ import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/institute/controllers/staff_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/presentation/institute/widgets/common_state_widget.dart';
+import 'package:tuoora/config/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -22,7 +23,11 @@ class StaffAttendanceScreen extends GetView<StaffController> {
       body: SafeArea(
         child: Column(
           children: [
-            InstituteAppBar(title: AppStrings.instAttendanceTitle, subtitle: staffName),
+            InstituteAppBar(
+              title: AppStrings.instAttendanceTitle,
+              subtitle: staffName,
+              actions: [_buildAddAttendanceButton()],
+            ),
             Expanded(
               child: Obx(() {
                 return CommonStateWidget(
@@ -49,6 +54,30 @@ class StaffAttendanceScreen extends GetView<StaffController> {
               }),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddAttendanceButton() {
+    return GestureDetector(
+      onTap: () {
+        final staff = controller.selectedStaff.value;
+        if (staff == null) return;
+        controller.selectLogStaffById(staff.id);
+        Get.toNamed(AppRoutes.instituteLogStaffAttendance);
+      },
+      child: Container(
+        width: AppSpacing.s40,
+        height: AppSpacing.s40,
+        decoration: BoxDecoration(
+          color: AppColors.primaryBrand,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(
+          Icons.add_rounded,
+          color: AppColors.white,
+          size: AppSpacing.s22,
         ),
       ),
     );

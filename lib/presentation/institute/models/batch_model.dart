@@ -12,6 +12,7 @@ class BatchModel {
   final Color statusBg;
   final Color leftBorderColor;
   final double baseFee;
+  final String? feesLastDate;
   final String description;
   final Color statusTextColor;
   final dynamic totalExpected;
@@ -34,6 +35,7 @@ class BatchModel {
     required this.statusBg,
     required this.leftBorderColor,
     this.baseFee = 0.0,
+    this.feesLastDate,
     this.description = '',
     this.statusTextColor = AppColors.white,
     this.totalExpected,

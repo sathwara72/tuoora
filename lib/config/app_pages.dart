@@ -3,6 +3,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/presentation/institute/bindings/institute_binding.dart';
 import 'package:tuoora/presentation/institute/view/batches_screen.dart';
+import 'package:tuoora/presentation/institute/view/birthdays_screen.dart';
 import 'package:tuoora/presentation/institute/view/fee_transaction_history_screen.dart';
 import 'package:tuoora/presentation/institute/view/fees_screen.dart';
 import 'package:tuoora/presentation/institute/view/fee_receipt_screen.dart';
@@ -18,14 +19,14 @@ import 'package:tuoora/presentation/institute/view/record_fee_screen.dart';
 import 'package:tuoora/presentation/institute/view/edit_profile_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_change_password_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_subscription_screen.dart';
-import 'package:tuoora/presentation/institute/view/subscription_renewal_screen.dart';
-import 'package:tuoora/presentation/institute/view/submit_payment_proof_screen.dart';
-import 'package:tuoora/presentation/institute/bindings/subscription_renewal_binding.dart';
+import 'package:tuoora/presentation/institute/view/white_label_screen.dart';
+import 'package:tuoora/presentation/institute/view/add_ons_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_whatsapp_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_upi_payment_settings_screen.dart';
 import 'package:tuoora/presentation/institute/view/fee_report_screen.dart';
 import 'package:tuoora/presentation/institute/view/attendance_report_screen.dart';
 import 'package:tuoora/presentation/institute/view/performance_report_screen.dart';
+import 'package:tuoora/presentation/institute/view/analytics_screen.dart';
 import 'package:tuoora/presentation/institute/view/reports_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_updates_screen.dart';
 import 'package:tuoora/presentation/institute/view/create_update_screen.dart';
@@ -38,7 +39,13 @@ import 'package:tuoora/presentation/institute/view/assign_to_batch_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_homework_screen.dart';
 import 'package:tuoora/presentation/institute/view/add_homework_screen.dart';
 import 'package:tuoora/presentation/institute/view/homework_rating_screen.dart';
+import 'package:tuoora/presentation/institute/view/batch_exams_screen.dart';
+import 'package:tuoora/presentation/institute/view/add_exam_screen.dart';
+import 'package:tuoora/presentation/institute/view/exam_marks_screen.dart';
+import 'package:tuoora/presentation/institute/view/batch_timetable_screen.dart';
+import 'package:tuoora/presentation/institute/view/add_timetable_slot_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_resources_screen.dart';
+import 'package:tuoora/presentation/institute/view/batch_classes_screen.dart';
 import 'package:tuoora/presentation/institute/view/resource_detail_screen.dart';
 import 'package:tuoora/presentation/institute/view/students_registry_screen.dart';
 import 'package:tuoora/presentation/student/bindings.dart';
@@ -54,6 +61,11 @@ import 'package:tuoora/presentation/student/view/student_notification_screen.dar
 import 'package:tuoora/presentation/student/view/student_main_screen.dart';
 import 'package:tuoora/presentation/student/view/homework_detail_screen.dart';
 import 'package:tuoora/presentation/student/view/student_assignment_detail_screen.dart';
+import 'package:tuoora/presentation/student/view/student_exams_screen.dart';
+import 'package:tuoora/presentation/student/view/student_exam_detail_screen.dart';
+import 'package:tuoora/presentation/student/view/student_timetable_screen.dart';
+import 'package:tuoora/presentation/student/view/batch_birthdays_screen.dart';
+import 'package:tuoora/presentation/student/view/student_id_card_screen.dart';
 import 'package:tuoora/presentation/student/view/student_attachment_preview_screen.dart';
 import 'package:tuoora/presentation/student/view/student_pay_fees_screen.dart';
 import 'package:tuoora/presentation/student/view/student_receipt_screen.dart';
@@ -154,6 +166,31 @@ class AppPages {
     GetPage(
       name: AppRoutes.studentAssignmentDetail,
       page: () => const StudentAssignmentDetailScreen(),
+      binding: StudentBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.studentExams,
+      page: () => const StudentExamsScreen(),
+      binding: StudentBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.studentExamDetail,
+      page: () => const StudentExamDetailScreen(),
+      binding: StudentBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.studentTimetable,
+      page: () => const StudentTimetableScreen(),
+      binding: StudentBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.studentBirthdays,
+      page: () => const BatchBirthdaysScreen(),
+      binding: StudentBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.studentIdCard,
+      page: () => const StudentIdCardScreen(),
       binding: StudentBinding(),
     ),
     GetPage(
@@ -294,6 +331,11 @@ class AppPages {
       binding: InstituteBinding(),
     ),
     GetPage(
+      name: AppRoutes.instituteBirthdays,
+      page: () => const BirthdaysScreen(),
+      binding: InstituteBinding(),
+    ),
+    GetPage(
       name: AppRoutes.instituteMarkAttendance,
       page: () => const MarkAttendanceScreen(),
       binding: InstituteBinding(),
@@ -329,14 +371,14 @@ class AppPages {
       binding: InstituteBinding(),
     ),
     GetPage(
-      name: AppRoutes.instituteSubscriptionRenew,
-      page: () => const SubscriptionRenewalScreen(),
-      binding: SubscriptionRenewalBinding(),
+      name: AppRoutes.instituteWhiteLabel,
+      page: () => const WhiteLabelScreen(),
+      binding: InstituteBinding(),
     ),
     GetPage(
-      name: AppRoutes.instituteSubmitPaymentProof,
-      page: () => const SubmitPaymentProofScreen(),
-      binding: SubscriptionRenewalBinding(),
+      name: AppRoutes.instituteAddOns,
+      page: () => const AddOnsScreen(),
+      binding: InstituteBinding(),
     ),
     GetPage(
       name: AppRoutes.instituteWhatsApp,
@@ -366,6 +408,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.institutePerformanceReport,
       page: () => const PerformanceReportScreen(),
+      binding: InstituteBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteAnalytics,
+      page: () => const AnalyticsScreen(),
       binding: InstituteBinding(),
     ),
     GetPage(
@@ -452,8 +499,32 @@ class AppPages {
       page: () => const HomeworkRatingScreen(),
     ),
     GetPage(
+      name: AppRoutes.instituteBatchExams,
+      page: () => const BatchExamsScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteAddExam,
+      page: () => const AddExamScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteExamMarks,
+      page: () => const ExamMarksScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteBatchTimetable,
+      page: () => const BatchTimetableScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteAddTimetableSlot,
+      page: () => const AddTimetableSlotScreen(),
+    ),
+    GetPage(
       name: AppRoutes.instituteBatchResources,
       page: () => const BatchResourcesScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteBatchClasses,
+      page: () => const BatchClassesScreen(),
     ),
     GetPage(
       name: AppRoutes.instituteResourceDetail,

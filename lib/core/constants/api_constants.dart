@@ -1,6 +1,17 @@
 class ApiConstants {
   static const String baseUrl = 'https://tuoora.com/api/v1';
 
+  // Public, unauthenticated — fetched once at launch using the build's
+  // baked-in institute_id (see BrandingService).
+  static const String appBranding = '/app-branding';
+
+  // Institute White Label add-on (purchase + branding submission)
+  static const String instituteWhiteLabel = '/institute/whitelabel';
+
+  // Generic Add-ons catalog (flag/quota kind — White Label keeps using
+  // instituteWhiteLabel above, this covers everything else)
+  static const String instituteAddOns = '/institute/addons';
+
   // Auth Endpoints
   static const String instituteLogin = '/institute/login';
   static const String instituteRegister = '/institute/register';
@@ -21,6 +32,11 @@ class ApiConstants {
       '/student/homeworks/$id/attachment';
   static String studentHomeworkAttachmentDownload(int id) =>
       '/student/homeworks/$id/attachment/download';
+  static const String studentExams = '/student/exams';
+  static String studentExamDetail(int id) => '/student/exams/$id';
+  static const String studentTimetable = '/student/timetable';
+  static const String studentBirthdays = '/student/birthdays';
+  static const String studentIdCard = '/student/id-card';
   static const String studentAttendance = '/student/attendance';
   static const String studentReport = '/student/report';
   static const String studentInstitute = '/student/institute';
@@ -43,6 +59,7 @@ class ApiConstants {
   static String instituteDeleteDeviceSession(int sessionId) =>
       '/institute/profile/device-sessions/$sessionId';
   static const String instituteBatches = '/institute/batches';
+  static const String instituteClasses = '/institute/classes';
   static const String instituteChangePassword =
       '/institute/profile/change-password';
   static const String instituteWhatsAppSettings =
@@ -54,6 +71,9 @@ class ApiConstants {
   static const String instituteDailyUpdates = '/institute/daily-updates';
   static const String instituteAttendance = '/institute/attendance';
   static const String instituteHomeworks = '/institute/homeworks';
+  static const String instituteExams = '/institute/exams';
+  static String instituteExamMarks(int id) => '/institute/exams/$id/marks';
+  static const String instituteTimetable = '/institute/timetable';
   static const String instituteResources = '/institute/resources';
   static const String instituteBatchAttendance = '/institute/batch-attendance';
   static String downloadResource(int resourceId) =>
@@ -61,6 +81,9 @@ class ApiConstants {
   static const String instituteForgotPassword = '/institute/forgot-password';
   static const String instituteResetPassword = '/institute/reset-password';
   static const String instituteNotifications = '/institute/notifications';
+  static const String instituteNotificationsSendPush =
+      '/institute/notifications/send-push';
+  static const String instituteBirthdays = '/institute/birthdays';
   static const String instituteExpenses = '/institute/expenses';
   static const String instituteExpenseCategories =
       '/institute/expenses/categories';
@@ -75,10 +98,6 @@ class ApiConstants {
   static const String instituteSalaries = '/institute/salaries';
   static const String instituteSubscriptionAllData =
       '/institute/subscriptions/all-data';
-  static const String instituteSubscriptionRenew =
-      '/institute/subscription/renew';
-  static const String instituteSubscriptionIapVerify =
-      '/institute/subscription/iap-verify';
   static const String razorpayCreateOrder =
       '/institute/subscription/create-order';
   static const String razorpayVerifyPayment =
@@ -109,6 +128,10 @@ class ApiConstants {
       '/institute/reports/performance';
   static const String instituteReportPerformanceExport =
       '/institute/reports/performance/export';
+
+  // Business Analytics
+  static const String instituteReportAnalytics =
+      '/institute/reports/analytics';
 
   // FCM Endpoints
   static const String fcmToken = '/fcm-token';

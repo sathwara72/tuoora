@@ -50,6 +50,13 @@ class Assignment {
   final String? gradeNote;
   final bool isOverdue;
   final DateTime? createdAt;
+  final String? submissionNote;
+  final String? submissionAttachmentUrl;
+
+  /// True once the due date has passed, regardless of submission status —
+  /// unlike [isOverdue] (display-only, forced false once completed), this
+  /// is what gates whether a (re)submission is still allowed.
+  final bool dueDatePassed;
 
   const Assignment({
     required this.id,
@@ -70,6 +77,9 @@ class Assignment {
     this.gradeNote,
     this.isOverdue = false,
     this.createdAt,
+    this.submissionNote,
+    this.submissionAttachmentUrl,
+    this.dueDatePassed = false,
   });
 
   bool get isCompleted => badge == AssignmentBadge.done;
@@ -156,10 +166,10 @@ class Assignment {
       }
     }
 
-    final bool overdue =
-        !isCompleted &&
-        (json['is_overdue'] == true ||
-            (dueDiffDays != null && dueDiffDays < 0));
+    final bool duePassed =
+        json['is_overdue'] == true || (dueDiffDays != null && dueDiffDays < 0);
+
+    final bool overdue = !isCompleted && duePassed;
 
     AssignmentBadge badge = AssignmentBadge.today;
     if (isCompleted) {
@@ -174,12 +184,16 @@ class Assignment {
 
     String? completedNoteStr;
     String? gradeNoteStr;
+    String? submissionNoteStr;
+    String? submissionAttachmentUrlStr;
     if (json['submission'] != null) {
       final sub = json['submission'];
       completedNoteStr = 'Status: ${sub['status'] ?? 'Submitted'}';
       if (sub['score'] != null) {
         gradeNoteStr = 'Score: ${sub['score']}';
       }
+      submissionNoteStr = sub['note'];
+      submissionAttachmentUrlStr = sub['attachment_url'];
     }
 
     DateTime? createdAtDt;
@@ -207,6 +221,9 @@ class Assignment {
       pendingNote: overdue ? 'Overdue' : null,
       completedNote: completedNoteStr,
       gradeNote: gradeNoteStr,
+      submissionNote: submissionNoteStr,
+      submissionAttachmentUrl: submissionAttachmentUrlStr,
+      dueDatePassed: duePassed,
       isOverdue: overdue,
       createdAt: createdAtDt,
     );

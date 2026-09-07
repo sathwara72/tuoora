@@ -61,6 +61,16 @@ class ReportsScreen extends StatelessWidget {
                       Get.toNamed(AppRoutes.institutePerformanceReport);
                     },
                   ),
+                  AppSpacing.v10,
+                  _buildReportCard(
+                    title: AppStrings.labelBusinessAnalytics,
+                    subtitle: AppStrings.revenueFeeCollectionAndDropoutTrends,
+                    icon: Icons.bar_chart_rounded,
+                    color: AppColors.primaryBrand,
+                    onTap: () {
+                      Get.toNamed(AppRoutes.instituteAnalytics);
+                    },
+                  ),
                 ],
               ),
             ),

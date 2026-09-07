@@ -76,7 +76,7 @@ class AddEditStaffScreen extends GetView<StaffController> {
           ),
         ),
         AppSpacing.v8,
-        Obx(() => _buildDepartmentDropdown(controller.deptError.value)),
+        Obx(() => _buildDepartmentMultiSelect(controller.deptError.value)),
         AppSpacing.v20,
         Obx(
           () => AppInputField(
@@ -247,12 +247,13 @@ class AddEditStaffScreen extends GetView<StaffController> {
     );
   }
 
-  Widget _buildDepartmentDropdown(String? errorText) {
+  Widget _buildDepartmentMultiSelect(String? errorText) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppColors.fieldBg,
             borderRadius: BorderRadius.circular(12),
@@ -260,37 +261,65 @@ class AddEditStaffScreen extends GetView<StaffController> {
                 ? Border.all(color: Colors.redAccent, width: 1.5)
                 : null,
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              value: controller.selectedDepartmentId.value,
-              isExpanded: true,
-              hint: Text(
-                AppStrings.selectDepartment,
-                style: AppTextStyles.outfit(
-                  fontSize: 14,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              icon: const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: AppColors.blueSapphire,
-              ),
-              items: controller.departments.map((dept) {
-                return DropdownMenuItem<int>(
-                  value: dept.id,
-                  child: Text(
-                    dept.name,
-                    style: AppTextStyles.outfit(
-                      fontSize: 14,
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w500,
-                    ),
+          child: controller.departments.isEmpty
+              ? Text(
+                  AppStrings.selectDepartment,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    color: AppColors.textTertiary,
                   ),
-                );
-              }).toList(),
-              onChanged: (val) => controller.selectedDepartmentId.value = val,
-            ),
-          ),
+                )
+              : Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: controller.departments.map((dept) {
+                    final isSelected = controller.selectedDepartmentIds
+                        .contains(dept.id);
+                    return GestureDetector(
+                      onTap: () => controller.toggleDepartment(dept.id),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primaryBrand
+                              : AppColors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primaryBrand
+                                : AppColors.fieldBorder,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSelected) ...[
+                              const Icon(
+                                Icons.check_rounded,
+                                size: 14,
+                                color: AppColors.white,
+                              ),
+                              AppSpacing.h4,
+                            ],
+                            Text(
+                              dept.name,
+                              style: AppTextStyles.outfit(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: isSelected
+                                    ? AppColors.white
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
         ),
         if (errorText != null) ...[
           const SizedBox(height: 4),

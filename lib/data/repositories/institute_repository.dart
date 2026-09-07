@@ -12,11 +12,17 @@ import 'package:tuoora/presentation/institute/models/fee_record.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:tuoora/presentation/institute/models/report_models.dart';
 import 'package:tuoora/presentation/institute/models/homework_model.dart';
+import 'package:tuoora/presentation/institute/models/exam_model.dart';
+import 'package:tuoora/presentation/institute/models/timetable_model.dart';
 import 'package:tuoora/presentation/institute/models/resource_model.dart';
+import 'package:tuoora/presentation/institute/models/school_class_model.dart';
 import 'package:tuoora/presentation/institute/models/attendance_record_model.dart';
 import 'package:tuoora/data/models/notification_model.dart';
 import 'package:tuoora/data/models/staff_model.dart';
 import 'package:tuoora/data/models/subscription_model.dart';
+import 'package:tuoora/data/models/white_label_model.dart';
+import 'package:tuoora/presentation/institute/models/birthday_model.dart';
+import 'package:tuoora/presentation/institute/models/add_on_model.dart';
 import 'package:get/get.dart';
 
 class InstituteRepository implements InstituteRepositoryImpl {
@@ -88,36 +94,6 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<void> verifyIapPurchase({
-    required int planId,
-    required String transactionId,
-    required String receiptData,
-    required String platform,
-  }) async {
-    final response = await _apiClient.post(
-      ApiConstants.instituteSubscriptionIapVerify,
-      {
-        'plan_id': planId,
-        'transaction_id': transactionId,
-        'receipt_data': receiptData,
-        // "ios" → Apple receipt; "android" → Google purchase token
-        'platform': platform,
-      },
-    );
-    if (response.status.hasError) {
-      _handleError(response, 'Failed to verify purchase');
-    }
-
-    final sub =
-        response.body is Map ? response.body['subscription'] : null;
-    if (sub != null) {
-      await Get.find<AuthService>().setSubscription(
-        Subscription.fromJson(Map<String, dynamic>.from(sub)),
-      );
-    }
-  }
-
-  @override
   Future<Map<String, dynamic>> createRazorpayOrder({
     required int planId,
   }) async {
@@ -163,34 +139,151 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<void> renewSubscription({
-    required String transactionId,
-    required String screenshotPath,
-    String? message,
+  Future<WhiteLabelStatus> getWhiteLabelStatus() async {
+    final response = await _apiClient.get(ApiConstants.instituteWhiteLabel);
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to fetch White Label status');
+    }
+    return WhiteLabelStatus.fromJson(Map<String, dynamic>.from(response.body['data']));
+  }
+
+  @override
+  Future<Map<String, dynamic>> createWhiteLabelOrder() async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteWhiteLabel}/create-order',
+      {},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to create payment order');
+    }
+    return Map<String, dynamic>.from(response.body['data']);
+  }
+
+  @override
+  Future<WhiteLabelRecord> verifyWhiteLabelPayment({
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteWhiteLabel}/verify-payment',
+      {
+        'razorpay_order_id': razorpayOrderId,
+        'razorpay_payment_id': razorpayPaymentId,
+        'razorpay_signature': razorpaySignature,
+      },
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Payment verification failed');
+    }
+    return WhiteLabelRecord.fromJson(Map<String, dynamic>.from(response.body['data']));
+  }
+
+  @override
+  Future<WhiteLabelRecord> submitWhiteLabelBranding({
+    required String appName,
+    String? logoPath,
+    String? primaryColor,
+    String? secondaryColor,
   }) async {
     final fields = <String, dynamic>{
-      'transaction_id': transactionId,
-      if (message != null && message.trim().isNotEmpty)
-        'message': message.trim(),
+      'app_name': appName,
+      if (primaryColor != null) 'primary_color': primaryColor,
+      if (secondaryColor != null) 'secondary_color': secondaryColor,
     };
-
     final formData = FormData(fields);
-    formData.files.add(
-      MapEntry(
-        'screenshot',
-        MultipartFile(
-          File(screenshotPath),
-          filename: screenshotPath.split('/').last,
+    if (logoPath != null && logoPath.isNotEmpty) {
+      formData.files.add(
+        MapEntry(
+          'app_logo',
+          MultipartFile(File(logoPath), filename: 'white_label_logo.jpg'),
         ),
-      ),
-    );
+      );
+    }
 
     final response = await _apiClient.post(
-      ApiConstants.instituteSubscriptionRenew,
+      '${ApiConstants.instituteWhiteLabel}/branding',
       formData,
     );
     if (response.status.hasError) {
-      _handleError(response, 'Failed to submit renewal request');
+      _handleError(response, 'Failed to submit branding');
+    }
+    return WhiteLabelRecord.fromJson(Map<String, dynamic>.from(response.body['data']));
+  }
+
+  @override
+  Future<List<AddOnModel>> getAddOns() async {
+    final response = await _apiClient.get(ApiConstants.instituteAddOns);
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to load add-ons');
+    }
+    final data = response.body['data'] as List? ?? [];
+    return data
+        .map((json) => AddOnModel.fromJson(Map<String, dynamic>.from(json)))
+        .toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> createAddOnOrder(String addOnId) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteAddOns}/$addOnId/create-order',
+      {},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to create payment order');
+    }
+    return Map<String, dynamic>.from(response.body['data']);
+  }
+
+  @override
+  Future<void> verifyAddOnPayment({
+    required String addOnId,
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteAddOns}/$addOnId/verify-payment',
+      {
+        'razorpay_order_id': razorpayOrderId,
+        'razorpay_payment_id': razorpayPaymentId,
+        'razorpay_signature': razorpaySignature,
+      },
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Payment verification failed');
+    }
+  }
+
+  @override
+  Future<List<BirthdayModel>> getBirthdays() async {
+    final response = await _apiClient.get(ApiConstants.instituteBirthdays);
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to load birthdays');
+    }
+    final data = response.body['data'] as List? ?? [];
+    return data
+        .map((json) => BirthdayModel.fromJson(Map<String, dynamic>.from(json)))
+        .toList();
+  }
+
+  @override
+  Future<void> sendBirthdayWish({
+    required int studentId,
+    required String studentName,
+  }) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteNotificationsSendPush,
+      {
+        'title': 'Happy Birthday! 🎂',
+        'message': 'Wishing you a fantastic birthday, $studentName!',
+        'target_type': 'specific_students',
+        'target_ids': [studentId],
+        'type': 'birthday_wish',
+      },
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to send wish');
     }
   }
 
@@ -418,6 +511,18 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<AnalyticsResponse> getAnalytics({int months = 6}) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteReportAnalytics,
+      query: {'months': months.toString()},
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch analytics: ${response.statusText}');
+    }
+    return AnalyticsResponse.fromJson(response.body['data']);
+  }
+
+  @override
   Future<BatchPerformanceDetailResponse> getBatchPerformanceReport(
     int batchId,
   ) async {
@@ -570,6 +675,157 @@ class InstituteRepository implements InstituteRepositoryImpl {
     );
     if (response.status.hasError) {
       final message = response.body?['message'] ?? 'Failed to mark attendance';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<List<ExamModel>> getExams(int batchId) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteExams,
+      query: {'batch_id': batchId.toString(), 'per_page': '100'},
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch exams: ${response.statusText}');
+    }
+
+    final dynamic bodyData = response.body['data'];
+    List<dynamic> data = [];
+
+    if (bodyData is List) {
+      data = bodyData;
+    } else if (bodyData is Map && bodyData['data'] is List) {
+      data = bodyData['data'];
+    }
+
+    return data.map((json) => ExamModel.fromJson(json)).toList();
+  }
+
+  @override
+  Future<ExamModel> createExam(Map<String, dynamic> data) async {
+    final response = await _apiClient.post(ApiConstants.instituteExams, data);
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to create exam');
+    }
+    return ExamModel.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<ExamModel> updateExam(int id, Map<String, dynamic> data) async {
+    final response = await _apiClient.put(
+      '${ApiConstants.instituteExams}/$id',
+      data,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update exam');
+    }
+    return ExamModel.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<void> deleteExam(int id) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteExams}/$id',
+    );
+    if (response.status.hasError) {
+      final message = response.body?['message'] ?? 'Failed to delete exam';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<ExamMarksData> getExamMarks(int examId) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteExamMarks(examId),
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch exam marks: ${response.statusText}');
+    }
+
+    final body = response.body['data'];
+    return ExamMarksData(
+      exam: ExamModel.fromJson(body['exam']),
+      students: (body['students'] as List)
+          .map((s) => ExamMarkRow.fromJson(s))
+          .toList(),
+      stats: ExamStats.fromJson(Map<String, dynamic>.from(body['stats'])),
+    );
+  }
+
+  @override
+  Future<ExamStats> saveExamMarks(
+    int examId,
+    List<Map<String, dynamic>> marks,
+  ) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteExamMarks(examId),
+      {'marks': marks},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to save marks');
+    }
+    return ExamStats.fromJson(
+      Map<String, dynamic>.from(response.body['data']['stats']),
+    );
+  }
+
+  @override
+  Future<List<TimetableSlot>> getTimetable(int batchId) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteTimetable,
+      query: {'batch_id': batchId.toString()},
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch timetable: ${response.statusText}');
+    }
+
+    final dynamic bodyData = response.body['data'];
+    List<dynamic> data = [];
+
+    if (bodyData is List) {
+      data = bodyData;
+    } else if (bodyData is Map && bodyData['data'] is List) {
+      data = bodyData['data'];
+    }
+
+    return data.map((json) => TimetableSlot.fromJson(json)).toList();
+  }
+
+  @override
+  Future<TimetableSlot> createTimetableSlot(Map<String, dynamic> data) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteTimetable,
+      data,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to create timetable slot');
+    }
+    return TimetableSlot.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<TimetableSlot> updateTimetableSlot(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiClient.put(
+      '${ApiConstants.instituteTimetable}/$id',
+      data,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update timetable slot');
+    }
+    return TimetableSlot.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<void> deleteTimetableSlot(int id) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteTimetable}/$id',
+    );
+    if (response.status.hasError) {
+      final message =
+          response.body?['message'] ?? 'Failed to delete timetable slot';
       throw Exception(message);
     }
   }
@@ -751,6 +1007,56 @@ class InstituteRepository implements InstituteRepositoryImpl {
       throw Exception(message);
     }
     return response.body['data'];
+  }
+
+  @override
+  Future<List<SchoolClassModel>> listClasses(int batchId) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteClasses,
+      query: {'batch_id': batchId.toString()},
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch classes: ${response.statusText}');
+    }
+    final data = response.body['data'] as List? ?? [];
+    return data
+        .map((json) => SchoolClassModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<SchoolClassModel> createClass(Map<String, dynamic> data) async {
+    final response = await _apiClient.post(ApiConstants.instituteClasses, data);
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to create class');
+    }
+    return SchoolClassModel.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<SchoolClassModel> updateClass(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiClient.put(
+      '${ApiConstants.instituteClasses}/$id',
+      data,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update class');
+    }
+    return SchoolClassModel.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<void> deleteClass(int id) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteClasses}/$id',
+    );
+    if (response.status.hasError) {
+      final message = response.body?['message'] ?? 'Failed to delete class';
+      throw Exception(message);
+    }
   }
 
   @override
@@ -972,6 +1278,54 @@ class InstituteRepository implements InstituteRepositoryImpl {
     }
     final message = response.body?['message'] ?? defaultMessage;
     throw Exception(message);
+  }
+
+  @override
+  Future<String> sendStaffPassword(int id) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStaff}/$id/send-password',
+      {},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to send password');
+    }
+    return response.body?['message'] ??
+        'A new password has been generated and emailed to the staff member.';
+  }
+
+  @override
+  Future<void> resetStaffPassword(int id, String password) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStaff}/$id/reset-password',
+      {'password': password},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to reset password');
+    }
+  }
+
+  @override
+  Future<Staff> changeStaffEmail(int id, String email) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStaff}/$id/change-email',
+      {'email': email},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update email');
+    }
+    return Staff.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<Staff> toggleStaffBlock(int id, bool blocked) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStaff}/$id/toggle-block',
+      {'blocked': blocked.toString()},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update login access');
+    }
+    return Staff.fromJson(response.body['data']);
   }
 
   @override

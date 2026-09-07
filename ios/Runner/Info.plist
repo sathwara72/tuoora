@@ -30,6 +30,8 @@
 	<string>We need access to your microphone to record voice messages in chat.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to select student profile photos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need access to save your ID card image to your photo library.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

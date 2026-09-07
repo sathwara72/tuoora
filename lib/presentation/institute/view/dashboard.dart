@@ -7,6 +7,7 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/data/models/menu_item.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_profile_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/subscription_banner.dart';
+import 'package:tuoora/presentation/institute/widgets/todays_birthday_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,7 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
             children: [
               _buildTopHeader(),
               const SubscriptionBanner(),
+              const TodaysBirthdayCard(),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16.0,
@@ -173,6 +175,16 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
         'Updates',
         () => Get.toNamed(AppRoutes.instituteUpdates),
         AppImages.icModuleUpdates,
+      ),
+      ModuleItem(
+        'Timetable',
+        () => Get.toNamed(AppRoutes.instituteBatches),
+        AppImages.icBatchTimetable,
+      ),
+      ModuleItem(
+        'Birthdays',
+        () => Get.toNamed(AppRoutes.instituteBirthdays),
+        AppImages.icBirthdayCake,
       ),
     ];
 

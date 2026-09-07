@@ -295,3 +295,233 @@ class BatchPerformanceDetailResponse {
   }
 }
 
+// Business Analytics Dashboard
+class RevenueMonthPoint {
+  final String month;
+  final double feeCollected;
+  final double billed;
+  final double subscriptionRevenue;
+  final double totalRevenue;
+
+  RevenueMonthPoint({
+    required this.month,
+    required this.feeCollected,
+    required this.billed,
+    required this.subscriptionRevenue,
+    required this.totalRevenue,
+  });
+
+  factory RevenueMonthPoint.fromJson(Map<String, dynamic> json) {
+    return RevenueMonthPoint(
+      month: FeeRecord.safeString(json['month']),
+      feeCollected: FeeRecord.safeDouble(json['fee_collected']),
+      billed: FeeRecord.safeDouble(json['billed']),
+      subscriptionRevenue: FeeRecord.safeDouble(json['subscription_revenue']),
+      totalRevenue: FeeRecord.safeDouble(json['total_revenue']),
+    );
+  }
+}
+
+class AnalyticsRevenue {
+  final double currentMonthTotal;
+  final double previousMonthTotal;
+  final double growthPercent;
+  final List<RevenueMonthPoint> monthlyTrend;
+
+  AnalyticsRevenue({
+    required this.currentMonthTotal,
+    required this.previousMonthTotal,
+    required this.growthPercent,
+    required this.monthlyTrend,
+  });
+
+  factory AnalyticsRevenue.fromJson(Map<String, dynamic> json) {
+    return AnalyticsRevenue(
+      currentMonthTotal: FeeRecord.safeDouble(json['current_month_total']),
+      previousMonthTotal: FeeRecord.safeDouble(json['previous_month_total']),
+      growthPercent: FeeRecord.safeDouble(json['growth_percent']),
+      monthlyTrend: (json['monthly_trend'] as List? ?? [])
+          .map((i) => RevenueMonthPoint.fromJson(i))
+          .toList(),
+    );
+  }
+}
+
+class CollectionMonthPoint {
+  final String month;
+  final double percent;
+
+  CollectionMonthPoint({required this.month, required this.percent});
+
+  factory CollectionMonthPoint.fromJson(Map<String, dynamic> json) {
+    return CollectionMonthPoint(
+      month: FeeRecord.safeString(json['month']),
+      percent: FeeRecord.safeDouble(json['percent']),
+    );
+  }
+}
+
+class AnalyticsFeeCollection {
+  final double overallPercent;
+  final double currentMonthPercent;
+  final double totalBilled;
+  final double totalCollected;
+  final List<CollectionMonthPoint> monthlyTrend;
+
+  AnalyticsFeeCollection({
+    required this.overallPercent,
+    required this.currentMonthPercent,
+    required this.totalBilled,
+    required this.totalCollected,
+    required this.monthlyTrend,
+  });
+
+  factory AnalyticsFeeCollection.fromJson(Map<String, dynamic> json) {
+    return AnalyticsFeeCollection(
+      overallPercent: FeeRecord.safeDouble(json['overall_percent']),
+      currentMonthPercent: FeeRecord.safeDouble(json['current_month_percent']),
+      totalBilled: FeeRecord.safeDouble(json['total_billed']),
+      totalCollected: FeeRecord.safeDouble(json['total_collected']),
+      monthlyTrend: (json['monthly_trend'] as List? ?? [])
+          .map((i) => CollectionMonthPoint.fromJson(i))
+          .toList(),
+    );
+  }
+}
+
+class AttendanceMonthPoint {
+  final String month;
+  final double? percent;
+
+  AttendanceMonthPoint({required this.month, this.percent});
+
+  factory AttendanceMonthPoint.fromJson(Map<String, dynamic> json) {
+    return AttendanceMonthPoint(
+      month: FeeRecord.safeString(json['month']),
+      percent: json['percent'] == null
+          ? null
+          : FeeRecord.safeDouble(json['percent']),
+    );
+  }
+}
+
+class AnalyticsAttendanceBatch {
+  final int batchId;
+  final String batchName;
+  final List<AttendanceMonthPoint> trend;
+
+  AnalyticsAttendanceBatch({
+    required this.batchId,
+    required this.batchName,
+    required this.trend,
+  });
+
+  factory AnalyticsAttendanceBatch.fromJson(Map<String, dynamic> json) {
+    return AnalyticsAttendanceBatch(
+      batchId: FeeRecord.safeInt(json['batch_id']),
+      batchName: FeeRecord.safeString(json['batch_name']),
+      trend: (json['trend'] as List? ?? [])
+          .map((i) => AttendanceMonthPoint.fromJson(i))
+          .toList(),
+    );
+  }
+}
+
+class AnalyticsAttendance {
+  final double overallPercentThisMonth;
+  final List<AnalyticsAttendanceBatch> batches;
+
+  AnalyticsAttendance({
+    required this.overallPercentThisMonth,
+    required this.batches,
+  });
+
+  factory AnalyticsAttendance.fromJson(Map<String, dynamic> json) {
+    return AnalyticsAttendance(
+      overallPercentThisMonth:
+          FeeRecord.safeDouble(json['overall_percent_this_month']),
+      batches: (json['batches'] as List? ?? [])
+          .map((i) => AnalyticsAttendanceBatch.fromJson(i))
+          .toList(),
+    );
+  }
+}
+
+class AnalyticsDropoutBatch {
+  final int batchId;
+  final String batchName;
+  final int activeCount;
+  final int inactiveCount;
+  final int total;
+  final double dropoutRate;
+
+  AnalyticsDropoutBatch({
+    required this.batchId,
+    required this.batchName,
+    required this.activeCount,
+    required this.inactiveCount,
+    required this.total,
+    required this.dropoutRate,
+  });
+
+  factory AnalyticsDropoutBatch.fromJson(Map<String, dynamic> json) {
+    return AnalyticsDropoutBatch(
+      batchId: FeeRecord.safeInt(json['batch_id']),
+      batchName: FeeRecord.safeString(json['batch_name']),
+      activeCount: FeeRecord.safeInt(json['active_count']),
+      inactiveCount: FeeRecord.safeInt(json['inactive_count']),
+      total: FeeRecord.safeInt(json['total']),
+      dropoutRate: FeeRecord.safeDouble(json['dropout_rate']),
+    );
+  }
+}
+
+class AnalyticsDropout {
+  final double overallRate;
+  final int totalActive;
+  final int totalInactive;
+  final List<AnalyticsDropoutBatch> batches;
+
+  AnalyticsDropout({
+    required this.overallRate,
+    required this.totalActive,
+    required this.totalInactive,
+    required this.batches,
+  });
+
+  factory AnalyticsDropout.fromJson(Map<String, dynamic> json) {
+    return AnalyticsDropout(
+      overallRate: FeeRecord.safeDouble(json['overall_rate']),
+      totalActive: FeeRecord.safeInt(json['total_active']),
+      totalInactive: FeeRecord.safeInt(json['total_inactive']),
+      batches: (json['batches'] as List? ?? [])
+          .map((i) => AnalyticsDropoutBatch.fromJson(i))
+          .toList(),
+    );
+  }
+}
+
+class AnalyticsResponse {
+  final AnalyticsRevenue revenue;
+  final AnalyticsFeeCollection feeCollection;
+  final AnalyticsAttendance attendance;
+  final AnalyticsDropout dropout;
+
+  AnalyticsResponse({
+    required this.revenue,
+    required this.feeCollection,
+    required this.attendance,
+    required this.dropout,
+  });
+
+  factory AnalyticsResponse.fromJson(Map<String, dynamic> json) {
+    return AnalyticsResponse(
+      revenue: AnalyticsRevenue.fromJson(json['revenue'] ?? {}),
+      feeCollection:
+          AnalyticsFeeCollection.fromJson(json['fee_collection'] ?? {}),
+      attendance: AnalyticsAttendance.fromJson(json['attendance'] ?? {}),
+      dropout: AnalyticsDropout.fromJson(json['dropout'] ?? {}),
+    );
+  }
+}
+

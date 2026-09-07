@@ -1,6 +1,6 @@
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:tuoora/core/constants/app_images.dart';
+import 'package:tuoora/core/widgets/app_logo.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/shared/controllers/login_controller.dart';
@@ -60,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     AppSpacing.v16,
-                    Image.asset(AppImages.logoWithName, height: AppSpacing.s48),
+                    AppLogo(height: AppSpacing.s48),
                     AppSpacing.v12,
                     Text(
                       AppStrings.tagLine,

@@ -18,5 +18,5 @@ abstract class StudentHomeworkRepositoryImpl {
   Future<Assignment> getHomeworkDetail(int id);
   Future<StudentHomeworkAttachmentModel> getHomeworkAttachment(int id);
   Future<List<int>> downloadAttachment(int id, {void Function(double)? onProgress});
-  Future<void> submitHomework(int id);
+  Future<void> submitHomework(int id, {String? note, String? attachmentPath});
 }

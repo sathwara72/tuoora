@@ -7,8 +7,24 @@ import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/utils/url_launcher_utils.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 
+/// Redirects real-money purchases to the external browser on iOS instead of
+/// running Razorpay natively — Apple requires digital purchases made inside
+/// the app to go through Apple's own IAP, so any Razorpay-backed purchase
+/// (subscriptions, the White Label add-on, etc.) sends iOS users to the web
+/// to complete payment instead.
 class SubscriptionManageOnWebView extends StatelessWidget {
-  const SubscriptionManageOnWebView({super.key});
+  final String title;
+  final String message;
+  final String buttonLabel;
+  final String url;
+
+  const SubscriptionManageOnWebView({
+    super.key,
+    this.title = AppStrings.subscriptionManageOnWebTitle,
+    this.message = AppStrings.subscriptionManageOnWebMessage,
+    this.buttonLabel = AppStrings.subscriptionOpenWebButton,
+    this.url = UrlConstants.urlInstituteSubscription,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +50,7 @@ class SubscriptionManageOnWebView extends StatelessWidget {
               ),
               AppSpacing.v24,
               Text(
-                AppStrings.subscriptionManageOnWebTitle,
+                title,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.outfit(
                   fontSize: 22,
@@ -44,7 +60,7 @@ class SubscriptionManageOnWebView extends StatelessWidget {
               ),
               AppSpacing.v12,
               Text(
-                AppStrings.subscriptionManageOnWebMessage,
+                message,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.outfit(
                   fontSize: 14,
@@ -56,11 +72,9 @@ class SubscriptionManageOnWebView extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: AppButton(
-                  label: AppStrings.subscriptionOpenWebButton,
+                  label: buttonLabel,
                   icon: Icons.open_in_new_rounded,
-                  onPressed: () => UrlLauncherUtils.openExternal(
-                    UrlConstants.urlInstituteSubscription,
-                  ),
+                  onPressed: () => UrlLauncherUtils.openExternal(url),
                 ),
               ),
             ],

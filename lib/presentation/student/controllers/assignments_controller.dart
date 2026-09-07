@@ -1,3 +1,5 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
@@ -33,11 +35,24 @@ class AssignmentsController extends GetxController {
   final RxInt weeklyOverdue = 0.obs;
   final RxString teacherName = 'Institute'.obs;
 
+  /// Draft submission state for the currently-open assignment. Cleared and
+  /// re-prefilled (from the assignment's existing submission, if any) every
+  /// time a new assignment is opened, so a resubmission starts from what
+  /// was last submitted rather than a blank form.
+  final TextEditingController noteController = TextEditingController();
+  final Rxn<String> newAttachmentLocalPath = Rxn<String>();
+
   @override
   void onInit() {
     super.onInit();
     _repository = StudentHomeworkRepository(Get.find<ApiClient>());
     loadAssignments();
+  }
+
+  @override
+  void onClose() {
+    noteController.dispose();
+    super.onClose();
   }
 
   Future<void> loadAssignments() async {
@@ -72,8 +87,14 @@ class AssignmentsController extends GetxController {
     activeTab.value = index;
   }
 
+  void _resetSubmissionDraft(Assignment? assignment) {
+    noteController.text = assignment?.submissionNote ?? '';
+    newAttachmentLocalPath.value = null;
+  }
+
   Future<void> openAssignment(Assignment assignment) async {
     selectedAssignment.value = assignment;
+    _resetSubmissionDraft(assignment);
     Get.toNamed(AppRoutes.studentAssignmentDetail);
 
     try {
@@ -81,6 +102,7 @@ class AssignmentsController extends GetxController {
       final int id = int.parse(assignment.id);
       final detail = await _repository.getHomeworkDetail(id);
       selectedAssignment.value = detail;
+      _resetSubmissionDraft(detail);
     } catch (e) {
       AppSnackBar.error(AppStrings.failedToLoadAssignmentDetails);
     } finally {
@@ -90,12 +112,14 @@ class AssignmentsController extends GetxController {
 
   Future<void> openAssignmentById(int id) async {
     selectedAssignment.value = null;
+    _resetSubmissionDraft(null);
     Get.toNamed(AppRoutes.studentAssignmentDetail);
 
     try {
       isDetailLoading.value = true;
       final detail = await _repository.getHomeworkDetail(id);
       selectedAssignment.value = detail;
+      _resetSubmissionDraft(detail);
     } catch (e) {
       AppSnackBar.error(AppStrings.failedToLoadAssignmentDetails);
     } finally {
@@ -131,42 +155,59 @@ class AssignmentsController extends GetxController {
     );
   }
 
-  /// Marks the currently-open assignment as submitted. On success the local
-  /// pending/completed lists are reshuffled and the detail view reflects
-  /// the new state immediately — no full reload needed.
+  Future<void> pickSubmissionAttachment() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
+      if (result != null && result.files.single.path != null) {
+        newAttachmentLocalPath.value = result.files.single.path;
+      }
+    } catch (e) {
+      AppSnackBar.error('Failed to pick file: $e');
+    }
+  }
+
+  void removeNewSubmissionAttachment() {
+    newAttachmentLocalPath.value = null;
+  }
+
+  /// Submits (or resubmits) the currently-open assignment with whatever is
+  /// in [noteController] / [newAttachmentLocalPath]. Allowed any number of
+  /// times up until the due date — the backend is the source of truth for
+  /// that gate, this just mirrors it client-side for a snappier error.
   Future<void> submitCurrentAssignment() async {
     final assignment = selectedAssignment.value;
     if (assignment == null || isSubmitting.value) return;
+
+    final note = noteController.text.trim();
+    final hasExistingAttachment =
+        (assignment.submissionAttachmentUrl ?? '').isNotEmpty;
+    if (note.isEmpty &&
+        newAttachmentLocalPath.value == null &&
+        !hasExistingAttachment) {
+      AppSnackBar.error('Add a note or attach a file before submitting.');
+      return;
+    }
+
     try {
       isSubmitting.value = true;
       final id = int.tryParse(assignment.id) ?? 0;
-      await _repository.submitHomework(id);
-
-      // Optimistically flip the assignment from pending → completed locally
-      // so the user sees the change without waiting for a fresh fetch.
-      pending.removeWhere((a) => a.id == assignment.id);
-      final submitted = Assignment(
-        id: assignment.id,
-        title: assignment.title,
-        subjectLabel: assignment.subjectLabel,
-        dueLabel: assignment.dueLabel,
-        icon: assignment.icon,
-        stripe: assignment.stripe,
-        iconBg: assignment.iconBg,
-        iconColor: assignment.iconColor,
-        badge: AssignmentBadge.done,
-        dueDateFullText: assignment.dueDateFullText,
-        instructions: assignment.instructions,
-        assignedBy: assignment.assignedBy,
-        attachments: assignment.attachments,
-        pendingNote: null,
-        completedNote: 'Status: Submitted',
-        gradeNote: assignment.gradeNote,
+      await _repository.submitHomework(
+        id,
+        note: note.isEmpty ? null : note,
+        attachmentPath: newAttachmentLocalPath.value,
       );
-      completed.insert(0, submitted);
-      selectedAssignment.value = submitted;
-      weeklyCompleted.value++;
-      if (weeklyRemaining.value > 0) weeklyRemaining.value--;
+
+      final detail = await _repository.getHomeworkDetail(id);
+      selectedAssignment.value = detail;
+      _resetSubmissionDraft(detail);
+
+      // Refresh the pending/completed lists + summary counts in the
+      // background — a resubmission doesn't move lists, but a first
+      // submission does, and either way the counts may have changed.
+      loadAssignments();
 
       AppSnackBar.success(AppStrings.assignmentSubmittedSuccessfully);
     } catch (e) {

@@ -7,6 +7,8 @@ class UrlConstants {
   static const String urlHelpSupport = 'https://tuoora.com/faq';
   static const String urlInstituteSubscription =
       'https://tuoora.com/institute/subscription';
+  static const String urlInstituteWhiteLabel =
+      'https://tuoora.com/institute/plans';
 
   /// Razorpay Key ID loaded from .env — never hard-code this value.
   static String get razorpayKeyId =>

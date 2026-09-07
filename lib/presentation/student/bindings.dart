@@ -14,6 +14,10 @@ import 'package:tuoora/presentation/student/controllers/student_institute_contro
 import 'package:tuoora/presentation/student/controllers/student_study_material_controller.dart';
 import 'package:tuoora/presentation/student/controllers/attachment_preview_controller.dart';
 import 'package:tuoora/presentation/student/controllers/student_dashboard_controller.dart';
+import 'package:tuoora/presentation/student/controllers/student_exams_controller.dart';
+import 'package:tuoora/presentation/student/controllers/student_timetable_controller.dart';
+import 'package:tuoora/presentation/student/controllers/student_birthday_controller.dart';
+import 'package:tuoora/presentation/student/controllers/student_id_card_controller.dart';
 
 class StudentBinding extends Bindings {
   @override
@@ -50,6 +54,22 @@ class StudentBinding extends Bindings {
     );
     Get.lazyPut<StudentDashboardController>(
       () => StudentDashboardController(),
+      fenix: true,
+    );
+    Get.lazyPut<StudentExamsController>(
+      () => StudentExamsController(),
+      fenix: true,
+    );
+    Get.lazyPut<StudentTimetableController>(
+      () => StudentTimetableController(),
+      fenix: true,
+    );
+    Get.lazyPut<StudentBirthdayController>(
+      () => StudentBirthdayController(),
+      fenix: true,
+    );
+    Get.lazyPut<StudentIdCardController>(
+      () => StudentIdCardController(),
       fenix: true,
     );
     Get.lazyPut<ChatRepositoryImpl>(

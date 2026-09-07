@@ -393,16 +393,7 @@ class _SubmitAssignmentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<AssignmentsController>();
-
-    if (assignment.isCompleted) {
-      return _StaticButton(
-        backgroundColor: AppColors.successGreen,
-        icon: Icons.check_circle_rounded,
-        label: AppStrings.instFilterSubmitted,
-      );
-    }
-    if (assignment.isOverdue) {
+    if (assignment.dueDatePassed) {
       return _StaticButton(
         backgroundColor: AppColors.textTertiary,
         icon: Icons.lock_outline_rounded,
@@ -410,55 +401,206 @@ class _SubmitAssignmentButton extends StatelessWidget {
       );
     }
 
-    return Obx(() {
-      final submitting = controller.isSubmitting.value;
-      return Material(
-        color: submitting
-            ? AppColors.primaryBrand.withValues(alpha: 0.6)
-            : AppColors.primaryBrand,
+    return _SubmissionForm(assignment: assignment);
+  }
+}
+
+/// Note + optional file attachment, editable any number of times up until
+/// the due date — including after a first submission, so a student can fix
+/// a mistake without waiting on the institute.
+class _SubmissionForm extends StatelessWidget {
+  final Assignment assignment;
+
+  const _SubmissionForm({required this.assignment});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<AssignmentsController>();
+    final alreadySubmitted = assignment.isCompleted;
+
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        child: InkWell(
-          onTap: submitting ? null : controller.submitCurrentAssignment,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.s16,
-              vertical: AppSpacing.s14,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (submitting)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation(AppColors.white),
-                    ),
-                  )
-                else
-                  const Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 18,
-                    color: AppColors.white,
-                  ),
-                AppSpacing.h12,
-                Text(
-                  submitting ? 'Submitting...' : 'Submit Assignment',
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.white,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            alreadySubmitted ? 'Edit Your Submission' : 'Submit Your Work',
+            style: AppTextStyles.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
             ),
           ),
+          AppSpacing.v12,
+          TextField(
+            controller: controller.noteController,
+            maxLines: 4,
+            minLines: 3,
+            style: AppTextStyles.outfit(fontSize: 13, color: AppColors.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Add a note (optional if you attach a file)',
+              hintStyle: AppTextStyles.outfit(
+                fontSize: 13,
+                color: AppColors.textMuted,
+              ),
+              filled: true,
+              fillColor: AppColors.surfaceBg,
+              contentPadding: AppSpacing.all12,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.s12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          AppSpacing.v12,
+          Obx(() => _AttachmentPicker(assignment: assignment, controller: controller)),
+          AppSpacing.v16,
+          Obx(() {
+            final submitting = controller.isSubmitting.value;
+            return Material(
+              color: submitting
+                  ? AppColors.primaryBrand.withValues(alpha: 0.6)
+                  : AppColors.primaryBrand,
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+              child: InkWell(
+                onTap: submitting ? null : controller.submitCurrentAssignment,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.s16,
+                    vertical: AppSpacing.s14,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (submitting)
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(AppColors.white),
+                          ),
+                        )
+                      else
+                        const Icon(
+                          Icons.check_circle_outline_rounded,
+                          size: 18,
+                          color: AppColors.white,
+                        ),
+                      AppSpacing.h12,
+                      Text(
+                        submitting
+                            ? 'Submitting...'
+                            : (alreadySubmitted
+                                  ? 'Resubmit Assignment'
+                                  : 'Submit Assignment'),
+                        style: AppTextStyles.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.white,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentPicker extends StatelessWidget {
+  final Assignment assignment;
+  final AssignmentsController controller;
+
+  const _AttachmentPicker({required this.assignment, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final newPath = controller.newAttachmentLocalPath.value;
+    final existingUrl = assignment.submissionAttachmentUrl;
+
+    String? displayName;
+    if (newPath != null) {
+      displayName = newPath.split('/').last;
+    } else if (existingUrl != null && existingUrl.isNotEmpty) {
+      displayName = existingUrl.split('/').last;
+    }
+
+    return InkWell(
+      onTap: controller.pickSubmissionAttachment,
+      borderRadius: BorderRadius.circular(AppSpacing.s12),
+      child: Container(
+        padding: AppSpacing.all12,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceBg,
+          borderRadius: BorderRadius.circular(AppSpacing.s12),
+          border: Border.all(color: AppColors.borderGrey),
         ),
-      );
-    });
+        child: Row(
+          children: [
+            Icon(
+              displayName != null
+                  ? Icons.attach_file_rounded
+                  : Icons.attach_file_outlined,
+              size: 18,
+              color: AppColors.primaryBrand,
+            ),
+            AppSpacing.h12,
+            Expanded(
+              child: Text(
+                displayName ?? 'Attach a file (optional)',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  fontWeight: displayName != null ? FontWeight.w600 : FontWeight.w400,
+                  color: displayName != null
+                      ? AppColors.textPrimary
+                      : AppColors.textMuted,
+                ),
+              ),
+            ),
+            if (newPath != null)
+              IconButton(
+                onPressed: controller.removeNewSubmissionAttachment,
+                icon: const Icon(
+                  Icons.close_rounded,
+                  size: 18,
+                  color: AppColors.textMuted,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              )
+            else
+              Text(
+                existingUrl != null && existingUrl.isNotEmpty ? 'Replace' : 'Add',
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryBrand,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

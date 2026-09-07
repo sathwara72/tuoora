@@ -1,4 +1,4 @@
-import 'package:tuoora/core/constants/app_images.dart';
+import 'package:tuoora/core/widgets/app_logo.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -37,10 +37,7 @@ class ForgotPasswordScreen extends GetView<ForgotPasswordController> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Center(
-                            child: Image.asset(
-                              AppImages.logoWithName,
-                              height: AppSpacing.s48,
-                            ),
+                            child: AppLogo(height: AppSpacing.s48),
                           ),
                           AppSpacing.v12,
                           Text(
