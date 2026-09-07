@@ -30,6 +30,12 @@ class CommonDialog extends StatelessWidget {
   /// cancel buttons are hidden and the X is the only dismissal cue.
   final bool showCloseIcon;
 
+  /// Optional saving/submitting flag. When supplied, the confirm button
+  /// shows a spinner and ignores taps while true — without this, a slow
+  /// [onConfirm] (e.g. a network call) invites repeat taps that each fire
+  /// [onConfirm] again before the first one has closed the dialog.
+  final RxBool? isLoading;
+
   const CommonDialog({
     super.key,
     required this.title,
@@ -46,6 +52,7 @@ class CommonDialog extends StatelessWidget {
     this.confirmButtonColor,
     this.showButtons = true,
     this.showCloseIcon = false,
+    this.isLoading,
   });
 
   static void show({
@@ -63,6 +70,7 @@ class CommonDialog extends StatelessWidget {
     Color? confirmButtonColor,
     bool showButtons = true,
     bool showCloseIcon = false,
+    RxBool? isLoading,
   }) {
     Get.dialog(
       CommonDialog(
@@ -80,6 +88,7 @@ class CommonDialog extends StatelessWidget {
         confirmButtonColor: confirmButtonColor,
         showButtons: showButtons,
         showCloseIcon: showCloseIcon,
+        isLoading: isLoading,
       ),
     );
   }
@@ -219,32 +228,13 @@ class CommonDialog extends StatelessWidget {
                           ),
                           AppSpacing.h12,
                           Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                if (body == null) Get.back();
-                                onConfirm();
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    confirmButtonColor ??
-                                    (icon != null
-                                        ? iconColor
-                                        : AppColors.primaryBrand),
-                                padding: AppSpacing.y16,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                confirmText,
-                                style: AppTextStyles.outfit(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.white,
-                                ),
-                              ),
-                            ),
+                            child: isLoading != null
+                                ? Obx(
+                                    () => _buildConfirmButton(
+                                      isLoading!.value,
+                                    ),
+                                  )
+                                : _buildConfirmButton(false),
                           ),
                         ],
                       ),
@@ -277,6 +267,44 @@ class CommonDialog extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildConfirmButton(bool loading) {
+    return ElevatedButton(
+      onPressed: loading
+          ? null
+          : () {
+              if (body == null) Get.back();
+              onConfirm();
+            },
+      style: ElevatedButton.styleFrom(
+        backgroundColor:
+            confirmButtonColor ?? (icon != null ? iconColor : AppColors.primaryBrand),
+        disabledBackgroundColor:
+            (confirmButtonColor ?? (icon != null ? iconColor : AppColors.primaryBrand))
+                .withValues(alpha: 0.6),
+        padding: AppSpacing.y16,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: loading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation(AppColors.white),
+              ),
+            )
+          : Text(
+              confirmText,
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.white,
+              ),
+            ),
     );
   }
 }

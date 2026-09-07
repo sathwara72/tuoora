@@ -178,7 +178,7 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
       ),
       ModuleItem(
         'Timetable',
-        () => Get.toNamed(AppRoutes.instituteBatches),
+        () => Get.toNamed(AppRoutes.instituteTimetable),
         AppImages.icBatchTimetable,
       ),
       ModuleItem(

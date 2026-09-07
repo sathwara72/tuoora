@@ -63,6 +63,17 @@ class ReportsScreen extends StatelessWidget {
                   ),
                   AppSpacing.v10,
                   _buildReportCard(
+                    title: 'Student Wise Report',
+                    subtitle:
+                        'Granular student profile breakdown with academic records, exams, attendance logs, homework, and fee history.',
+                    icon: Icons.person_outline_rounded,
+                    color: AppColors.primaryBrand,
+                    onTap: () {
+                      Get.toNamed(AppRoutes.instituteStudentWiseReport);
+                    },
+                  ),
+                  AppSpacing.v10,
+                  _buildReportCard(
                     title: AppStrings.labelBusinessAnalytics,
                     subtitle: AppStrings.revenueFeeCollectionAndDropoutTrends,
                     icon: Icons.bar_chart_rounded,

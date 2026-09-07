@@ -9,6 +9,8 @@ import 'package:tuoora/presentation/institute/models/student_performance_model.d
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:get/get.dart';
 
+import 'package:tuoora/presentation/institute/models/batch_model.dart';
+
 class ReportsController extends GetxController {
   final BatchController batchController = Get.find<BatchController>();
   final InstituteController instituteController =
@@ -18,6 +20,15 @@ class ReportsController extends GetxController {
   final DownloadService _downloadService = Get.find<DownloadService>();
 
   final batchPerformances = <BatchPerformance>[].obs;
+
+  // Student Wise Report State
+  final selectedBatchForStudentReport = Rxn<BatchModel>();
+  final batchStudentsForReport = <StudentBatchItem>[].obs;
+  final selectedStudentForReport = Rxn<StudentBatchItem>();
+  final studentWiseReport = Rxn<StudentWiseReportData>();
+  final isStudentReportLoading = false.obs;
+  final isBatchStudentsLoading = false.obs;
+  final currentStudentReportTab = 0.obs;
 
   // Fee Data
   final feeReport = Rxn<FeeReportResponse>();
@@ -138,6 +149,67 @@ class ReportsController extends GetxController {
         if (type == 'Attendance') return _repository.exportAttendanceReport();
         return _repository.exportPerformanceReport();
       },
+    );
+  }
+
+  Future<void> initStudentWiseReport() async {
+    if (batchController.batchesList.isEmpty) {
+      await batchController.loadBatches(isRefresh: true);
+    }
+    if (batchController.batchesList.isNotEmpty) {
+      final initialBatch = selectedBatchForStudentReport.value ??
+          batchController.batchesList.first;
+      await selectBatchForStudentReport(initialBatch);
+    }
+  }
+
+  Future<void> selectBatchForStudentReport(BatchModel batch) async {
+    selectedBatchForStudentReport.value = batch;
+    selectedStudentForReport.value = null;
+    studentWiseReport.value = null;
+    final bId = int.tryParse(batch.id);
+    if (bId == null) return;
+
+    try {
+      isBatchStudentsLoading.value = true;
+      final students = await _repository.getStudentsForBatchReport(bId);
+      batchStudentsForReport.assignAll(students);
+      if (students.isNotEmpty) {
+        await selectStudentForReport(students.first);
+      }
+    } catch (e) {
+      AppSnackBar.error('Failed to load students for batch: $e');
+    } finally {
+      isBatchStudentsLoading.value = false;
+    }
+  }
+
+  Future<void> selectStudentForReport(StudentBatchItem student) async {
+    selectedStudentForReport.value = student;
+    try {
+      isStudentReportLoading.value = true;
+      final data = await _repository.getStudentWiseReport(student.id);
+      studentWiseReport.value = data;
+    } catch (e) {
+      AppSnackBar.error('Failed to load student report: $e');
+    } finally {
+      isStudentReportLoading.value = false;
+    }
+  }
+
+  Future<void> exportStudentReportPdf() async {
+    final student = selectedStudentForReport.value;
+    if (student == null) {
+      AppSnackBar.warning('Please select a student first');
+      return;
+    }
+    final safeName = student.name.replaceAll(RegExp(r'[^A-Za-z0-9_\-]'), '_');
+    final fileName = 'Student_Report_${safeName}_${student.id}.pdf';
+    await _downloadService.download(
+      label: 'Preparing Student Report PDF…',
+      fileName: fileName,
+      successMessage: 'Student report downloaded successfully',
+      fetch: () => _repository.exportStudentWiseReport(student.id),
     );
   }
 

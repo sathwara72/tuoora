@@ -133,6 +133,11 @@ class ApiConstants {
   static const String instituteReportAnalytics =
       '/institute/reports/analytics';
 
+  // Student Wise Report
+  static const String instituteReportStudent = '/institute/reports/student';
+  static const String instituteReportStudentExport =
+      '/institute/reports/student/export';
+
   // Teacher Endpoints
   static const String teacherLogin = '/teacher/login';
   static const String teacherForgotPassword = '/teacher/forgot-password';

@@ -110,6 +110,11 @@ class BatchClassesController extends GetxController {
   }
 
   Future<void> saveClass() async {
+    // The dialog's Save button isn't disabled while the request is in
+    // flight, so a slow response invites repeat taps — guard here instead
+    // of relying on the UI to stop re-entrant submits (which was creating
+    // one duplicate class per extra tap).
+    if (isSaving.value) return;
     triedToSave.value = true;
     if (nameController.text.trim().isEmpty) {
       nameError.value = 'Class name is required';
@@ -126,20 +131,24 @@ class BatchClassesController extends GetxController {
 
     try {
       isSaving.value = true;
-      if (editingClassId.value != null) {
+      final wasEditing = editingClassId.value != null;
+      if (wasEditing) {
         final updated = await _repository.updateClass(
           editingClassId.value!,
           data,
         );
         final index = classes.indexWhere((c) => c.id == updated.id);
         if (index != -1) classes[index] = updated;
-        AppSnackBar.success('Class updated successfully');
       } else {
         final created = await _repository.createClass(data);
         classes.insert(0, created);
-        AppSnackBar.success('Class created successfully');
       }
       Get.back();
+      AppSnackBar.success(
+        wasEditing
+            ? 'Class updated successfully'
+            : 'Class created successfully',
+      );
     } catch (e) {
       AppSnackBar.error('Failed to save class: $e');
     } finally {

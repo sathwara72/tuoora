@@ -28,6 +28,7 @@ import 'package:tuoora/presentation/institute/view/attendance_report_screen.dart
 import 'package:tuoora/presentation/institute/view/performance_report_screen.dart';
 import 'package:tuoora/presentation/institute/view/analytics_screen.dart';
 import 'package:tuoora/presentation/institute/view/reports_screen.dart';
+import 'package:tuoora/presentation/institute/view/student_wise_report_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_updates_screen.dart';
 import 'package:tuoora/presentation/institute/view/create_update_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_report_detail_screen.dart';
@@ -533,6 +534,11 @@ class AppPages {
       binding: InstituteBinding(),
     ),
     GetPage(
+      name: AppRoutes.instituteStudentWiseReport,
+      page: () => const StudentWiseReportScreen(),
+      binding: InstituteBinding(),
+    ),
+    GetPage(
       name: AppRoutes.instituteUpdates,
       page: () => const InstituteUpdatesScreen(),
       binding: InstituteBinding(),
@@ -626,6 +632,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.instituteExamMarks,
       page: () => const ExamMarksScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteTimetable,
+      page: () => const BatchTimetableScreen(),
     ),
     GetPage(
       name: AppRoutes.instituteBatchTimetable,

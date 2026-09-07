@@ -216,6 +216,7 @@ class BatchClassesScreen extends StatelessWidget {
           : 'Add Class',
       confirmText: controller.editingClassId.value != null ? 'Update' : 'Add',
       onConfirm: () => controller.saveClass(),
+      isLoading: controller.isSaving,
       // CommonDialog itself scrolls and height-constrains its whole content
       // (title + description + body + buttons) against the keyboard, so the
       // body here is just a plain Column — no need to duplicate that logic.

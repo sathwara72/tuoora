@@ -98,6 +98,8 @@ class AppRoutes {
   static const String instituteOtp = '/institute/otp';
   static const String instituteProfileSetup = '/institute/profile-setup';
   static const String instituteBatchReportDetail = '/institute/reports/detail';
+  static const String instituteStudentWiseReport =
+      '/institute/reports/student-wise';
   static const String instituteReports = '/institute/reports';
   static const String instituteForgotPassword = '/institute/forgot-password';
   static const String instituteResetPassword = '/institute/reset-password';
@@ -110,6 +112,7 @@ class AppRoutes {
   static const String instituteBatchExams = '/institute/batches/exams';
   static const String instituteAddExam = '/institute/batches/exams/add';
   static const String instituteExamMarks = '/institute/batches/exams/marks';
+  static const String instituteTimetable = '/institute/timetable';
   static const String instituteBatchTimetable = '/institute/batches/timetable';
   static const String instituteAddTimetableSlot =
       '/institute/batches/timetable/add';
