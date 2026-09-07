@@ -196,58 +196,19 @@ class _BatchesScreenState extends State<BatchesScreen> {
                             StatusBadge.fromLabel(batch.statusLabel),
                           ],
                         ),
-                        AppSpacing.v4,
-                        Text(
-                          batch.subject,
-                          style: AppTextStyles.outfit(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textTertiary,
-                          ),
-                        ),
-                        if (batch.staffName != null &&
-                            batch.staffName!.trim().isNotEmpty) ...[
-                          AppSpacing.v12,
-                          Row(
-                            children: [
-                              Text(
-                                AppStrings.faculty,
-                                style: AppTextStyles.outfit(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.fieldLabel,
-                                ),
-                              ),
-                              Text(
-                                batch.staffName!,
-                                style: AppTextStyles.outfit(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
+                        if (batch.description.trim().isNotEmpty) ...[
+                          AppSpacing.v4,
+                          Text(
+                            batch.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.outfit(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.textTertiary,
+                            ),
                           ),
                         ],
-                        AppSpacing.v12,
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.access_time_rounded,
-                              size: AppSpacing.s16,
-                              color: AppColors.textSecondary,
-                            ),
-                            AppSpacing.h8,
-                            Text(
-                              batch.time,
-                              style: AppTextStyles.outfit(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
                         AppSpacing.v12,
                         Row(
                           children: [

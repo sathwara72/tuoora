@@ -11,6 +11,7 @@ import 'package:tuoora/presentation/institute/widgets/institute_label.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class AddEditBatchScreen extends GetView<BatchController> {
   const AddEditBatchScreen({super.key});
@@ -47,15 +48,6 @@ class AddEditBatchScreen extends GetView<BatchController> {
                     AppSpacing.v24,
                     Obx(
                       () => AppInputField(
-                        label: AppStrings.instBatchSubjectLabel,
-                        controller: controller.subjectController,
-                        hint: AppStrings.instBatchSubjectHint,
-                        errorText: controller.subjectError.value,
-                      ),
-                    ),
-                    AppSpacing.v24,
-                    Obx(
-                      () => AppInputField(
                         label: AppStrings.instBatchFeeLabelAlt,
                         controller: controller.batchFeeController,
                         hint: AppStrings.instBatchFeeHint,
@@ -68,15 +60,15 @@ class AddEditBatchScreen extends GetView<BatchController> {
                       ),
                     ),
                     AppSpacing.v24,
+                    const InstituteLabel('Fees Last Date'),
+                    _buildFeesLastDateField(context),
+                    AppSpacing.v24,
                     AppInputField(
                       label: AppStrings.instBatchDescLabel,
                       controller: controller.descriptionController,
                       hint: AppStrings.instBatchDescHint,
                       maxLines: 3,
                     ),
-                    AppSpacing.v24,
-                    const InstituteLabel(AppStrings.instTimeSlot),
-                    _buildTimeSlotField(context),
                     AppSpacing.v24,
                     const InstituteLabel(AppStrings.instActiveDaysLabel),
                     Obx(() {
@@ -97,14 +89,6 @@ class AddEditBatchScreen extends GetView<BatchController> {
                     }),
                     AppSpacing.v12,
                     _buildDaysSelection(),
-                    AppSpacing.v24,
-                    AppInputField(
-                      label: AppStrings.instBatchClassroomLabel,
-                      controller: controller.classroomController,
-                      hint: AppStrings.instBatchClassroomHint,
-                    ),
-                    AppSpacing.v24,
-                    _buildAssignedStaffField(),
                     AppSpacing.v32,
                     _buildSaveButton(context),
                     AppSpacing.v24,
@@ -118,60 +102,80 @@ class AddEditBatchScreen extends GetView<BatchController> {
     );
   }
 
-  Widget _buildTimeSlotField(BuildContext context) {
+  Widget _buildFeesLastDateField(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showTimeRangePicker(context),
+      onTap: () => controller.selectFeesLastDate(context),
       behavior: HitTestBehavior.opaque,
-      child: Container(
-        // minHeight matches the rendered height of a single-line AppInputField
-        // (Material's default ~48 dp touch target), so the time slot sits at
-        // the exact same height as Batch Description / Batch Fee above it.
-        constraints: const BoxConstraints(minHeight: 48),
-        padding: InputStyles.contentPadding,
-        decoration: BoxDecoration(
-          color: AppColors.fieldBg,
-          borderRadius: BorderRadius.circular(InputStyles.borderRadius),
-          border: Border.all(color: AppColors.fieldBorder),
-        ),
-        child: Row(
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.access_time_filled,
-              color: AppColors.fieldLabel,
-              size: AppSpacing.s20,
+            Container(
+              constraints: const BoxConstraints(minHeight: 48),
+              padding: InputStyles.contentPadding,
+              decoration: BoxDecoration(
+                color: AppColors.fieldBg,
+                borderRadius: BorderRadius.circular(InputStyles.borderRadius),
+                border: Border.all(
+                  color: controller.feesLastDateError.value != null
+                      ? Colors.redAccent
+                      : AppColors.fieldBorder,
+                  width: controller.feesLastDateError.value != null ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.event_rounded,
+                    color: AppColors.fieldLabel,
+                    size: AppSpacing.s20,
+                  ),
+                  AppSpacing.h12,
+                  Expanded(
+                    child: Text(
+                      controller.selectedFeesLastDate.value != null
+                          ? DateFormat(
+                              'MMM dd, yyyy',
+                            ).format(controller.selectedFeesLastDate.value!)
+                          : 'Select fees last date',
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: controller.selectedFeesLastDate.value != null
+                            ? AppColors.textPrimary
+                            : AppColors.textTertiary,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    AppStrings.instChangeBtn,
+                    style: AppTextStyles.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.fieldLabel,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            AppSpacing.h12,
-            Expanded(
-              child: Obx(
-                () => Text(
-                  '${controller.startTime.value.format(context)} — ${controller.endTime.value.format(context)}',
+            if (controller.feesLastDateError.value != null) ...[
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  controller.feesLastDateError.value!,
                   style: AppTextStyles.outfit(
-                    fontSize: 14,
+                    fontSize: 12,
+                    color: Colors.redAccent,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
-            ),
-            Text(
-              AppStrings.instChangeBtn,
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.fieldLabel,
-              ),
-            ),
+            ],
           ],
         ),
       ),
     );
-  }
-
-  void _showTimeRangePicker(BuildContext context) async {
-    await controller.selectStartTime(context);
-    if (context.mounted) {
-      await controller.selectEndTime(context);
-    }
   }
 
   Widget _buildDaysSelection() {
@@ -203,100 +207,6 @@ class AddEditBatchScreen extends GetView<BatchController> {
           );
         });
       }).toList(),
-    );
-  }
-
-  Widget _buildAssignedStaffField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppStrings.instBatchAssignedStaffLabel,
-          style: AppTextStyles.outfit(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.fieldLabel,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Obx(() {
-          final hasError = controller.staffError.value != null;
-          final selectedId = controller.selectedStaffId.value;
-          final isValueInList = controller.staffList.any(
-            (s) => s.id == selectedId,
-          );
-          return Container(
-            constraints: const BoxConstraints(minHeight: 48),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: AppColors.fieldBg,
-              borderRadius: BorderRadius.circular(InputStyles.borderRadius),
-              border: Border.all(
-                color: hasError ? Colors.redAccent : AppColors.fieldBorder,
-                width: hasError ? 1.5 : 1,
-              ),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<int>(
-                value: isValueInList ? selectedId : null,
-                isExpanded: true,
-                hint: Text(
-                  controller.isLoadingStaff.value
-                      ? 'Loading staff...'
-                      : AppStrings.instBatchAssignedStaffHint,
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    color: AppColors.fieldLabel,
-                  ),
-                ),
-                icon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.fieldLabel,
-                ),
-                style: AppTextStyles.outfit(
-                  fontSize: 14,
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-                dropdownColor: AppColors.white,
-                items: controller.staffList
-                    .map(
-                      (staff) => DropdownMenuItem<int>(
-                        value: staff.id,
-                        child: Text(
-                          staff.fullName,
-                          style: AppTextStyles.outfit(
-                            fontSize: 14,
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: controller.isLoadingStaff.value
-                    ? null
-                    : controller.selectStaff,
-              ),
-            ),
-          );
-        }),
-        Obx(() {
-          final err = controller.staffError.value;
-          if (err == null) return const SizedBox.shrink();
-          return Padding(
-            padding: const EdgeInsets.only(top: 4, left: 4),
-            child: Text(
-              err,
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                color: Colors.redAccent,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          );
-        }),
-      ],
     );
   }
 

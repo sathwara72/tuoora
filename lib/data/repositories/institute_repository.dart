@@ -15,6 +15,7 @@ import 'package:tuoora/presentation/institute/models/homework_model.dart';
 import 'package:tuoora/presentation/institute/models/exam_model.dart';
 import 'package:tuoora/presentation/institute/models/timetable_model.dart';
 import 'package:tuoora/presentation/institute/models/resource_model.dart';
+import 'package:tuoora/presentation/institute/models/school_class_model.dart';
 import 'package:tuoora/presentation/institute/models/attendance_record_model.dart';
 import 'package:tuoora/data/models/notification_model.dart';
 import 'package:tuoora/data/models/staff_model.dart';
@@ -1009,6 +1010,56 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<List<SchoolClassModel>> listClasses(int batchId) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteClasses,
+      query: {'batch_id': batchId.toString()},
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch classes: ${response.statusText}');
+    }
+    final data = response.body['data'] as List? ?? [];
+    return data
+        .map((json) => SchoolClassModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<SchoolClassModel> createClass(Map<String, dynamic> data) async {
+    final response = await _apiClient.post(ApiConstants.instituteClasses, data);
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to create class');
+    }
+    return SchoolClassModel.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<SchoolClassModel> updateClass(
+    int id,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _apiClient.put(
+      '${ApiConstants.instituteClasses}/$id',
+      data,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update class');
+    }
+    return SchoolClassModel.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<void> deleteClass(int id) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteClasses}/$id',
+    );
+    if (response.status.hasError) {
+      final message = response.body?['message'] ?? 'Failed to delete class';
+      throw Exception(message);
+    }
+  }
+
+  @override
   Future<void> deleteResource(int id) async {
     final response = await _apiClient.delete(
       '${ApiConstants.instituteResources}/$id',
@@ -1227,6 +1278,54 @@ class InstituteRepository implements InstituteRepositoryImpl {
     }
     final message = response.body?['message'] ?? defaultMessage;
     throw Exception(message);
+  }
+
+  @override
+  Future<String> sendStaffPassword(int id) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStaff}/$id/send-password',
+      {},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to send password');
+    }
+    return response.body?['message'] ??
+        'A new password has been generated and emailed to the staff member.';
+  }
+
+  @override
+  Future<void> resetStaffPassword(int id, String password) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStaff}/$id/reset-password',
+      {'password': password},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to reset password');
+    }
+  }
+
+  @override
+  Future<Staff> changeStaffEmail(int id, String email) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStaff}/$id/change-email',
+      {'email': email},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update email');
+    }
+    return Staff.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<Staff> toggleStaffBlock(int id, bool blocked) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStaff}/$id/toggle-block',
+      {'blocked': blocked.toString()},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update login access');
+    }
+    return Staff.fromJson(response.body['data']);
   }
 
   @override

@@ -45,6 +45,7 @@ import 'package:tuoora/presentation/institute/view/exam_marks_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_timetable_screen.dart';
 import 'package:tuoora/presentation/institute/view/add_timetable_slot_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_resources_screen.dart';
+import 'package:tuoora/presentation/institute/view/batch_classes_screen.dart';
 import 'package:tuoora/presentation/institute/view/resource_detail_screen.dart';
 import 'package:tuoora/presentation/institute/view/students_registry_screen.dart';
 import 'package:tuoora/presentation/teacher/bindings/teacher_binding.dart';
@@ -637,6 +638,10 @@ class AppPages {
     GetPage(
       name: AppRoutes.instituteBatchResources,
       page: () => const BatchResourcesScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteBatchClasses,
+      page: () => const BatchClassesScreen(),
     ),
     GetPage(
       name: AppRoutes.instituteResourceDetail,

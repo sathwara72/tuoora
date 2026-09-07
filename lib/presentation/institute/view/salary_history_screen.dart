@@ -6,6 +6,7 @@ import 'package:tuoora/presentation/institute/controllers/staff_controller.dart'
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/data/models/staff_model.dart';
 import 'package:tuoora/presentation/institute/widgets/common_state_widget.dart';
+import 'package:tuoora/config/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -20,7 +21,10 @@ class SalaryHistoryScreen extends GetView<StaffController> {
       body: SafeArea(
         child: Column(
           children: [
-            const InstituteAppBar(title: AppStrings.salaryHistory),
+            InstituteAppBar(
+              title: AppStrings.salaryHistory,
+              actions: [_buildAddSalaryButton()],
+            ),
             Expanded(
               child: Obx(() {
                 final salaries = controller.salaryList;
@@ -44,6 +48,32 @@ class SalaryHistoryScreen extends GetView<StaffController> {
               }),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddSalaryButton() {
+    return GestureDetector(
+      onTap: () {
+        final staff = controller.selectedStaff.value;
+        if (staff == null) return;
+        Get.toNamed(
+          AppRoutes.instituteAddSalary,
+          arguments: {'staffId': staff.id},
+        );
+      },
+      child: Container(
+        width: AppSpacing.s40,
+        height: AppSpacing.s40,
+        decoration: BoxDecoration(
+          color: AppColors.primaryBrand,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(
+          Icons.add_rounded,
+          color: AppColors.white,
+          size: AppSpacing.s22,
         ),
       ),
     );

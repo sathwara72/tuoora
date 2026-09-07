@@ -31,7 +31,12 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
     // are still building. The primary reset happens at the launch site —
     // this is a safety net for any other entry path into this route.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) controller.initAddSalaryMode();
+      if (!mounted) return;
+      controller.initAddSalaryMode();
+      final args = Get.arguments;
+      if (args is Map && args['staffId'] != null) {
+        controller.selectSalaryStaffById(args['staffId'] as int);
+      }
     });
   }
 

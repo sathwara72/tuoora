@@ -116,7 +116,7 @@ class StaffController extends GetxController {
   }
 
   // Add/Edit Staff Reactive State
-  final selectedDepartmentId = Rxn<int>();
+  final selectedDepartmentIds = <int>[].obs;
   final employmentType = 'Salary'.obs;
 
   final staffNameController = TextEditingController();
@@ -132,6 +132,10 @@ class StaffController extends GetxController {
   final staffSalaryError = RxnString();
   final deptError = RxnString();
   final triedToSave = false.obs;
+
+  // Staff account management (staff profile screen)
+  final isSendingPassword = false.obs;
+  final isTogglingBlock = false.obs;
 
   // Log Attendance State
   final selectedLogStaff = Rxn<Staff>();
@@ -175,7 +179,7 @@ class StaffController extends GetxController {
     staffEmailController.addListener(() => _clearError(staffEmailError));
     staffPhoneController.addListener(() => _clearError(staffPhoneError));
     staffSalaryController.addListener(() => _clearError(staffSalaryError));
-    selectedDepartmentId.listen((_) => _clearError(deptError));
+    ever(selectedDepartmentIds, (_) => _clearError(deptError));
 
     // Initialize salary date controller
     salaryDateController.text = DateFormat(
@@ -601,9 +605,9 @@ class StaffController extends GetxController {
       staffSalaryController.text,
       employmentType.value == 'Salary' ? 'Base Salary' : 'Hourly Rate',
     );
-    deptError.value = ValidationUtils.validateDepartmentSelection(
-      selectedDepartmentId.value,
-    );
+    deptError.value = selectedDepartmentIds.isEmpty
+        ? 'Please select at least one department'
+        : null;
 
     // Check if any validation failed
     if (staffNameError.value != null ||
@@ -620,7 +624,7 @@ class StaffController extends GetxController {
         'full_name': staffNameController.text.trim(),
         'email': staffEmailController.text.trim(),
         'phone': staffPhoneController.text.trim(),
-        'staff_department_id': selectedDepartmentId.value.toString(),
+        'staff_department_ids': selectedDepartmentIds.join(','),
         'employment_type': employmentType.value,
         'base_salary': staffSalaryController.text.trim(),
       };
@@ -703,12 +707,91 @@ class StaffController extends GetxController {
     }
   }
 
+  Future<void> sendStaffPassword() async {
+    final staff = selectedStaff.value;
+    if (staff == null) return;
+    try {
+      isSendingPassword.value = true;
+      final message = await _repository.sendStaffPassword(staff.id);
+      AppSnackBar.success(message);
+    } catch (e) {
+      AppSnackBar.error('Failed to send password: $e');
+    } finally {
+      isSendingPassword.value = false;
+    }
+  }
+
+  Future<void> resetStaffPassword(String password) async {
+    final staff = selectedStaff.value;
+    if (staff == null) return;
+    try {
+      isSaving.value = true;
+      await _repository.resetStaffPassword(staff.id, password);
+      Get.back();
+      AppSnackBar.success('Staff password has been reset successfully!');
+    } catch (e) {
+      AppSnackBar.error(_firstErrorMessage(e, 'Failed to reset password'));
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<void> changeStaffEmail(String email) async {
+    final staff = selectedStaff.value;
+    if (staff == null) return;
+    try {
+      isSaving.value = true;
+      final updated = await _repository.changeStaffEmail(staff.id, email);
+      selectedStaff.value = updated;
+      final index = staffList.indexWhere((s) => s.id == updated.id);
+      if (index != -1) staffList[index] = updated;
+      Get.back();
+      AppSnackBar.success('Staff login email updated successfully!');
+    } catch (e) {
+      AppSnackBar.error(_firstErrorMessage(e, 'Failed to update email'));
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  Future<void> toggleStaffBlock() async {
+    final staff = selectedStaff.value;
+    if (staff == null) return;
+    try {
+      isTogglingBlock.value = true;
+      final updated = await _repository.toggleStaffBlock(
+        staff.id,
+        !staff.isLoginBlocked,
+      );
+      selectedStaff.value = updated;
+      final index = staffList.indexWhere((s) => s.id == updated.id);
+      if (index != -1) staffList[index] = updated;
+      AppSnackBar.success(
+        updated.isLoginBlocked
+            ? 'Staff login has been blocked.'
+            : 'Staff login has been unblocked.',
+      );
+    } catch (e) {
+      AppSnackBar.error('Failed to update login access: $e');
+    } finally {
+      isTogglingBlock.value = false;
+    }
+  }
+
+  String _firstErrorMessage(Object e, String fallback) {
+    if (e is ValidationException) {
+      final first = e.errors.values.first;
+      return first is List ? first.first.toString() : first.toString();
+    }
+    return '$fallback: $e';
+  }
+
   void clearStaffForm() {
     staffNameController.clear();
     staffEmailController.clear();
     staffPhoneController.clear();
     staffSalaryController.clear();
-    selectedDepartmentId.value = null;
+    selectedDepartmentIds.clear();
     employmentType.value = 'Salary';
     selectedImagePath.value = null;
     selectedStaff.value = null;
@@ -722,11 +805,21 @@ class StaffController extends GetxController {
     staffEmailController.text = staff.email;
     staffPhoneController.text = staff.phone;
     staffSalaryController.text = staff.baseSalary;
-    selectedDepartmentId.value = staff.staffDepartmentId;
+    selectedDepartmentIds.assignAll(staff.departmentIds);
     employmentType.value = staff.employmentType;
     selectedImagePath.value = null;
     triedToSave.value = false;
     _resetFormErrors();
+  }
+
+  /// Toggles a department's selection for the multi-select department field
+  /// on the Add/Edit Staff form.
+  void toggleDepartment(int departmentId) {
+    if (selectedDepartmentIds.contains(departmentId)) {
+      selectedDepartmentIds.remove(departmentId);
+    } else {
+      selectedDepartmentIds.add(departmentId);
+    }
   }
 
   void selectStaff(Staff staff) {
