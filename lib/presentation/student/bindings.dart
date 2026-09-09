@@ -18,6 +18,7 @@ import 'package:tuoora/presentation/student/controllers/student_exams_controller
 import 'package:tuoora/presentation/student/controllers/student_timetable_controller.dart';
 import 'package:tuoora/presentation/student/controllers/student_birthday_controller.dart';
 import 'package:tuoora/presentation/student/controllers/student_id_card_controller.dart';
+import 'package:tuoora/presentation/student/controllers/student_notifications_controller.dart';
 
 class StudentBinding extends Bindings {
   @override
@@ -70,6 +71,12 @@ class StudentBinding extends Bindings {
     );
     Get.lazyPut<StudentIdCardController>(
       () => StudentIdCardController(),
+      fenix: true,
+    );
+    // Registered here (not just on the notifications route) so the
+    // StudentAppBar's unread dot can read hasUnread from every tab.
+    Get.lazyPut<StudentNotificationsController>(
+      () => StudentNotificationsController(),
       fenix: true,
     );
     Get.lazyPut<ChatRepositoryImpl>(

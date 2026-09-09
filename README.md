@@ -1,6 +1,6 @@
-# fee_easy
+# Tuoora
 
-A new Flutter project.
+Institute, teacher, and student mobile app for Tuoora, backed by the `fee_easy` Laravel API.
 
 ## Getting Started
 

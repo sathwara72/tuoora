@@ -13,8 +13,14 @@ import 'package:tuoora/core/services/branding_service.dart';
 class AppLogo extends StatelessWidget {
   final double? height;
   final double? width;
+  final BoxFit fit;
 
-  const AppLogo({super.key, this.height, this.width});
+  const AppLogo({
+    super.key,
+    this.height,
+    this.width,
+    this.fit = BoxFit.contain,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +36,7 @@ class AppLogo extends StatelessWidget {
       imageUrl: logoUrl,
       height: height,
       width: width,
-      fit: BoxFit.contain,
+      fit: fit,
       placeholder: (context, url) => _defaultLogo(),
       errorWidget: (context, url, error) => _defaultLogo(),
     );
@@ -41,6 +47,7 @@ class AppLogo extends StatelessWidget {
       AppImages.logoWithName,
       height: height,
       width: width,
+      fit: fit,
     );
   }
 }

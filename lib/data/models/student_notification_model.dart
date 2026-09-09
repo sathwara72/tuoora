@@ -24,6 +24,19 @@ class StudentNotification {
   int? get referenceIdInt =>
       referenceId == null ? null : int.tryParse(referenceId!);
 
+  StudentNotification copyWith({bool? isRead}) {
+    return StudentNotification(
+      id: id,
+      title: title,
+      message: message,
+      image: image,
+      kind: kind,
+      referenceId: referenceId,
+      isRead: isRead ?? this.isRead,
+      createdAt: createdAt,
+    );
+  }
+
   factory StudentNotification.fromJson(Map<String, dynamic> json) {
     DateTime? created;
     final rawCreated = json['created_at']?.toString();

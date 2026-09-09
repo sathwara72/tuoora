@@ -8,7 +8,7 @@ import 'package:tuoora/presentation/student/models/student_timetable_model.dart'
 class StudentTimetableController extends GetxController {
   final RxList<StudentTimetableSlot> slots = <StudentTimetableSlot>[].obs;
   final RxBool isLoading = true.obs;
-  final RxString selectedDay = DayOfWeek.today().obs;
+  final RxString selectedDay = DayOfWeek.monday.obs;
 
   late StudentTimetableRepository _repository;
 

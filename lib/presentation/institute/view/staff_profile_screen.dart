@@ -294,45 +294,21 @@ class StaffProfileScreen extends GetView<StaffController> {
       padding: AppSpacing.x16,
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Obx(
-                  () => AppButton(
-                    label: 'Email Password',
-                    onPressed: controller.isSendingPassword.value
-                        ? null
-                        : () => controller.sendStaffPassword(),
-                    isLoading: controller.isSendingPassword.value,
-                    icon: Icons.email_outlined,
-                    backgroundColor: AppColors.white,
-                    foregroundColor: AppColors.warningAmber,
-                    borderColor: AppColors.warningAmber,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.s14,
-                    ),
-                  ),
-                ),
-              ),
-              AppSpacing.h16,
-              Expanded(
-                child: AppButton(
-                  label: 'Reset Password',
-                  onPressed: () => _showResetPasswordDialog(staff),
-                  icon: Icons.lock_outline,
-                  backgroundColor: AppColors.white,
-                  foregroundColor: AppColors.studentProgressBlue,
-                  borderColor: AppColors.studentProgressBlue,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: AppSpacing.s14,
-                  ),
-                ),
-              ),
-            ],
+          Obx(
+            () => AppButton(
+              label: 'Reset & Email Password',
+              onPressed: controller.isSendingPassword.value
+                  ? null
+                  : () => controller.sendStaffPassword(),
+              isLoading: controller.isSendingPassword.value,
+              icon: Icons.email_outlined,
+              backgroundColor: AppColors.white,
+              foregroundColor: AppColors.warningAmber,
+              borderColor: AppColors.warningAmber,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.s14),
+            ),
           ),
           AppSpacing.v16,
           Row(
@@ -383,63 +359,6 @@ class StaffProfileScreen extends GetView<StaffController> {
           ),
         ],
       ),
-    );
-  }
-
-  void _showResetPasswordDialog(Staff staff) {
-    final passwordController = TextEditingController();
-    final obscurePassword = true.obs;
-
-    CommonDialog.show(
-      title: 'Reset Staff Password',
-      description:
-          'Set a new password for ${staff.fullName} directly. It must be 8-15 characters and include an uppercase letter, a lowercase letter, a number, and a special character.',
-      confirmText: 'Save Password',
-      confirmButtonColor: AppColors.studentProgressBlue,
-      body: Obx(
-        () => Container(
-          decoration: BoxDecoration(
-            color: AppColors.fieldBg,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.fieldBorder),
-          ),
-          child: TextField(
-            controller: passwordController,
-            obscureText: obscurePassword.value,
-            style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
-            decoration: InputDecoration(
-              hintText: 'Enter new password',
-              hintStyle: AppTextStyles.outfit(
-                fontSize: 14,
-                color: AppColors.textMuted,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscurePassword.value
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: AppColors.textMuted,
-                  size: 20,
-                ),
-                onPressed: () => obscurePassword.toggle(),
-              ),
-            ),
-          ),
-        ),
-      ),
-      onConfirm: () {
-        final password = passwordController.text;
-        if (password.isEmpty) {
-          AppSnackBar.error('Please enter a new password');
-          return;
-        }
-        controller.resetStaffPassword(password);
-      },
     );
   }
 

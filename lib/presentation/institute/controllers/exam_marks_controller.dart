@@ -8,6 +8,7 @@ class ExamMarksController extends GetxController {
   final ExamModel exam;
   final InstituteRepositoryImpl _repository = Get.find<InstituteRepositoryImpl>();
 
+  final searchQuery = ''.obs;
   final isLoading = false.obs;
   final isSaving = false.obs;
   final rows = <ExamMarkRow>[].obs;
@@ -22,6 +23,61 @@ class ExamMarksController extends GetxController {
   void onInit() {
     super.onInit();
     fetchMarks();
+  }
+
+  List<ExamMarkRow> get filteredRows {
+    if (searchQuery.isEmpty) return rows;
+    final q = searchQuery.value.toLowerCase().trim();
+    return rows.where((r) {
+      final name = r.studentName.toLowerCase();
+      final id = (r.enrollmentId ?? r.studentId.toString()).toLowerCase();
+      return name.contains(q) || id.contains(q);
+    }).toList();
+  }
+
+  int get totalStudentsCount => rows.length;
+  int get presentStudentsCount => rows.where((r) => !r.isAbsent).length;
+  int get absentStudentsCount => rows.where((r) => r.isAbsent).length;
+
+  int get passedStudentsCount {
+    int count = 0;
+    for (final r in rows) {
+      if (r.isAbsent) continue;
+      final text = marksControllers[r.studentId]?.text.trim() ?? '';
+      final val = double.tryParse(text);
+      if (val != null && val >= exam.passingMarks) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  double get passRatePercent {
+    final present = presentStudentsCount;
+    if (present == 0) return 0.0;
+    return (passedStudentsCount / present) * 100;
+  }
+
+  void fillPassingMarks() {
+    final passing = _trimZeros(exam.passingMarks);
+    for (final row in rows) {
+      if (!row.isAbsent) {
+        final current = marksControllers[row.studentId]?.text.trim() ?? '';
+        if (current.isEmpty) {
+          marksControllers[row.studentId]?.text = passing;
+        }
+      }
+    }
+    rows.refresh();
+  }
+
+  void clearAllMarks() {
+    for (final row in rows) {
+      row.isAbsent = false;
+      marksControllers[row.studentId]?.clear();
+      remarksControllers[row.studentId]?.clear();
+    }
+    rows.refresh();
   }
 
   Future<void> fetchMarks() async {

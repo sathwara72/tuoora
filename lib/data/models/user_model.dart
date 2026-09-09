@@ -22,6 +22,10 @@ class User {
   final String? instagram;
   final bool isProfileSetup;
   final String? emailVerifiedAt;
+  final String? staffRole;
+  final String? department;
+  final bool mustChangePassword;
+  final String? profileImage;
 
   bool get isEmailVerified =>
       emailVerifiedAt != null && emailVerifiedAt!.isNotEmpty;
@@ -50,6 +54,10 @@ class User {
     this.instagram,
     this.isProfileSetup = true,
     this.emailVerifiedAt,
+    this.staffRole,
+    this.department,
+    this.mustChangePassword = false,
+    this.profileImage,
   });
 
   factory User.fromJson(
@@ -59,19 +67,23 @@ class User {
     String? accessToken,
     String? refreshToken,
   }) {
+    final institute = json['institute'];
     return User(
       id: json['id'],
-      name: json['name'] ?? '',
+      name: json['name'] ?? json['full_name'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'],
       token: token,
       accessToken: accessToken ?? token,
       refreshToken: refreshToken ?? '',
       role: role,
-      instituteName: json['institute_name'],
-      logo: json['logo'],
+      instituteName:
+          json['institute_name'] ??
+          (institute is Map ? institute['institute_name'] : null),
+      logo: json['logo'] ?? (institute is Map ? institute['logo'] : null),
       address: json['address'],
-      instituteId: json['institute_id'],
+      instituteId:
+          json['institute_id'] ?? (institute is Map ? institute['id'] : null),
       batchId: json['batch_id'],
       standard: json['standard'],
       idHash: json['id_hash'],
@@ -83,7 +95,19 @@ class User {
       instagram: json['instagram'],
       isProfileSetup: json['is_profile_setup'] ?? true,
       emailVerifiedAt: json['email_verified_at']?.toString(),
+      staffRole: _extractLabel(json['staff_role'] ?? json['role']),
+      department: _extractLabel(json['staff_department'] ?? json['department']),
+      mustChangePassword: json['must_change_password'] == true,
+      profileImage: json['profile_url'] ?? json['profile_image'],
     );
+  }
+
+  static String? _extractLabel(dynamic value) {
+    if (value is String) return value;
+    if (value is Map) {
+      return value['name']?.toString() ?? value['title']?.toString();
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -111,10 +135,18 @@ class User {
       'instagram': instagram,
       'is_profile_setup': isProfileSetup,
       'email_verified_at': emailVerifiedAt,
+      'staff_role': staffRole,
+      'staff_department': department,
+      'must_change_password': mustChangePassword,
+      'profile_url': profileImage,
     };
   }
 
-  User copyWith({String? accessToken, String? refreshToken}) {
+  User copyWith({
+    String? accessToken,
+    String? refreshToken,
+    bool? mustChangePassword,
+  }) {
     return User(
       id: id,
       name: name,
@@ -139,6 +171,10 @@ class User {
       instagram: instagram,
       isProfileSetup: isProfileSetup,
       emailVerifiedAt: emailVerifiedAt,
+      staffRole: staffRole,
+      department: department,
+      mustChangePassword: mustChangePassword ?? this.mustChangePassword,
+      profileImage: profileImage,
     );
   }
 }

@@ -103,6 +103,11 @@ abstract class InstituteRepositoryImpl {
   Future<BatchPerformanceDetailResponse> getBatchPerformanceReport(int batchId);
   Future<List<int>> exportPerformanceReport();
 
+  // Student Wise Report
+  Future<List<StudentBatchItem>> getStudentsForBatchReport(int batchId);
+  Future<StudentWiseReportData> getStudentWiseReport(int studentId);
+  Future<List<int>> exportStudentWiseReport(int studentId);
+
   // Business Analytics
   Future<AnalyticsResponse> getAnalytics({int months = 6});
 
@@ -135,7 +140,7 @@ abstract class InstituteRepositoryImpl {
   Future<ExamStats> saveExamMarks(int examId, List<Map<String, dynamic>> marks);
 
   // Timetable
-  Future<List<TimetableSlot>> getTimetable(int batchId);
+  Future<List<TimetableSlot>> getTimetable({int? batchId, String? day});
   Future<TimetableSlot> createTimetableSlot(Map<String, dynamic> data);
   Future<TimetableSlot> updateTimetableSlot(int id, Map<String, dynamic> data);
   Future<void> deleteTimetableSlot(int id);
@@ -183,7 +188,6 @@ abstract class InstituteRepositoryImpl {
     String? imagePath,
   );
   Future<String> sendStaffPassword(int id);
-  Future<void> resetStaffPassword(int id, String password);
   Future<Staff> changeStaffEmail(int id, String email);
   Future<Staff> toggleStaffBlock(int id, bool blocked);
   Future<SalaryListResponse> getStaffSalaries(int staffId, {int page = 1});

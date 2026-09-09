@@ -1,4 +1,4 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -240,7 +240,10 @@ class MarkAttendanceScreen extends GetView<AttendanceController> {
                   ),
                 ),
                 Text(
-                  'ID: ${student.id}',
+                  student.enrollmentId != null &&
+                          student.enrollmentId!.trim().isNotEmpty
+                      ? 'Enrollment ID: ${student.enrollmentId!.trim()}'
+                      : 'ID: ${student.id}',
                   style: AppTextStyles.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

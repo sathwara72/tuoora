@@ -28,22 +28,25 @@ class SplashScreen extends GetView<SplashController> {
           );
         },
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AppLogo(height: 80),
-              AppSpacing.v24,
-              Text(
-                AppStrings.tagLine,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.outfit(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                  letterSpacing: 0.8,
+          child: Padding(
+            padding: AppSpacing.x32,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AppLogo(height: 56, fit: BoxFit.contain),
+                AppSpacing.v24,
+                Text(
+                  AppStrings.tagLine,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.8,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

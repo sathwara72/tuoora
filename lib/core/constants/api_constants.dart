@@ -5,6 +5,10 @@ class ApiConstants {
   // baked-in institute_id (see BrandingService).
   static const String appBranding = '/app-branding';
 
+  // Public, unauthenticated — admin-configured "latest version" per app,
+  // read by AppVersionLabel to offer an update when this build is older.
+  static const String appVersions = '/app-versions';
+
   // Institute White Label add-on (purchase + branding submission)
   static const String instituteWhiteLabel = '/institute/whitelabel';
 
@@ -48,6 +52,10 @@ class ApiConstants {
   static String studentReceiptDetail(int id) => '/student/receipts/$id';
   static String studentFeeDownload(int id) => '/student/fees/$id/download';
   static const String studentNotifications = '/student/notifications';
+  static String studentNotificationRead(int id) =>
+      '/student/notifications/$id/read';
+  static const String studentNotificationsMarkAllRead =
+      '/student/notifications/mark-all-read';
 
   // Institute Endpoints
   static const String instituteStudents = '/institute/students';
@@ -132,6 +140,41 @@ class ApiConstants {
   // Business Analytics
   static const String instituteReportAnalytics =
       '/institute/reports/analytics';
+
+  // Student Wise Report
+  static const String instituteReportStudent = '/institute/reports/student';
+  static const String instituteReportStudentExport =
+      '/institute/reports/student/export';
+
+  // Teacher Endpoints
+  static const String teacherLogin = '/teacher/login';
+  static const String teacherForgotPassword = '/teacher/forgot-password';
+  static const String teacherResetPassword = '/teacher/reset-password';
+  static const String teacherLogout = '/teacher/logout';
+  static const String teacherChangePassword = '/teacher/change-password';
+  static const String teacherProfile = '/teacher/profile';
+  static const String teacherProfileAvatar = '/teacher/profile/avatar';
+  static const String teacherBatches = '/teacher/batches';
+  static String teacherBatchDetail(int batchId) => '/teacher/batches/$batchId';
+  static String teacherBatchStudents(int batchId) =>
+      '/teacher/batches/$batchId/students';
+  static const String teacherAttendance = '/teacher/attendance';
+  static const String teacherSelfAttendanceToday =
+      '/teacher/self-attendance/today';
+  static const String teacherSelfAttendance = '/teacher/self-attendance';
+  static const String teacherHomeworks = '/teacher/homeworks';
+  static String teacherHomeworkDetail(int id) => '/teacher/homeworks/$id';
+  static String teacherHomeworkGrades(int id) =>
+      '/teacher/homeworks/$id/grades';
+  static const String teacherExams = '/teacher/exams';
+  static String teacherExamDetail(int id) => '/teacher/exams/$id';
+  static String teacherExamMarks(int id) => '/teacher/exams/$id/marks';
+  static const String teacherTimetable = '/teacher/timetable';
+  static String teacherTimetableDetail(int id) => '/teacher/timetable/$id';
+  static const String teacherFees = '/teacher/fees';
+  static const String teacherSalaries = '/teacher/salaries';
+  static String teacherSalaryDownload(int id) =>
+      '/teacher/salaries/$id/download';
 
   // FCM Endpoints
   static const String fcmToken = '/fcm-token';

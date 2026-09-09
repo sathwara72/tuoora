@@ -17,7 +17,7 @@ class ApiClient extends GetConnect {
   @override
   void onInit() {
     httpClient.baseUrl = ApiConstants.baseUrl;
-    httpClient.timeout = const Duration(seconds: 120);
+    httpClient.timeout = const Duration(seconds: 20);
 
     // Add default headers
     // Detailed Request Logging
@@ -44,7 +44,8 @@ class ApiClient extends GetConnect {
 
       // Do not attempt to authenticate or force logout if the request is a login request
       if (path.endsWith(ApiConstants.instituteLogin) ||
-          path.endsWith(ApiConstants.studentLogin)) {
+          path.endsWith(ApiConstants.studentLogin) ||
+          path.endsWith(ApiConstants.teacherLogin)) {
         return request;
       }
 
@@ -101,7 +102,8 @@ class ApiClient extends GetConnect {
         if (response.statusCode == 401) {
           final urlStr = request.url.toString();
           if (!urlStr.contains(ApiConstants.instituteLogin) &&
-              !urlStr.contains(ApiConstants.studentLogin)) {
+              !urlStr.contains(ApiConstants.studentLogin) &&
+              !urlStr.contains(ApiConstants.teacherLogin)) {
             _forceLogout();
           }
         }

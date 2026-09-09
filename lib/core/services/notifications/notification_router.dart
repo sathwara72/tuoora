@@ -6,6 +6,8 @@ import 'package:tuoora/core/services/notifications/handlers/batch_notification_h
 import 'package:tuoora/core/services/notifications/handlers/birthday_notification_handler.dart';
 import 'package:tuoora/core/services/notifications/handlers/broadcast_notification_handler.dart';
 import 'package:tuoora/core/services/notifications/handlers/chat_notification_handler.dart';
+import 'package:tuoora/core/services/notifications/handlers/exam_notification_handler.dart';
+import 'package:tuoora/core/services/notifications/handlers/fee_reminder_notification_handler.dart';
 import 'package:tuoora/core/services/notifications/handlers/homework_notification_handler.dart';
 import 'package:tuoora/core/services/notifications/handlers/resource_notification_handler.dart';
 import 'package:tuoora/core/services/notifications/handlers/subscription_notification_handler.dart';
@@ -31,13 +33,15 @@ class NotificationRouter extends GetxService {
     // Single homework handler shared by all three homework-related types —
     // they all carry a `homework_id` and open the same detail screen.
     final homeworkHandler = HomeworkNotificationHandler();
-    // Single batch handler shared by assignment + removal — both land the
+    // Single batch handler shared by assignment + removal + updates — both land the
     // student on the Assignments tab.
     final batchHandler = BatchNotificationHandler();
     // Single broadcast handler shared by every "informational" type —
     // they all open the student's notifications list, where the full
     // context (reference_id, image, category) already renders.
     final broadcastHandler = BroadcastNotificationHandler();
+    final examHandler = ExamNotificationHandler();
+    final feeReminderHandler = FeeReminderNotificationHandler();
 
     _handlers = <String, NotificationHandler>{
       'chat': ChatNotificationHandler(),
@@ -47,6 +51,16 @@ class NotificationRouter extends GetxService {
       'homework_reminder': homeworkHandler,
       'batch_assignment': batchHandler,
       'batch_removal': batchHandler,
+      'batch_updated': batchHandler,
+      'batch_update': batchHandler,
+      'batch': batchHandler,
+      'exam': examHandler,
+      'exam_scheduled': examHandler,
+      'exam_schedule': examHandler,
+      'fee_reminder': feeReminderHandler,
+      'fee_reminders': feeReminderHandler,
+      'fees_reminder': feeReminderHandler,
+      'fee_payment_reminder': feeReminderHandler,
       'announcement': broadcastHandler,
       'event': broadcastHandler,
       'holiday': broadcastHandler,

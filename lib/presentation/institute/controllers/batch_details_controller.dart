@@ -21,7 +21,8 @@ class BatchDetailsController extends GetxController {
       Get.find<InstituteController>();
   final InstituteRepositoryImpl _repository =
       Get.find<InstituteRepositoryImpl>();
-  final BatchModel batch;
+  late final Rx<BatchModel> _batch;
+  BatchModel get batch => _batch.value;
 
   final assignedStudents = <BatchStudent>[].obs;
   final isLoading = false.obs;
@@ -44,7 +45,20 @@ class BatchDetailsController extends GetxController {
         .toList();
   }
 
-  BatchDetailsController(this.batch);
+  BatchDetailsController(BatchModel initialBatch) {
+    _batch = initialBatch.obs;
+  }
+
+  void updateBatch(BatchModel newBatch) {
+    _batch.value = newBatch;
+    studentCount.value = int.tryParse(newBatch.studentCount.split(' ')[0]) ?? 0;
+    totalExpected.value = newBatch.totalExpected?.toString() ?? '0';
+    totalPaid.value = newBatch.totalPaid?.toString() ?? '0';
+    isStatusClosed.value = newBatch.statusLabel.toLowerCase() == 'closed';
+    if (newBatch.students != null) {
+      _loadAssignedStudents(newBatch.students);
+    }
+  }
 
   @override
   void onInit() {
@@ -54,6 +68,16 @@ class BatchDetailsController extends GetxController {
     totalPaid.value = batch.totalPaid?.toString() ?? '0';
     isStatusClosed.value = batch.statusLabel.toLowerCase() == 'closed';
     _loadAssignedStudents(batch.students);
+
+    if (instituteController.students.isEmpty) {
+      instituteController.fetchStudents();
+    }
+
+    ever(instituteController.students, (_) {
+      if (batch.students != null && batch.students!.isNotEmpty) {
+        _loadAssignedStudents(batch.students);
+      }
+    });
   }
 
   void _loadAssignedStudents(List<dynamic>? studentsList) {
@@ -62,20 +86,48 @@ class BatchDetailsController extends GetxController {
     if (studentsList != null && studentsList.isNotEmpty) {
       final List<BatchStudent> loadedStudents = [];
       for (var s in studentsList) {
-        final studentModel = Student(
-          id: s.id,
-          name: s.name,
-          email: '',
-          phone: '',
-          instituteId: 0,
-          standard: '',
-          dob: '',
-          status: 'Active',
-          idHash: '',
-          createdAt: '',
-          updatedAt: '',
-          profileImageUrl: s.profileImageUrl ?? '',
-        );
+        final targetId = s.id;
+        Student? matchedStudent;
+        try {
+          if (Get.isRegistered<InstituteController>()) {
+            final instController = Get.find<InstituteController>();
+            matchedStudent = instController.students.firstWhereOrNull(
+              (st) => st.id == targetId,
+            );
+            matchedStudent ??= instController.students.firstWhereOrNull(
+              (st) =>
+                  st.name.toLowerCase().trim() ==
+                  s.name.toString().toLowerCase().trim(),
+            );
+          }
+        } catch (_) {}
+
+        final String? realEnrollment = (matchedStudent?.enrollmentID != null &&
+                matchedStudent!.enrollmentID!.isNotEmpty)
+            ? matchedStudent.enrollmentID
+            : (matchedStudent?.idHash.isNotEmpty == true
+                ? matchedStudent!.idHash
+                : (s.enrollmentId != null && s.enrollmentId!.isNotEmpty)
+                    ? s.enrollmentId
+                    : null);
+
+        final studentModel = matchedStudent ??
+            Student(
+              id: targetId,
+              name: s.name,
+              email: matchedStudent?.email ?? '',
+              phone: matchedStudent?.phone ?? '',
+              instituteId: matchedStudent?.instituteId ?? 0,
+              enrollmentID: realEnrollment,
+              standard: matchedStudent?.standard ?? '',
+              dob: matchedStudent?.dob ?? '',
+              status: 'Active',
+              idHash: realEnrollment ?? '',
+              createdAt: '',
+              updatedAt: '',
+              profileImageUrl: s.profileImageUrl ?? '',
+            );
+
         loadedStudents.add(
           BatchStudent(student: studentModel, assignedFee: batch.baseFee),
         );

@@ -36,7 +36,7 @@ class AddExpenseScreen extends GetView<ExpenseController> {
                 ),
                 Obx(
                   () => Padding(
-                    padding: AppSpacing.x16,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     child: AppButton(
                       onPressed: () => controller.addExpense(),
                       label: AppStrings.addExpense,

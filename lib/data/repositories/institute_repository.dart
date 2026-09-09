@@ -562,6 +562,47 @@ class InstituteRepository implements InstituteRepositoryImpl {
     );
   }
 
+  @override
+  Future<List<StudentBatchItem>> getStudentsForBatchReport(int batchId) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteReportStudent,
+      query: {'batch_id': batchId.toString()},
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch batch students: ${response.statusText}');
+    }
+    final List<dynamic> items = response.body['data']?['items'] ?? [];
+    return items
+        .map(
+          (json) => StudentBatchItem.fromJson(
+            Map<String, dynamic>.from(json as Map),
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<StudentWiseReportData> getStudentWiseReport(int studentId) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteReportStudent,
+      query: {'student_id': studentId.toString()},
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch student report: ${response.statusText}');
+    }
+    return StudentWiseReportData.fromJson(
+      Map<String, dynamic>.from(response.body['data']),
+    );
+  }
+
+  @override
+  Future<List<int>> exportStudentWiseReport(int studentId) async {
+    return _downloadFile(
+      '${ApiConstants.instituteReportStudentExport}?student_id=$studentId',
+      acceptHeader: 'application/pdf',
+    );
+  }
+
   Future<List<int>> _downloadFile(
     String endpoint, {
     String acceptHeader = '*/*',
@@ -770,10 +811,17 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<List<TimetableSlot>> getTimetable(int batchId) async {
+  Future<List<TimetableSlot>> getTimetable({int? batchId, String? day}) async {
+    final Map<String, String> query = {};
+    if (batchId != null) {
+      query['batch_id'] = batchId.toString();
+    }
+    if (day != null && day.isNotEmpty && day.toLowerCase() != 'all') {
+      query['day'] = day.toLowerCase();
+    }
     final response = await _apiClient.get(
       ApiConstants.instituteTimetable,
-      query: {'batch_id': batchId.toString()},
+      query: query.isNotEmpty ? query : null,
     );
     if (response.status.hasError) {
       throw Exception('Failed to fetch timetable: ${response.statusText}');
@@ -1291,17 +1339,6 @@ class InstituteRepository implements InstituteRepositoryImpl {
     }
     return response.body?['message'] ??
         'A new password has been generated and emailed to the staff member.';
-  }
-
-  @override
-  Future<void> resetStaffPassword(int id, String password) async {
-    final response = await _apiClient.post(
-      '${ApiConstants.instituteStaff}/$id/reset-password',
-      {'password': password},
-    );
-    if (response.status.hasError) {
-      _handleError(response, 'Failed to reset password');
-    }
   }
 
   @override

@@ -7,17 +7,21 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
+import 'package:tuoora/presentation/institute/controllers/batch_details_controller.dart';
+import 'package:tuoora/presentation/institute/controllers/institute_controller.dart';
 import 'package:tuoora/core/widgets/app_pickers.dart';
 
 class AttendanceStudent {
   final int id;
   final String name;
+  final String? enrollmentId;
   final String? profileImageUrl;
   String status; // 'present' or 'absent'
 
   AttendanceStudent({
     required this.id,
     required this.name,
+    this.enrollmentId,
     this.profileImageUrl,
     this.status = 'present',
   });
@@ -90,9 +94,56 @@ class AttendanceController extends GetxController {
 
       if (response.isNotEmpty) {
         final students = response.map((record) {
+          String? resolvedEnrollment = record.enrollmentId;
+          if (resolvedEnrollment == null || resolvedEnrollment.trim().isEmpty) {
+            // Check batch details controller or institute controller
+            try {
+              if (Get.isRegistered<BatchDetailsController>(tag: batch.id)) {
+                final bdc = Get.find<BatchDetailsController>(tag: batch.id);
+                final match = bdc.assignedStudents.firstWhereOrNull(
+                  (bs) =>
+                      bs.student.id == record.studentId ||
+                      bs.student.name.trim().toLowerCase() ==
+                          record.studentName.trim().toLowerCase(),
+                );
+                if (match != null) {
+                  final enId = match.student.enrollmentID?.toString().trim() ?? '';
+                  if (enId.isNotEmpty) {
+                    resolvedEnrollment = enId;
+                  } else if (match.student.idHash.trim().isNotEmpty) {
+                    resolvedEnrollment = match.student.idHash.trim();
+                  }
+                }
+              }
+            } catch (_) {}
+
+            if (resolvedEnrollment == null || resolvedEnrollment.trim().isEmpty) {
+              try {
+                if (Get.isRegistered<InstituteController>()) {
+                  final inst = Get.find<InstituteController>();
+                  final match = inst.students.firstWhereOrNull(
+                    (s) =>
+                        s.id == record.studentId ||
+                        s.name.trim().toLowerCase() ==
+                            record.studentName.trim().toLowerCase(),
+                  );
+                  if (match != null) {
+                    final enId = match.enrollmentID?.toString().trim() ?? '';
+                    if (enId.isNotEmpty) {
+                      resolvedEnrollment = enId;
+                    } else if (match.idHash.trim().isNotEmpty) {
+                      resolvedEnrollment = match.idHash.trim();
+                    }
+                  }
+                }
+              } catch (_) {}
+            }
+          }
+
           return AttendanceStudent(
             id: record.studentId,
             name: record.studentName,
+            enrollmentId: resolvedEnrollment ?? record.studentId.toString(),
             profileImageUrl: null, // API doesn't provide it in this endpoint
             status:
                 record.status ?? 'present', // Default to present if not marked
@@ -174,7 +225,11 @@ class AttendanceController extends GetxController {
                   s.name.toLowerCase().contains(
                     searchQuery.value.toLowerCase(),
                   ) ||
-                  s.id.toString().contains(searchQuery.value),
+                  s.id.toString().contains(searchQuery.value) ||
+                  (s.enrollmentId != null &&
+                      s.enrollmentId!.toLowerCase().contains(
+                            searchQuery.value.toLowerCase(),
+                          )),
             )
             .toList(),
       );

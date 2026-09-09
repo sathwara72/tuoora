@@ -8,6 +8,7 @@ class InstituteMetricCard extends StatelessWidget {
   final String value;
   final Color? valueColor;
   final bool isCentered;
+  final EdgeInsetsGeometry? padding;
 
   const InstituteMetricCard({
     super.key,
@@ -15,12 +16,13 @@ class InstituteMetricCard extends StatelessWidget {
     required this.value,
     this.valueColor,
     this.isCentered = true,
+    this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: AppSpacing.cardPadding,
+      padding: padding ?? const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.surfaceBg,
         border: Border.all(width: 1.5, color: AppColors.fieldBorder),
@@ -40,6 +42,9 @@ class InstituteMetricCard extends StatelessWidget {
         children: [
           Text(
             label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: isCentered ? TextAlign.center : TextAlign.start,
             style: AppTextStyles.outfit(
               fontSize: 10,
               fontWeight: FontWeight.w600,
@@ -48,12 +53,16 @@ class InstituteMetricCard extends StatelessWidget {
             ),
           ),
           AppSpacing.v4,
-          Text(
-            value,
-            style: AppTextStyles.outfit(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: valueColor ?? AppColors.textPrimary,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: AppTextStyles.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: valueColor ?? AppColors.textPrimary,
+              ),
             ),
           ),
         ],

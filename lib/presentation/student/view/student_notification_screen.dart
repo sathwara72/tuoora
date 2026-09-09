@@ -9,9 +9,26 @@ import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/student/controllers/student_notifications_controller.dart';
 import 'package:tuoora/presentation/student/widgets/student_app_bar.dart';
 
-class StudentNotificationScreen
-    extends GetView<StudentNotificationsController> {
+class StudentNotificationScreen extends StatefulWidget {
   const StudentNotificationScreen({super.key});
+
+  @override
+  State<StudentNotificationScreen> createState() =>
+      _StudentNotificationScreenState();
+}
+
+class _StudentNotificationScreenState
+    extends State<StudentNotificationScreen> {
+  late final StudentNotificationsController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<StudentNotificationsController>();
+    // Refresh then clear the unread dot — a fresh load avoids marking
+    // items read before we actually know about the latest ones.
+    controller.load(isBackground: true).then((_) => controller.markAllAsRead());
+  }
 
   @override
   Widget build(BuildContext context) {

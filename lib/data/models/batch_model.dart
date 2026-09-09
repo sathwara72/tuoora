@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' show Color;
 import 'package:tuoora/presentation/institute/models/batch_model.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/utils/date_format_utils.dart';
 import 'package:tuoora/data/models/staff_model.dart';
 
 class Batch {
@@ -102,7 +103,7 @@ class Batch {
       description: description,
       totalExpected: totalExpected,
       totalPaid: totalPaid,
-      days: days,
+      days: DateFormatUtils.normalizeDays(days),
       students: students,
       classroom: classroom,
       staffId: staffId,
@@ -134,7 +135,7 @@ class Batch {
       feesLastDate: json['fees_last_date']?.toString(),
       startTime: json['start_time']?.toString() ?? '',
       endTime: json['end_time']?.toString() ?? '',
-      days: (json['days'] as List?)?.map((d) => d.toString()).toList() ?? const [],
+      days: DateFormatUtils.normalizeDays(json['days']),
       classroom: json['classroom']?.toString(),
       maxCapacity: safeNullableInt(json['max_capacity']),
       createdAt: json['created_at']?.toString() ?? '',
@@ -211,14 +212,18 @@ class Batch {
 
 class BatchStudent {
   final int id;
+  final int? studentId;
   final String name;
+  final String? enrollmentId;
   final int? batchId;
   final String? profileImageUrl;
   final bool isBirthdayToday;
 
   BatchStudent({
     required this.id,
+    this.studentId,
     required this.name,
+    this.enrollmentId,
     this.batchId,
     this.profileImageUrl,
     this.isBirthdayToday = false,
@@ -231,9 +236,15 @@ class BatchStudent {
       return int.tryParse(v.toString());
     }
 
+    final rawEnrollment = json['enrollment_id']?.toString() ??
+        json['id_hash']?.toString() ??
+        json['enrollmentId']?.toString();
+
     return BatchStudent(
       id: toInt(json['id']) ?? 0,
+      studentId: toInt(json['student_id']),
       name: json['name']?.toString() ?? '',
+      enrollmentId: rawEnrollment,
       batchId: toInt(json['batch_id']),
       profileImageUrl: json['profile_image_url']?.toString(),
       isBirthdayToday: json['is_birthday_today'] == true,
@@ -243,7 +254,9 @@ class BatchStudent {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'student_id': studentId,
       'name': name,
+      'enrollment_id': enrollmentId,
       'batch_id': batchId,
       'profile_image_url': profileImageUrl,
       'is_birthday_today': isBirthdayToday,

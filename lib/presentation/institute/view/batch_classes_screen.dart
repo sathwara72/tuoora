@@ -1,3 +1,4 @@
+import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -19,7 +20,16 @@ class BatchClassesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final BatchModel batch = Get.arguments;
+    final batch = Get.arguments as BatchModel?;
+    if (batch == null) {
+      // Arguments are lost if this route is re-entered without a fresh
+      // navigation (e.g. a hot restart while already on this screen) —
+      // bail out instead of crashing on the null cast.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Get.currentRoute == AppRoutes.instituteBatchClasses) Get.back();
+      });
+      return const Scaffold(body: SizedBox.shrink());
+    }
     final controller = Get.put(BatchClassesController(batch), tag: batch.id);
 
     return Scaffold(
@@ -55,7 +65,6 @@ class BatchClassesScreen extends StatelessWidget {
                     itemCount: controller.classes.length,
                     separatorBuilder: (_, _) => AppSpacing.v12,
                     itemBuilder: (context, index) => _buildClassCard(
-                      context,
                       controller,
                       controller.classes[index],
                     ),
@@ -69,7 +78,7 @@ class BatchClassesScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () => SubscriptionGuard.runAddAction(() {
           controller.prepareForAdd();
-          _showClassDialog(context, controller);
+          _showClassDialog(controller);
         }),
         backgroundColor: SubscriptionGuard.blocksAdd
             ? AppColors.textMuted
@@ -80,7 +89,6 @@ class BatchClassesScreen extends StatelessWidget {
   }
 
   Widget _buildClassCard(
-    BuildContext context,
     BatchClassesController controller,
     SchoolClassModel schoolClass,
   ) {
@@ -115,7 +123,7 @@ class BatchClassesScreen extends StatelessWidget {
               IconButton(
                 onPressed: () {
                   controller.prepareForEdit(schoolClass);
-                  _showClassDialog(context, controller);
+                  _showClassDialog(controller);
                 },
                 icon: const Icon(
                   Icons.edit_outlined,
@@ -201,13 +209,17 @@ class BatchClassesScreen extends StatelessWidget {
     );
   }
 
-  void _showClassDialog(BuildContext context, BatchClassesController controller) {
+  void _showClassDialog(BatchClassesController controller) {
     CommonDialog.show(
       title: controller.editingClassId.value != null
           ? 'Edit Class'
           : 'Add Class',
       confirmText: controller.editingClassId.value != null ? 'Update' : 'Add',
       onConfirm: () => controller.saveClass(),
+      isLoading: controller.isSaving,
+      // CommonDialog itself scrolls and height-constrains its whole content
+      // (title + description + body + buttons) against the keyboard, so the
+      // body here is just a plain Column — no need to duplicate that logic.
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -231,73 +243,223 @@ class BatchClassesScreen extends StatelessWidget {
           AppSpacing.v20,
           const InstituteLabel('Assign Teachers'),
           AppSpacing.v8,
+          _buildTeacherMultiSelect(controller),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeacherMultiSelect(BatchClassesController controller) {
+    return Obx(() {
+      final isOpen = controller.isTeacherPickerOpen.value;
+      final eligible = controller.eligibleTeachers;
+      final selectedNames = eligible
+          .where((s) => controller.selectedTeacherIds.contains(s.id))
+          .map((s) => s.fullName)
+          .toList();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: controller.isLoadingStaff.value
+                ? null
+                : () => controller.isTeacherPickerOpen.toggle(),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 48),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.fieldBg,
+                borderRadius: isOpen
+                    ? const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      )
+                    : BorderRadius.circular(12),
+                border: Border.all(
+                  color: isOpen ? AppColors.primaryBrand : AppColors.fieldBorder,
+                  width: isOpen ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: controller.isLoadingStaff.value
+                        ? const CommonLoading(size: 18, strokeWidth: 2)
+                        : Text(
+                            selectedNames.isEmpty
+                                ? (eligible.isEmpty
+                                      ? 'No faculty found'
+                                      : 'Select teacher(s)')
+                                : selectedNames.join(', '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.outfit(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: selectedNames.isEmpty
+                                  ? AppColors.textTertiary
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                  ),
+                  Icon(
+                    isOpen
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    color: isOpen
+                        ? AppColors.primaryBrand
+                        : AppColors.fieldLabel,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isOpen) _buildTeacherPanel(controller),
+        ],
+      );
+    });
+  }
+
+  Widget _buildTeacherPanel(BatchClassesController controller) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        border: Border.all(color: AppColors.primaryBrand, width: 1.5),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'CHOOSE TEACHERS',
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textTertiary,
+                    letterSpacing: 0.6,
+                  ),
+                ),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => controller.selectedTeacherIds.clear(),
+                      child: Text(
+                        'Clear',
+                        style: AppTextStyles.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.bohoRed,
+                        ),
+                      ),
+                    ),
+                    AppSpacing.h16,
+                    GestureDetector(
+                      onTap: () => controller.isTeacherPickerOpen.value = false,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBrand,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.check_rounded,
+                              size: 14,
+                              color: AppColors.white,
+                            ),
+                            AppSpacing.h4,
+                            Text(
+                              'Done',
+                              style: AppTextStyles.outfit(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: AppColors.background),
           Obx(() {
-            if (controller.isLoadingStaff.value) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: CommonLoading(size: 20, strokeWidth: 2),
-              );
-            }
-            if (controller.staffList.isEmpty) {
-              return Text(
-                'No staff members found',
-                style: AppTextStyles.outfit(
-                  fontSize: 13,
-                  color: AppColors.textMuted,
+            final eligible = controller.eligibleTeachers;
+            if (eligible.isEmpty) {
+              return Padding(
+                padding: AppSpacing.all16,
+                child: Text(
+                  'No staff members in the Faculty / Teacher department yet.',
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               );
             }
-            return Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: controller.staffList.map((staff) {
-                final isSelected = controller.selectedTeacherIds.contains(
-                  staff.id,
-                );
-                return GestureDetector(
-                  onTap: () => controller.toggleTeacher(staff.id),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primaryBrand
-                          : AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryBrand
-                            : AppColors.fieldBorder,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isSelected) ...[
-                          const Icon(
-                            Icons.check_rounded,
-                            size: 14,
-                            color: AppColors.white,
-                          ),
-                          AppSpacing.h4,
-                        ],
-                        Text(
+            return ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 220),
+              child: Material(
+                type: MaterialType.transparency,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  itemCount: eligible.length,
+                  itemBuilder: (context, index) {
+                    final staff = eligible[index];
+                    return Obx(() {
+                      final isSelected = controller.selectedTeacherIds
+                          .contains(staff.id);
+                      return CheckboxListTile(
+                        value: isSelected,
+                        onChanged: (_) => controller.toggleTeacher(staff.id),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                        ),
+                        activeColor: AppColors.primaryBrand,
+                        tileColor: isSelected
+                            ? AppColors.primaryBrandLight
+                            : Colors.transparent,
+                        title: Text(
                           staff.fullName,
                           style: AppTextStyles.outfit(
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: isSelected
-                                ? AppColors.white
-                                : AppColors.textPrimary,
+                            color: AppColors.textPrimary,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+                      );
+                    });
+                  },
+                ),
+              ),
             );
           }),
         ],

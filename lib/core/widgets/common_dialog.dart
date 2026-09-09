@@ -30,6 +30,12 @@ class CommonDialog extends StatelessWidget {
   /// cancel buttons are hidden and the X is the only dismissal cue.
   final bool showCloseIcon;
 
+  /// Optional saving/submitting flag. When supplied, the confirm button
+  /// shows a spinner and ignores taps while true — without this, a slow
+  /// [onConfirm] (e.g. a network call) invites repeat taps that each fire
+  /// [onConfirm] again before the first one has closed the dialog.
+  final RxBool? isLoading;
+
   const CommonDialog({
     super.key,
     required this.title,
@@ -46,6 +52,7 @@ class CommonDialog extends StatelessWidget {
     this.confirmButtonColor,
     this.showButtons = true,
     this.showCloseIcon = false,
+    this.isLoading,
   });
 
   static void show({
@@ -63,6 +70,7 @@ class CommonDialog extends StatelessWidget {
     Color? confirmButtonColor,
     bool showButtons = true,
     bool showCloseIcon = false,
+    RxBool? isLoading,
   }) {
     Get.dialog(
       CommonDialog(
@@ -80,6 +88,7 @@ class CommonDialog extends StatelessWidget {
         confirmButtonColor: confirmButtonColor,
         showButtons: showButtons,
         showCloseIcon: showCloseIcon,
+        isLoading: isLoading,
       ),
     );
   }
@@ -106,157 +115,196 @@ class CommonDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    // Cap the dialog to the space actually left once the keyboard (and the
+    // Dialog's own insetPadding) are accounted for, and let the content
+    // scroll within that — otherwise a body with variable-height content
+    // (an expandable picker, say) can overflow the Column once it grows
+    // past what's available, which silently breaks the dialog rather than
+    // just clipping the excess.
+    final maxDialogHeight =
+        media.size.height - media.viewInsets.bottom - AppSpacing.s24 * 2;
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.s16,
         vertical: AppSpacing.s24,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Container(
-        padding: AppSpacing.all16,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: maxDialogHeight.clamp(200, double.infinity),
         ),
-        child: Stack(
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: body != null
-                  ? CrossAxisAlignment.stretch
-                  : CrossAxisAlignment.center,
-              children: [
-                if (icon != null || svgAsset != null) ...[
-                  Center(
-                    child: Container(
-                      padding: AppSpacing.all16,
-                      decoration: BoxDecoration(
-                        color: iconBgColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: svgAsset != null
-                          ? AppActionIcon(
-                              asset: svgAsset!,
-                              color: iconColor,
-                              size: 32,
-                            )
-                          : Icon(icon, color: iconColor, size: 32),
-                    ),
-                  ),
-                  AppSpacing.v24,
-                ],
-                Padding(
-                  // Reserve right-side space so the title doesn't run
-                  // underneath the X close icon when it's shown.
-                  padding: showCloseIcon
-                      ? const EdgeInsets.only(right: 32)
-                      : EdgeInsets.zero,
-                  child: Text(
-                    title,
-                    textAlign:
-                        body != null ? TextAlign.left : TextAlign.center,
-                    style: AppTextStyles.outfit(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                if (description != null) ...[
-                  AppSpacing.v12,
-                  Text(
-                    description!,
-                    textAlign:
-                        body != null ? TextAlign.left : TextAlign.center,
-                    style: AppTextStyles.outfit(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-                if (body != null) ...[AppSpacing.v24, body!],
-                if (showButtons) ...[
-                  AppSpacing.v32,
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: onCancel ?? () => Get.back(),
-                          style: OutlinedButton.styleFrom(
-                            padding: AppSpacing.y16,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            side: BorderSide(color: Colors.grey.shade300),
+        child: Container(
+          padding: AppSpacing.all16,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: body != null
+                      ? CrossAxisAlignment.stretch
+                      : CrossAxisAlignment.center,
+                  children: [
+                    if (icon != null || svgAsset != null) ...[
+                      Center(
+                        child: Container(
+                          padding: AppSpacing.all16,
+                          decoration: BoxDecoration(
+                            color: iconBgColor,
+                            shape: BoxShape.circle,
                           ),
-                          child: Text(
-                            cancelText,
-                            style: AppTextStyles.outfit(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
+                          child: svgAsset != null
+                              ? AppActionIcon(
+                                  asset: svgAsset!,
+                                  color: iconColor,
+                                  size: 32,
+                                )
+                              : Icon(icon, color: iconColor, size: 32),
                         ),
                       ),
-                      AppSpacing.h12,
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (body == null) Get.back();
-                            onConfirm();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: confirmButtonColor ??
-                                (icon != null
-                                    ? iconColor
-                                    : AppColors.primaryBrand),
-                            padding: AppSpacing.y16,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            confirmText,
-                            style: AppTextStyles.outfit(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.white,
-                            ),
-                          ),
+                      AppSpacing.v24,
+                    ],
+                    Padding(
+                      // Reserve right-side space so the title doesn't run
+                      // underneath the X close icon when it's shown.
+                      padding: showCloseIcon
+                          ? const EdgeInsets.only(right: 32)
+                          : EdgeInsets.zero,
+                      child: Text(
+                        title,
+                        textAlign: body != null
+                            ? TextAlign.left
+                            : TextAlign.center,
+                        style: AppTextStyles.outfit(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                    if (description != null) ...[
+                      AppSpacing.v12,
+                      Text(
+                        description!,
+                        textAlign: body != null
+                            ? TextAlign.left
+                            : TextAlign.center,
+                        style: AppTextStyles.outfit(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
-                  ),
-                ],
-              ],
-            ),
-            if (showCloseIcon)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: GestureDetector(
-                  onTap: () => Get.back(),
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: AppColors.textTertiary,
+                    if (body != null) ...[AppSpacing.v24, body!],
+                    if (showButtons) ...[
+                      AppSpacing.v32,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: onCancel ?? () => Get.back(),
+                              style: OutlinedButton.styleFrom(
+                                padding: AppSpacing.y16,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              child: Text(
+                                cancelText,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          AppSpacing.h12,
+                          Expanded(
+                            child: isLoading != null
+                                ? Obx(
+                                    () => _buildConfirmButton(
+                                      isLoading!.value,
+                                    ),
+                                  )
+                                : _buildConfirmButton(false),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (showCloseIcon)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onTap: () => Get.back(),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.fieldBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildConfirmButton(bool loading) {
+    return ElevatedButton(
+      onPressed: loading
+          ? null
+          : () {
+              if (body == null) Get.back();
+              onConfirm();
+            },
+      style: ElevatedButton.styleFrom(
+        backgroundColor:
+            confirmButtonColor ?? (icon != null ? iconColor : AppColors.primaryBrand),
+        disabledBackgroundColor:
+            (confirmButtonColor ?? (icon != null ? iconColor : AppColors.primaryBrand))
+                .withValues(alpha: 0.6),
+        padding: AppSpacing.y16,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: loading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation(AppColors.white),
+              ),
+            )
+          : Text(
+              confirmText,
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.white,
+              ),
+            ),
     );
   }
 }

@@ -11,6 +11,7 @@ import 'package:tuoora/data/models/student_notification_model.dart';
 import 'package:tuoora/data/repositories/student_notifications_repository.dart';
 import 'package:tuoora/presentation/student/controllers/assignments_controller.dart';
 import 'package:tuoora/presentation/student/controllers/student_controller.dart';
+import 'package:tuoora/core/services/push_notification_service.dart';
 
 /// View-model for a single notification row. Encapsulates the icon /
 /// colour / time-ago decisions so the screen widget stays declarative.
@@ -47,22 +48,46 @@ class StudentNotificationsController extends GetxController {
     super.onInit();
     _repository = StudentNotificationsRepository(Get.find<ApiClient>());
     load();
+
+    // Auto-refresh notifications list when a push or local notification arrives
+    if (Get.isRegistered<PushNotificationService>()) {
+      ever(PushNotificationService.to.onMessage, (_) {
+        load(isBackground: true);
+      });
+    }
   }
 
-  Future<void> load() async {
+  Future<void> load({bool isBackground = false}) async {
     try {
-      isLoading.value = true;
+      if (!isBackground) isLoading.value = true;
       final list = await _repository.getNotifications();
       items.assignAll(list);
     } catch (_) {
-      AppSnackBar.error(AppStrings.failedToLoadNotifications);
+      if (!isBackground) {
+        AppSnackBar.error(AppStrings.failedToLoadNotifications);
+      }
     } finally {
-      isLoading.value = false;
+      if (!isBackground) isLoading.value = false;
     }
   }
 
   List<StudentNotificationDisplay> get displays =>
       items.map(_toDisplay).toList();
+
+  /// Drives the orange unread dot on [StudentAppBar]'s notification bell.
+  bool get hasUnread => items.any((n) => !n.isRead);
+
+  /// Marks every notification read, both on the backend and locally, so
+  /// the unread dot clears as soon as the user views the list.
+  Future<void> markAllAsRead() async {
+    if (!hasUnread) return;
+    try {
+      await _repository.markAllRead();
+      items.assignAll(items.map((n) => n.copyWith(isRead: true)).toList());
+    } catch (_) {
+      // Best-effort — the dot will simply reappear next load if this failed.
+    }
+  }
 
   /// Routes notification taps to the right screen based on [n.kind].
   /// Types we don't know how to deep-link into stay on the list (no

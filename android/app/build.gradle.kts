@@ -44,18 +44,27 @@ android {
             (project.findProperty("appLabel") as String?) ?: "Tuoora"
     }
 
+    val releaseKeystoreFile = keystoreProperties["storeFile"]?.let { file("../${it}") }
+    val hasValidReleaseKeystore = releaseKeystoreFile != null && releaseKeystoreFile.exists()
+
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String?
-            keyPassword = keystoreProperties["keyPassword"] as String?
-            storeFile = keystoreProperties["storeFile"]?.let { file("../${it}") }
-            storePassword = keystoreProperties["storePassword"] as String?
+        if (hasValidReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties["keyAlias"] as String?
+                keyPassword = keystoreProperties["keyPassword"] as String?
+                storeFile = releaseKeystoreFile
+                storePassword = keystoreProperties["storePassword"] as String?
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasValidReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
