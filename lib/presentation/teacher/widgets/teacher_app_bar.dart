@@ -27,7 +27,7 @@ class TeacherAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: AppSpacing.x16.add(
-        const EdgeInsets.only(top: AppSpacing.s16, bottom: AppSpacing.s8),
+        const EdgeInsets.only(top: AppSpacing.s16, bottom: AppSpacing.s10),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

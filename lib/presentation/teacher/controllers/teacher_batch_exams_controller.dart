@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:tuoora/config/app_routes.dart';
@@ -42,6 +43,38 @@ class TeacherBatchExamsController extends GetxController {
   Future<void> editExam(TeacherExam exam) async {
     final updated = await Get.toNamed(AppRoutes.teacherAddExam, arguments: exam);
     if (updated == true) fetchExams();
+  }
+
+  Future<void> confirmDeleteExam(TeacherExam exam) async {
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text('Delete Exam'),
+        content: Text(
+          'Are you sure you want to delete "${exam.title}"? Any marks already entered may be lost.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await deleteExam(exam);
+    }
   }
 
   Future<void> deleteExam(TeacherExam exam) async {

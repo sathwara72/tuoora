@@ -42,6 +42,8 @@ class AppRoutes {
   static const String teacherProfile = '/teacher/profile';
   static const String teacherBatches = '/teacher/batches';
   static const String teacherBatchDetails = '/teacher/batches/details';
+  static const String teacherBatchStudents = '/teacher/batches/students';
+  static const String teacherAssignStudents = '/teacher/batches/students/assign';
   static const String teacherMarkAttendance = '/teacher/batches/attendance';
   static const String teacherSelfAttendance = '/teacher/self-attendance';
   static const String teacherBatchHomework = '/teacher/batches/homework';
@@ -54,6 +56,7 @@ class AppRoutes {
   static const String teacherAddTimetableSlot =
       '/teacher/batches/timetable/add';
   static const String teacherFees = '/teacher/batches/fees';
+  static const String teacherBatchResources = '/teacher/batches/resources';
   static const String teacherSalaries = '/teacher/salaries';
 
   static const String instituteDashboard = '/institute/dashboard';

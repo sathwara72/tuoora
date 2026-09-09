@@ -191,6 +191,76 @@ class AuthRepository implements AuthRepositoryImpl {
     }
   }
 
+  @override
+  Future<User> switchTeacherInstitute(int instituteId) async {
+    final response = await _apiClient.post(
+      ApiConstants.teacherSwitchInstitute,
+      {'institute_id': instituteId},
+    );
+    if (response.status.hasError) {
+      throw Exception(
+        response.body?['message'] ?? 'Failed to switch institute',
+      );
+    }
+
+    final body = response.body;
+    final data = body is Map ? (body['data'] ?? body) : null;
+    final authService = Get.find<AuthService>();
+    final currentUser = authService.currentUser;
+
+    String? newAccessToken;
+    String? newRefreshToken;
+    String? newInstituteName;
+
+    if (data is Map) {
+      final token =
+          data['token']?.toString() ?? data['access_token']?.toString();
+      newAccessToken = data['access_token']?.toString() ?? token;
+      newRefreshToken = data['refresh_token']?.toString();
+      newInstituteName =
+          data['institute_name']?.toString() ??
+          (data['institute'] is Map
+              ? (data['institute']['institute_name'] ??
+                      data['institute']['name'])
+                  ?.toString()
+              : null);
+    }
+
+    if (newInstituteName == null && currentUser != null) {
+      for (final inst in currentUser.institutes) {
+        if (inst.id == instituteId) {
+          newInstituteName = inst.name;
+          break;
+        }
+      }
+    }
+
+    if (currentUser != null) {
+      final updatedUser = currentUser.copyWith(
+        instituteId: instituteId,
+        instituteName: newInstituteName ?? currentUser.instituteName,
+        accessToken: newAccessToken ?? currentUser.accessToken,
+        refreshToken: newRefreshToken ?? currentUser.refreshToken,
+      );
+      await authService.saveSession(
+        updatedUser,
+        stayAuthenticated: authService.shouldStayAuthenticated,
+        loggedIn: true,
+        role: 'TEACHER',
+      );
+      return updatedUser;
+    } else {
+      final user = _handleResponse(response, 'TEACHER');
+      await authService.saveSession(
+        user,
+        stayAuthenticated: authService.shouldStayAuthenticated,
+        loggedIn: true,
+        role: 'TEACHER',
+      );
+      return user;
+    }
+  }
+
   void _handleError(dynamic response, String defaultMessage) {
     if (response.statusCode == 422 && response.body?['errors'] != null) {
       throw ValidationException(

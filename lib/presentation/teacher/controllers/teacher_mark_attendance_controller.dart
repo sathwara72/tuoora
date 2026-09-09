@@ -23,8 +23,30 @@ class TeacherMarkAttendanceController extends GetxController {
     return d.year == now.year && d.month == now.month && d.day == now.day;
   }
 
+  bool get isEditable {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final d = DateTime(
+      selectedDate.value.year,
+      selectedDate.value.month,
+      selectedDate.value.day,
+    );
+    return !d.isAfter(today);
+  }
+
   String get apiDate => DateFormat('yyyy-MM-dd').format(selectedDate.value);
-  String get displayDate => DateFormat('dd MMM, yyyy').format(selectedDate.value);
+  String get displayDate =>
+      DateFormat('dd MMM, yyyy').format(selectedDate.value);
+
+  int get presentCount =>
+      rows.where((r) => r.status?.toLowerCase() == 'present').length;
+  int get absentCount =>
+      rows.where((r) => r.status?.toLowerCase() == 'absent').length;
+  int get lateCount =>
+      rows.where((r) => r.status?.toLowerCase() == 'late').length;
+  int get unmarkedCount =>
+      rows.where((r) => r.status == null || r.status!.isEmpty).length;
+  int get totalCount => rows.length;
 
   @override
   void onInit() {
@@ -53,13 +75,29 @@ class TeacherMarkAttendanceController extends GetxController {
   }
 
   void setStatus(TeacherAttendanceRow row, String status) {
-    if (!isToday) return;
-    row.status = status;
+    if (!isEditable) return;
+    row.status = status.toLowerCase();
+    rows.refresh();
+  }
+
+  void markAllPresent() {
+    if (!isEditable) return;
+    for (final r in rows) {
+      r.status = 'present';
+    }
+    rows.refresh();
+  }
+
+  void markAll(String status) {
+    if (!isEditable) return;
+    for (final r in rows) {
+      r.status = status.toLowerCase();
+    }
     rows.refresh();
   }
 
   Future<void> submit() async {
-    if (!isToday) return;
+    if (!isEditable) return;
     final unset = rows.where((r) => r.status == null || r.status!.isEmpty);
     if (unset.isNotEmpty) {
       AppSnackBar.error('Please mark attendance for every student');
@@ -74,7 +112,7 @@ class TeacherMarkAttendanceController extends GetxController {
             .map((r) => {'student_id': r.studentId, 'status': r.status})
             .toList(),
       );
-      AppSnackBar.success('Attendance saved');
+      AppSnackBar.success('Attendance saved successfully');
       await fetchAttendance();
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));

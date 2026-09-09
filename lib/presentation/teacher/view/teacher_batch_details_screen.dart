@@ -31,10 +31,10 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                 return RefreshIndicator(
                   onRefresh: controller.fetchDetail,
                   child: ListView(
-                    padding: AppSpacing.x16,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     children: [
                       Container(
-                        padding: AppSpacing.cardPadding,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         decoration: BoxDecoration(
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
@@ -42,8 +42,9 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (batch.subject != null && batch.subject!.isNotEmpty)
+                            if (batch.subject != null && batch.subject!.isNotEmpty) ...[
                               Text(
                                 batch.subject!,
                                 style: AppTextStyles.outfit(
@@ -52,19 +53,20 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                                   color: AppColors.primaryBrand,
                                 ),
                               ),
-                            AppSpacing.v4,
+                              AppSpacing.v4,
+                            ],
                             Text(
                               '$studentsCount students'
                               '${batch.classroom != null ? ' · Room ${batch.classroom}' : ''}',
                               style: AppTextStyles.outfit(
-                                fontSize: 12,
-                                color: AppColors.textTertiary,
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      AppSpacing.v24,
+                      AppSpacing.v16,
                       GridView.count(
                         crossAxisCount: 2,
                         shrinkWrap: true,
@@ -73,6 +75,19 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                         crossAxisSpacing: AppSpacing.s12,
                         childAspectRatio: 1.3,
                         children: [
+                          _FeatureTile(
+                            icon: Icons.people_alt_outlined,
+                            label: 'Students',
+                            accent: const Color(0xFF0284C7),
+                            bgColor: const Color(0xFFF0F9FF),
+                            onTap: () async {
+                              await Get.toNamed(
+                                AppRoutes.teacherBatchStudents,
+                                arguments: batch,
+                              );
+                              controller.fetchDetail();
+                            },
+                          ),
                           _FeatureTile(
                             icon: Icons.assignment_ind_outlined,
                             label: 'Attendance',
@@ -110,6 +125,16 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                             bgColor: const Color(0xFFEFF6FF),
                             onTap: () => Get.toNamed(
                               AppRoutes.teacherBatchTimetable,
+                              arguments: batch,
+                            ),
+                          ),
+                          _FeatureTile(
+                            icon: Icons.folder_shared_outlined,
+                            label: 'Materials',
+                            accent: const Color(0xFF0D9488),
+                            bgColor: const Color(0xFFF0FDFA),
+                            onTap: () => Get.toNamed(
+                              AppRoutes.teacherBatchResources,
                               arguments: batch,
                             ),
                           ),

@@ -4,11 +4,13 @@ import 'package:get/get.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_profile_controller.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_profile_model.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
+import 'package:tuoora/presentation/teacher/widgets/teacher_institute_switcher_sheet.dart';
 
 class TeacherProfileScreen extends GetView<TeacherProfileController> {
   const TeacherProfileScreen({super.key});
@@ -31,7 +33,7 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
                   return const SizedBox.shrink();
                 }
                 return ListView(
-                  padding: AppSpacing.x16,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   children: [
                     Center(
                       child: GestureDetector(
@@ -110,6 +112,14 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
                     AppSpacing.v24,
                     _infoCard(profile),
                     AppSpacing.v24,
+                    if (Get.find<AuthService>().currentUser?.hasMultipleInstitutes == true) ...[
+                      _actionTile(
+                        icon: Icons.apartment_rounded,
+                        label: 'Switch Institute',
+                        onTap: () => TeacherInstituteSwitcherSheet.show(context),
+                      ),
+                      AppSpacing.v8,
+                    ],
                     _actionTile(
                       icon: Icons.lock_reset_rounded,
                       label: 'Change Password',

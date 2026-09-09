@@ -8,6 +8,7 @@ import 'package:tuoora/data/repositories/teacher_profile_repository.dart';
 import 'package:tuoora/data/repositories/teacher_exam_repository.dart';
 import 'package:tuoora/data/repositories/teacher_fee_repository.dart';
 import 'package:tuoora/data/repositories/teacher_homework_repository.dart';
+import 'package:tuoora/data/repositories/teacher_resource_repository.dart';
 import 'package:tuoora/data/repositories/teacher_salary_repository.dart';
 import 'package:tuoora/data/repositories/teacher_timetable_repository.dart';
 import 'package:tuoora/data/repositories_impl/teacher_attendance_repository_impl.dart';
@@ -16,12 +17,16 @@ import 'package:tuoora/data/repositories_impl/teacher_exam_repository_impl.dart'
 import 'package:tuoora/data/repositories_impl/teacher_fee_repository_impl.dart';
 import 'package:tuoora/data/repositories_impl/teacher_homework_repository_impl.dart';
 import 'package:tuoora/data/repositories_impl/teacher_profile_repository_impl.dart';
+import 'package:tuoora/data/repositories_impl/teacher_resource_repository_impl.dart';
 import 'package:tuoora/data/repositories_impl/teacher_salary_repository_impl.dart';
 import 'package:tuoora/data/repositories_impl/teacher_timetable_repository_impl.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_exam_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_homework_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_timetable_slot_controller.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_assign_students_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_details_controller.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_batch_resources_controller.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_batch_students_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_exams_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_homework_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_timetable_controller.dart';
@@ -72,12 +77,27 @@ class TeacherBinding extends Bindings {
       () => TeacherSalaryRepository(Get.find<ApiClient>()),
       fenix: true,
     );
+    Get.lazyPut<TeacherResourceRepositoryImpl>(
+      () => TeacherResourceRepository(Get.find<ApiClient>()),
+      fenix: true,
+    );
     Get.lazyPut(() => TeacherChangePasswordController());
     Get.lazyPut(
       () => TeacherBatchesController(Get.find<TeacherBatchRepositoryImpl>()),
     );
     Get.lazyPut(
       () => TeacherBatchDetailsController(Get.find<TeacherBatchRepositoryImpl>()),
+    );
+    Get.lazyPut(
+      () => TeacherBatchStudentsController(Get.find<TeacherBatchRepositoryImpl>()),
+    );
+    Get.lazyPut(
+      () => TeacherAssignStudentsController(Get.find<TeacherBatchRepositoryImpl>()),
+    );
+    Get.lazyPut(
+      () => TeacherBatchResourcesController(
+        Get.find<TeacherResourceRepositoryImpl>(),
+      ),
     );
     Get.lazyPut(
       () => TeacherProfileController(Get.find<TeacherProfileRepositoryImpl>()),
