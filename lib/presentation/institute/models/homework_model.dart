@@ -52,6 +52,7 @@ class HomeworkSubmission {
   final String id;
   final int studentId;
   final String studentName;
+  final String? enrollmentId;
   final String? profileImageUrl;
   double score; // Non-final to allow local updates
   String status; // Non-final to allow local updates
@@ -62,6 +63,7 @@ class HomeworkSubmission {
     required this.id,
     required this.studentId,
     required this.studentName,
+    this.enrollmentId,
     this.profileImageUrl,
     required this.score,
     required this.status,
@@ -72,12 +74,20 @@ class HomeworkSubmission {
   bool get isLate => status.toLowerCase() == 'late';
 
   factory HomeworkSubmission.fromJson(Map<String, dynamic> json) {
-    final student = json['student'] ?? {};
+    final student = json['student'] is Map ? json['student'] as Map : {};
     final statusStr = json['status'] ?? 'Pending';
+    final rawEnrollment = (student['enrollment_id'] ??
+            student['enrollment_no'] ??
+            student['id_hash'] ??
+            student['enrollmentId'] ??
+            json['enrollment_id'])
+        ?.toString();
+
     return HomeworkSubmission(
       id: json['id'].toString(),
       studentId: json['student_id'],
       studentName: student['name'] ?? 'Student',
+      enrollmentId: rawEnrollment,
       profileImageUrl: student['profile_image_url'],
       score: (json['score'] ?? 0).toDouble(),
       status: statusStr,

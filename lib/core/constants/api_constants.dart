@@ -5,6 +5,10 @@ class ApiConstants {
   // baked-in institute_id (see BrandingService).
   static const String appBranding = '/app-branding';
 
+  // Public, unauthenticated — admin-configured "latest version" per app,
+  // read by AppVersionLabel to offer an update when this build is older.
+  static const String appVersions = '/app-versions';
+
   // Institute White Label add-on (purchase + branding submission)
   static const String instituteWhiteLabel = '/institute/whitelabel';
 
@@ -48,6 +52,10 @@ class ApiConstants {
   static String studentReceiptDetail(int id) => '/student/receipts/$id';
   static String studentFeeDownload(int id) => '/student/fees/$id/download';
   static const String studentNotifications = '/student/notifications';
+  static String studentNotificationRead(int id) =>
+      '/student/notifications/$id/read';
+  static const String studentNotificationsMarkAllRead =
+      '/student/notifications/mark-all-read';
 
   // Institute Endpoints
   static const String instituteStudents = '/institute/students';

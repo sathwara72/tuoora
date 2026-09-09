@@ -16,6 +16,7 @@ class ExamController extends GetxController {
 
   final exams = <ExamModel>[].obs;
   final searchQuery = ''.obs;
+  final selectedTab = 0.obs; // 0: All Exams, 1: Scheduled, 2: Completed
   final isLoading = false.obs;
   final isSaving = false.obs;
 
@@ -52,9 +53,15 @@ class ExamController extends GetxController {
   }
 
   List<ExamModel> get filteredExams {
-    if (searchQuery.isEmpty) return exams;
+    var list = exams.toList();
+    if (selectedTab.value == 1) {
+      list = list.where((e) => e.isScheduled).toList();
+    } else if (selectedTab.value == 2) {
+      list = list.where((e) => e.isCompleted).toList();
+    }
+    if (searchQuery.isEmpty) return list;
     final q = searchQuery.value.toLowerCase();
-    return exams
+    return list
         .where(
           (e) =>
               e.title.toLowerCase().contains(q) ||
@@ -204,11 +211,11 @@ class ExamController extends GetxController {
     }
   }
 
-  void deleteExamWithConfirmation(ExamModel exam) {
+  void deleteExamWithConfirmation(ExamModel exam, {bool popParent = false}) {
     CommonDialog.showDeleteConfirmation(
       title: 'Delete Exam',
       description:
-          'Are you sure you want to delete this exam? This will also remove any marks entered for it.',
+          'Are you sure you want to delete "${exam.title}"? This will also remove any marks entered for it.',
       onConfirm: () async {
         try {
           Get.dialog(
@@ -219,7 +226,9 @@ class ExamController extends GetxController {
           exams.removeWhere((e) => e.id == exam.id);
 
           Get.back(); // close loading dialog
-          Get.back(); // pop the exam marks/detail screen back to the list
+          if (popParent) {
+            Get.back(); // pop the exam marks screen back to the list
+          }
 
           AppSnackBar.success('Exam deleted', title: 'Deleted');
         } catch (e) {

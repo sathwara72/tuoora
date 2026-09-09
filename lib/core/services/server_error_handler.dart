@@ -8,7 +8,7 @@ class ServerErrorHandler extends GetxService {
   bool _isShowing = false;
 
   void showError({String? message}) {
-    if (_isShowing) return;
+    if (_isShowing || (Get.isDialogOpen ?? false)) return;
     _isShowing = true;
 
     Get.dialog(
@@ -22,10 +22,11 @@ class ServerErrorHandler extends GetxService {
   }
 
   void dismiss() {
-    if (!_isShowing) return;
-    _isShowing = false;
-    if (Get.isDialogOpen ?? false) {
-      Get.back();
+    if (_isShowing) {
+      _isShowing = false;
+      if (Get.isDialogOpen ?? false) {
+        Get.back();
+      }
     }
   }
 }

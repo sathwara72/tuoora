@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:intl/intl.dart';
 
 /// Shared date-string helpers so different screens render the same date
@@ -43,5 +44,80 @@ class DateFormatUtils {
   static bool isDifferentDay(DateTime? a, DateTime? b) {
     if (a == null || b == null) return a != b;
     return a.year != b.year || a.month != b.month || a.day != b.day;
+  }
+
+  /// Normalizes a dynamic input of days (List, comma-separated string,
+  /// full day names like "Monday", or short names like "Mon") into a deduplicated,
+  /// canonical ordered list of 3-letter day abbreviations:
+  /// `['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']`.
+  static List<String> normalizeDays(dynamic input) {
+    if (input == null) return const [];
+    List<dynamic> rawItems = [];
+    if (input is List) {
+      rawItems = input;
+    } else if (input is String) {
+      final trimmed = input.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is List) rawItems = decoded;
+        } catch (_) {
+          rawItems = trimmed
+              .replaceAll('[', '')
+              .replaceAll(']', '')
+              .replaceAll('"', '')
+              .replaceAll("'", '')
+              .split(',');
+        }
+      } else {
+        rawItems = trimmed.split(',');
+      }
+    }
+
+    final Set<String> normalizedSet = {};
+    const dayMap = {
+      'mon': 'Mon',
+      'monday': 'Mon',
+      'tue': 'Tue',
+      'tues': 'Tue',
+      'tuesday': 'Tue',
+      'wed': 'Wed',
+      'wednesday': 'Wed',
+      'thu': 'Thu',
+      'thur': 'Thu',
+      'thurs': 'Thu',
+      'thursday': 'Thu',
+      'fri': 'Fri',
+      'friday': 'Fri',
+      'sat': 'Sat',
+      'saturday': 'Sat',
+      'sun': 'Sun',
+      'sunday': 'Sun',
+    };
+
+    for (final item in rawItems) {
+      if (item == null) continue;
+      final parts = item.toString().split(',');
+      for (final part in parts) {
+        final key = part.trim().toLowerCase();
+        if (key.isEmpty) continue;
+        if (dayMap.containsKey(key)) {
+          normalizedSet.add(dayMap[key]!);
+        } else if (key.length >= 3 && dayMap.containsKey(key.substring(0, 3))) {
+          normalizedSet.add(dayMap[key.substring(0, 3)]!);
+        }
+      }
+    }
+
+    const order = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final sorted = order.where((d) => normalizedSet.contains(d)).toList();
+    return sorted.isNotEmpty ? sorted : normalizedSet.toList();
+  }
+
+  /// Formats days as a clean, deduplicated, comma-separated string (e.g. "Mon, Tue, Wed").
+  static String formatDays(dynamic input) {
+    final list = normalizeDays(input);
+    if (list.isEmpty) return '';
+    return list.join(', ');
   }
 }

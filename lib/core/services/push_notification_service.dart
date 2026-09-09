@@ -16,13 +16,74 @@ import 'package:tuoora/core/services/notifications/notification_router.dart';
 /// spawn an isolated Dart isolate when the app is killed.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Firebase.initializeApp() is already called in main.dart and is safe to
-  // re-call here for the background isolate. Importing firebase_core and
-  // calling initializeApp() inside this isolate is the standard pattern, but
-  // since the background isolate auto-inherits the default app on Android,
-  // we just log and return.
   if (kDebugMode) {
     print('[FCM-bg] ${message.messageId} data=${message.data}');
+  }
+
+  // If the backend sent a data-only FCM message (no top-level `notification` block),
+  // Android won't display a tray notification unless we show it locally here.
+  if (message.notification == null && message.data.isNotEmpty) {
+    try {
+      final title = (message.data['title'] ??
+              message.data['heading'] ??
+              message.data['subject'] ??
+              '')
+          .toString()
+          .trim();
+      final body = (message.data['body'] ??
+              message.data['message'] ??
+              message.data['description'] ??
+              message.data['content'] ??
+              '')
+          .toString()
+          .trim();
+
+      if (title.isNotEmpty || body.isNotEmpty) {
+        final local = FlutterLocalNotificationsPlugin();
+        const androidInit = AndroidInitializationSettings('ic_notification');
+        const iosInit = DarwinInitializationSettings();
+        await local.initialize(const InitializationSettings(
+          android: androidInit,
+          iOS: iosInit,
+        ));
+
+        const channel = AndroidNotificationChannel(
+          'tuoora_default_channel',
+          'Tuoora Notifications',
+          description: 'Default channel for Tuoora push notifications',
+          importance: Importance.high,
+        );
+        await local
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.createNotificationChannel(channel);
+
+        await local.show(
+          message.hashCode,
+          title.isNotEmpty ? title : 'Tuoora',
+          body,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'tuoora_default_channel',
+              'Tuoora Notifications',
+              channelDescription:
+                  'Default channel for Tuoora push notifications',
+              icon: 'ic_notification',
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+            iOS: DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
+          ),
+          payload: jsonEncode(message.data),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) print('[FCM-bg] error showing local notification: $e');
+    }
   }
 }
 
@@ -277,28 +338,48 @@ class PushNotificationService extends GetxService {
 
     final notification = message.notification;
     final android = message.notification?.android;
-    if (notification != null && (Platform.isAndroid || Platform.isIOS)) {
-      _local.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        NotificationDetails(
-          android: AndroidNotificationDetails(
-            _androidChannelId,
-            _androidChannelName,
-            channelDescription: _androidChannelDesc,
-            icon: android?.smallIcon ?? 'ic_notification',
-            importance: Importance.high,
-            priority: Priority.high,
+    String? title = notification?.title;
+    String? body = notification?.body;
+
+    // Fall back to data payload if notification block was omitted by backend
+    if (title == null || title.isEmpty) {
+      final t = message.data['title'] ??
+          message.data['heading'] ??
+          message.data['subject'];
+      if (t != null) title = t.toString().trim();
+    }
+    if (body == null || body.isEmpty) {
+      final b = message.data['body'] ??
+          message.data['message'] ??
+          message.data['description'] ??
+          message.data['content'];
+      if (b != null) body = b.toString().trim();
+    }
+
+    if ((title != null && title.isNotEmpty) || (body != null && body.isNotEmpty)) {
+      if (Platform.isAndroid || Platform.isIOS) {
+        _local.show(
+          notification?.hashCode ?? message.hashCode,
+          title ?? 'Tuoora',
+          body ?? '',
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              _androidChannelId,
+              _androidChannelName,
+              channelDescription: _androidChannelDesc,
+              icon: android?.smallIcon ?? 'ic_notification',
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+            iOS: const DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
           ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-        payload: jsonEncode(message.data),
-      );
+          payload: jsonEncode(message.data),
+        );
+      }
     }
   }
 
@@ -341,5 +422,39 @@ class PushNotificationService extends GetxService {
     _fcmToken.value = null;
     await _storage.remove(_tokenStorageKey);
     await _storage.remove(_syncedTokenStorageKey);
+  }
+
+  /// Show an immediate local notification (e.g. for download completion).
+  Future<void> showLocalNotification({
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    final id = DateTime.now().millisecondsSinceEpoch.remainder(100000);
+    try {
+      await _local.show(
+        id,
+        title,
+        body,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _androidChannelId,
+            _androidChannelName,
+            channelDescription: _androidChannelDesc,
+            icon: 'ic_notification',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        payload: payload,
+      );
+    } catch (e) {
+      if (kDebugMode) print('[FCM] showLocalNotification error: $e');
+    }
   }
 }

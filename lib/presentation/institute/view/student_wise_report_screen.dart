@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
@@ -9,7 +8,6 @@ import 'package:tuoora/core/widgets/app_empty_view.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
 import 'package:tuoora/presentation/institute/models/report_models.dart';
-import 'package:tuoora/presentation/institute/widgets/export_report.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 
 class StudentWiseReportScreen extends StatefulWidget {
@@ -40,12 +38,7 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
           children: [
             InstituteAppBar(
               title: 'Student Wise Report',
-              subtitle:
-                  'Comprehensive individual student analytics, exams, attendance, and fee history.',
-              actions: [
-                ExportReport(onTap: () => controller.exportStudentReportPdf()),
-                AppSpacing.h8,
-              ],
+              onBackTap: () => Get.back(),
             ),
             Expanded(
               child: RefreshIndicator(
@@ -129,12 +122,11 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
         children: [
           // Batch Selector
           Text(
-            'SELECT BATCH (DEFAULT: LAST BATCH)',
+            'SELECT BATCH',
             style: AppTextStyles.outfit(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryBrand,
-              letterSpacing: 0.5,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.fieldLabel,
             ),
           ),
           AppSpacing.v8,
@@ -159,7 +151,7 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
                     const Icon(
                       Icons.school_outlined,
                       size: 20,
-                      color: AppColors.primaryBrand,
+                      color: AppColors.textMuted,
                     ),
                     AppSpacing.h12,
                     Expanded(
@@ -191,10 +183,9 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
           Text(
             'SELECT STUDENT',
             style: AppTextStyles.outfit(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryBrand,
-              letterSpacing: 0.5,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.fieldLabel,
             ),
           ),
           AppSpacing.v8,
@@ -227,7 +218,7 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
                     const Icon(
                       Icons.person_outline_rounded,
                       size: 20,
-                      color: AppColors.primaryBrand,
+                      color: AppColors.textMuted,
                     ),
                     AppSpacing.h12,
                     Expanded(
@@ -253,37 +244,6 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
                       color: AppColors.fieldLabel,
                     ),
                   ],
-                ),
-              ),
-            );
-          }),
-
-          // Batch count chip
-          Obx(() {
-            final batch = controller.selectedBatchForStudentReport.value;
-            final count = controller.batchStudentsForReport.length;
-            if (batch == null) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBrandLight,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${batch.title} ($count students)',
-                    style: AppTextStyles.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryBrand,
-                    ),
-                  ),
                 ),
               ),
             );
@@ -374,45 +334,6 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
                       ),
                     ),
                   ],
-                ),
-              ),
-              // Full Profile button
-              GestureDetector(
-                onTap: () {
-                  Get.toNamed(
-                    AppRoutes.instituteStudentProfile,
-                    arguments: student.id,
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.open_in_new_rounded,
-                        size: 14,
-                        color: AppColors.primaryBrand,
-                      ),
-                      AppSpacing.h4,
-                      Text(
-                        'Full Profile',
-                        style: AppTextStyles.outfit(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryBrand,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
             ],

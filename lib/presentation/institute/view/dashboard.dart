@@ -127,6 +127,11 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
   Widget _buildModulesGrid() {
     final modules = [
       ModuleItem(
+        'Timetable',
+        () => Get.toNamed(AppRoutes.instituteTimetable),
+        AppImages.icBatchTimetable,
+      ),
+      ModuleItem(
         'Students',
         () => Get.toNamed(AppRoutes.instituteStudents),
         AppImages.icModuleStaff,
@@ -175,11 +180,6 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
         'Updates',
         () => Get.toNamed(AppRoutes.instituteUpdates),
         AppImages.icModuleUpdates,
-      ),
-      ModuleItem(
-        'Timetable',
-        () => Get.toNamed(AppRoutes.instituteTimetable),
-        AppImages.icBatchTimetable,
       ),
       ModuleItem(
         'Birthdays',

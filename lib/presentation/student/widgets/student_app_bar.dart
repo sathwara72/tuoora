@@ -5,6 +5,7 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/presentation/student/controllers/student_notifications_controller.dart';
 
 class StudentAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
@@ -103,15 +104,48 @@ class StudentAppBar extends StatelessWidget implements PreferredSizeWidget {
         onTap: () => Get.toNamed(AppRoutes.studentChat),
       ),
       AppSpacing.h8,
-      StudentHeaderIconButton(
-        icon: Icons.notifications_none_rounded,
-        onTap: () => Get.toNamed(AppRoutes.studentNotifications),
-      ),
+      const _NotificationBellButton(),
     ];
   }
 
   @override
   Size get preferredSize => const Size.fromHeight(72);
+}
+
+class _NotificationBellButton extends StatelessWidget {
+  const _NotificationBellButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        StudentHeaderIconButton(
+          icon: Icons.notifications_none_rounded,
+          onTap: () => Get.toNamed(AppRoutes.studentNotifications),
+        ),
+        if (Get.isRegistered<StudentNotificationsController>())
+          Positioned(
+            top: 6,
+            right: 6,
+            child: Obx(() {
+              final hasUnread =
+                  Get.find<StudentNotificationsController>().hasUnread;
+              if (!hasUnread) return const SizedBox.shrink();
+              return Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: AppColors.instBrandOrange,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.white, width: 1.5),
+                ),
+              );
+            }),
+          ),
+      ],
+    );
+  }
 }
 
 class StudentHeaderIconButton extends StatelessWidget {

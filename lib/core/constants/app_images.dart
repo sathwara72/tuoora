@@ -5,6 +5,9 @@ class AppImages {
   // --- Brand ---
   /// Full Tuoora logo with wordmark, used in auth headers + splash.
   static const String logoWithName = '$_iconsPath/logo_w_name.png';
+  /// Square app logo / launcher emblem.
+  static const String appLogo = '$_iconsPath/logo_square_white.png';
+  static const String logoSquare = '$_iconsPath/logo_square_white.png';
 
   // --- Action Icons (edit / delete / download) ---
   /// Render via [AppActionIcon] to get the standard primary-brand tint.

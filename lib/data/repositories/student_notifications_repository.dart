@@ -20,6 +20,30 @@ class StudentNotificationsRepository {
         .toList();
   }
 
+  Future<void> markAsRead(int id) async {
+    final response = await _apiClient.post(
+      ApiConstants.studentNotificationRead(id),
+      {},
+    );
+    if (response.status.hasError) {
+      throw Exception(
+        'Failed to mark notification as read: ${response.statusText}',
+      );
+    }
+  }
+
+  Future<void> markAllRead() async {
+    final response = await _apiClient.post(
+      ApiConstants.studentNotificationsMarkAllRead,
+      {},
+    );
+    if (response.status.hasError) {
+      throw Exception(
+        'Failed to mark all notifications as read: ${response.statusText}',
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> getNotificationSettings() async {
     final response = await _apiClient.get(ApiConstants.studentNotificationSettings);
     if (response.status.hasError) {

@@ -173,7 +173,7 @@ class SalaryManagementScreen extends GetView<StaffController> {
               ),
               child: _buildPayoutItem(
                 salary.staff?.fullName ?? 'Unknown Staff',
-                '$date â€¢ ${salary.paymentMethod}',
+                '$date \u2022 ${salary.paymentMethod}',
                 '₹${salary.netSalary}',
                 salary.staff?.profileUrl ?? '',
               ),

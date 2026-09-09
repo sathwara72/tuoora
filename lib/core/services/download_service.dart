@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
+import 'package:tuoora/core/services/push_notification_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 
 class DownloadService extends GetxService {
@@ -54,6 +55,14 @@ class DownloadService extends GetxService {
       await file.writeAsBytes(bytes);
 
       AppSnackBar.success(successMessage ?? 'File downloaded');
+
+      if (Get.isRegistered<PushNotificationService>()) {
+        Get.find<PushNotificationService>().showLocalNotification(
+          title: 'Report Downloaded',
+          body: '$fileName has been downloaded successfully.',
+        );
+      }
+
       return filePath;
     } catch (e) {
       AppSnackBar.error(AppStrings.downloadFailed);

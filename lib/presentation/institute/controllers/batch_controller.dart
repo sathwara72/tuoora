@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:tuoora/core/utils/validation_utils.dart';
+import 'package:tuoora/core/utils/date_format_utils.dart';
+import 'package:tuoora/presentation/institute/controllers/batch_details_controller.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/core/api/api_exception.dart';
 
@@ -166,7 +168,7 @@ class BatchController extends GetxController {
         ? DateTime.tryParse(batch.feesLastDate!)
         : null;
 
-    selectedDays.assignAll(batch.days);
+    selectedDays.assignAll(DateFormatUtils.normalizeDays(batch.days));
     searchQuery.value = '';
     triedToSave.value = false;
     batchNameError.value = null;
@@ -240,6 +242,7 @@ class BatchController extends GetxController {
     triedToSave.value = true;
     if (!validateForm()) return;
 
+    final cleanDays = DateFormatUtils.normalizeDays(selectedDays);
     final data = {
       'name': batchNameController.text.trim(),
       'description': descriptionController.text.trim(),
@@ -247,7 +250,7 @@ class BatchController extends GetxController {
       'fees_last_date': DateFormat(
         'yyyy-MM-dd',
       ).format(selectedFeesLastDate.value!),
-      'days': selectedDays.toList(),
+      'days': cleanDays,
     };
 
     try {
@@ -257,11 +260,19 @@ class BatchController extends GetxController {
           int.parse(currentEditingBatchId.value),
           data,
         );
+        final uiModel = updatedBatch.toUIModel();
         final index = batchesList.indexWhere(
           (b) => b.id == currentEditingBatchId.value,
         );
         if (index != -1) {
-          batchesList[index] = updatedBatch.toUIModel();
+          batchesList[index] = uiModel;
+        }
+        if (Get.isRegistered<BatchDetailsController>(
+          tag: currentEditingBatchId.value,
+        )) {
+          Get.find<BatchDetailsController>(
+            tag: currentEditingBatchId.value,
+          ).updateBatch(uiModel);
         }
       } else {
         final newBatch = await _repository.createBatch(data);
@@ -270,14 +281,9 @@ class BatchController extends GetxController {
 
       batchesList.refresh();
 
-      if (isEditMode.value) {
-        // If editing, go back twice: EditScreen -> DetailsScreen -> BatchesScreen
-        Get.back();
-        Get.back();
-      } else {
-        // If adding, just go back once to BatchesScreen
-        Get.back();
-      }
+      // Return back to previous screen
+      Get.back();
+
       AppSnackBar.success(
         'Successfully saved ${batchNameController.text}',
         title: isEditMode.value ? 'Batch Updated' : 'Batch Created',

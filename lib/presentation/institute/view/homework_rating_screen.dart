@@ -295,7 +295,7 @@ class HomeworkRatingScreen extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'ID: #${sub.studentId}',
+                      'Enrollment ID: ${controller.getEnrollmentIdForStudent(sub)}',
                       style: AppTextStyles.outfit(
                         fontSize: 12,
                         color: AppColors.textTertiary,

@@ -105,17 +105,20 @@ class InstituteNotificationsScreen extends GetView<NotificationController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      notification.title,
-                      style: AppTextStyles.outfit(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.darkSlate,
-                        height: 1.2,
+                    Expanded(
+                      child: Text(
+                        notification.title,
+                        style: AppTextStyles.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.darkSlate,
+                          height: 1.2,
+                        ),
                       ),
                     ),
+                    AppSpacing.h8,
                     Text(
                       _getRelativeTime(notification.createdAt),
                       style: AppTextStyles.outfit(

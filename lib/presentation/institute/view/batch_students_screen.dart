@@ -8,6 +8,7 @@ import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/institute/controllers/batch_details_controller.dart';
 import 'package:tuoora/presentation/institute/models/batch_model.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
+import 'package:tuoora/data/models/student_model.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_bottom_button.dart';
 import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/core/widgets/app_search_field.dart';
@@ -271,7 +272,7 @@ class BatchStudentsScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Enrollment ID: ${bs.student.enrollmentId}',
+                        _getEnrollmentText(bs.student),
                         style: AppTextStyles.outfit(
                           fontSize: 12,
                           color: AppColors.textMuted,
@@ -356,5 +357,16 @@ class BatchStudentsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getEnrollmentText(Student student) {
+    final enrollmentId = student.enrollmentID?.toString().trim() ?? '';
+    if (enrollmentId.isNotEmpty) {
+      return 'Enrollment ID: $enrollmentId';
+    }
+    if (student.idHash.isNotEmpty) {
+      return 'Enrollment ID: ${student.idHash}';
+    }
+    return 'Enrollment ID: ${student.id}';
   }
 }

@@ -66,18 +66,15 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       AppSpacing.v12,
-                      // Header Card matching web screenshot
-                      _buildHeaderCard(),
-                      AppSpacing.v16,
+                      // Optional Batch Filter and Day Tabs (only on main timetable)
+                      if (scopedBatch == null) ...[
+                        _buildBatchFilterBar(),
+                        AppSpacing.v8,
+                        _buildDaySelector(),
+                        AppSpacing.v16,
+                      ],
 
-                      // Day Selector Tabs (Monday .. Sunday)
-                      _buildDayTabs(),
-                      AppSpacing.v12,
-
-                      // Optional Batch Filter (when viewing all batches)
-                      if (scopedBatch == null) _buildBatchFilterBar(),
-
-                      // Timetable Slots List for the selected day
+                      // Timetable Slots List
                       _buildSlotsSection(),
                       AppSpacing.v32,
                     ],
@@ -100,7 +97,7 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
 
   void _onAddScheduleTap() {
     SubscriptionGuard.runAddAction(() {
-      controller.startCreate(scopedBatch);
+      controller.startCreate(scopedBatch, scopedBatch != null);
       Get.toNamed(
         AppRoutes.instituteAddTimetableSlot,
         arguments: scopedBatch,
@@ -108,207 +105,7 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
     });
   }
 
-  Widget _buildHeaderCard() {
-    return Container(
-      margin: AppSpacing.x16,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Orange icon badge
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF4EC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFD8C2)),
-            ),
-            child: const Icon(
-              Icons.calendar_month_rounded,
-              color: AppColors.primaryBrand,
-              size: 24,
-            ),
-          ),
-          AppSpacing.h12,
-          // Title & subtitle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Timetable',
-                  style: AppTextStyles.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  scopedBatch != null
-                      ? 'Academic schedule for ${scopedBatch!.title}'
-                      : 'Academic schedule sheet across all days & batches',
-                  style: AppTextStyles.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          AppSpacing.h8,
-          // "+ Add Class Schedule" pill button
-          InkWell(
-            onTap: _onAddScheduleTap,
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: SubscriptionGuard.blocksAdd
-                    ? AppColors.textMuted
-                    : AppColors.primaryBrand,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryBrand.withValues(alpha: 0.25),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add, size: 16, color: Colors.white),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Add Schedule',
-                    style: AppTextStyles.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildDayTabs() {
-    final days = DayOfWeek.values;
-
-    return Obx(() {
-      final activeDay = controller.selectedDay.value.toLowerCase();
-
-      return SizedBox(
-        height: 44,
-        child: ListView.separated(
-          padding: AppSpacing.x16,
-          scrollDirection: Axis.horizontal,
-          itemCount: days.length,
-          separatorBuilder: (context, index) => const SizedBox(width: 8),
-          itemBuilder: (context, index) {
-            final day = days[index];
-            final isSelected = day == activeDay;
-            final count = controller.countForDay(day);
-
-            return InkWell(
-              onTap: () => controller.selectDay(day),
-              borderRadius: BorderRadius.circular(10),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primaryBrand
-                      : AppColors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.primaryBrand
-                        : const Color(0xFFE2E8F0),
-                    width: 1.2,
-                  ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primaryBrand.withValues(alpha: 0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      day.toUpperCase(),
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF475569),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    if (isSelected) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        width: 5,
-                        height: 5,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ] else if (count > 0) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '$count',
-                          style: AppTextStyles.outfit(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF64748B),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      );
-    });
-  }
 
   Widget _buildBatchFilterBar() {
     return Obx(() {
@@ -392,21 +189,111 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
     });
   }
 
+  Widget _buildDaySelector() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        height: 44,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: DayOfWeek.values.length,
+          separatorBuilder: (context, index) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            final day = DayOfWeek.values[index];
+            return Obx(() {
+              final isSelected =
+                  controller.selectedDay.value.toLowerCase() ==
+                      day.toLowerCase();
+              return GestureDetector(
+                onTap: () => controller.selectDay(day),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primaryBrand
+                        : AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primaryBrand
+                          : const Color(0xFFE2E8F0),
+                    ),
+                    boxShadow: [
+                      if (isSelected)
+                        BoxShadow(
+                          color: AppColors.primaryBrand.withValues(alpha: 0.25),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      DayOfWeek.shortLabelFor(day),
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.white
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  String _getDayBadgeText(String rawDay) {
+    switch (rawDay.toLowerCase()) {
+      case 'monday':
+        return 'MON';
+      case 'tuesday':
+        return 'TUE';
+      case 'wednesday':
+        return 'WED';
+      case 'thursday':
+        return 'THU';
+      case 'friday':
+        return 'FRI';
+      case 'saturday':
+        return 'SAT';
+      case 'sunday':
+        return 'SUN';
+      default:
+        return rawDay.length > 3
+            ? rawDay.substring(0, 3).toUpperCase()
+            : rawDay.toUpperCase();
+    }
+  }
+
   Widget _buildSlotsSection() {
     return Obx(() {
-      final daySlots = controller.slotsForSelectedDay;
-      final currentDayLabel = DayOfWeek.labelFor(controller.selectedDay.value);
+      final isMainTimetable = scopedBatch == null;
+      final slots = isMainTimetable
+          ? controller.slotsForSelectedDay
+          : controller.allSortedSlots;
+
+      final emptySubtitle = isMainTimetable
+          ? 'Add a lecture slot for ${DayOfWeek.labelFor(controller.selectedDay.value)}'
+          : 'No lecture schedule configured yet.\nTap + to add one.';
 
       return CommonStateWidget(
         isLoading: controller.isLoading.value,
-        isEmpty: daySlots.isEmpty,
-        emptyTitle: 'No classes on $currentDayLabel',
-        emptySubtitle: 'No lecture schedule configured for this day.\nTap + Add Schedule to add one.',
+        isEmpty: slots.isEmpty,
+        emptyTitle: 'No classes scheduled',
+        emptySubtitle: emptySubtitle,
         emptyIcon: Icons.calendar_view_week_rounded,
         child: Padding(
           padding: AppSpacing.x16,
           child: Column(
-            children: daySlots.map((slot) => _buildSlotCard(slot)).toList(),
+            children: slots.map((slot) => _buildSlotCard(slot)).toList(),
           ),
         ),
       );
@@ -417,67 +304,58 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
     final timeDisplay = slot.timeSlot != null && slot.timeSlot!.isNotEmpty
         ? slot.timeSlot!
         : controller.formatTimeRange(slot.startTime, slot.endTime);
+    final dayText = _getDayBadgeText(slot.dayOfWeek);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: Time badge & action buttons
+          // Row 1: Day badge (MON, TUE, etc.) & Action icons (Edit & Delete)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Soft orange time pill
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4EC),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFFFD8C2)),
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.access_time_rounded,
-                      size: 13,
-                      color: AppColors.primaryBrand,
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      timeDisplay,
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryBrand,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  dayText,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF475569),
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
-              // Action buttons (Edit & Delete)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
                     onPressed: () {
-                      controller.startEdit(slot);
+                      controller.startEdit(slot, isLocked: true);
                       Get.toNamed(
                         AppRoutes.instituteAddTimetableSlot,
-                        arguments: {'slot': slot},
+                        arguments: {
+                          'slot': slot,
+                          'batch': scopedBatch ?? controller.currentBatch.value,
+                        },
                       );
                     },
                     icon: const AppActionIcon(asset: AppImages.icEdit),
@@ -497,9 +375,39 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
               ),
             ],
           ),
-          AppSpacing.v10,
+          AppSpacing.v8,
 
-          // Subject Name
+          // Row 2: Soft orange time pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF4EC),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFFD8C2)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.access_time_rounded,
+                  size: 13,
+                  color: AppColors.primaryBrand,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  timeDisplay,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryBrand,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AppSpacing.v8,
+
+          // Row 3: Subject Name
           Text(
             slot.subject,
             style: AppTextStyles.outfit(
@@ -508,81 +416,93 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
               color: const Color(0xFF0F172A),
             ),
           ),
-          AppSpacing.v6,
 
-          // Batch info pill
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              slot.batchName ?? 'Batch #${slot.batchId}',
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF475569),
+          if (scopedBatch == null && slot.batchName != null) ...[
+            AppSpacing.v4,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(4),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              child: Text(
+                slot.batchName!,
+                style: AppTextStyles.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
             ),
-          ),
-
-          // Faculty and room info
-          if ((slot.staffName != null && slot.staffName!.isNotEmpty) ||
-              (slot.roomNo != null && slot.roomNo!.isNotEmpty)) ...[
-            AppSpacing.v10,
-            Divider(height: 1, color: Colors.grey.withValues(alpha: 0.15)),
-            AppSpacing.v10,
           ],
 
-          if (slot.staffName != null && slot.staffName!.isNotEmpty) ...[
-            Row(
-              children: [
-                const Icon(
-                  Icons.person_outline_rounded,
-                  size: 15,
-                  color: Color(0xFF94A3B8),
+          AppSpacing.v8,
+          // Row 4: Divider
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          AppSpacing.v8,
+
+          // Row 5: Faculty info
+          Row(
+            children: [
+              const Icon(
+                Icons.person_outline_rounded,
+                size: 16,
+                color: Color(0xFF94A3B8),
+              ),
+              AppSpacing.h8,
+              Expanded(
+                child: Text(
+                  (slot.staffName != null && slot.staffName!.isNotEmpty)
+                      ? slot.staffName!
+                      : 'Teacher Not Assigned',
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF334155),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                AppSpacing.h6,
-                Expanded(
-                  child: Text(
-                    slot.staffName!,
+              ),
+            ],
+          ),
+          AppSpacing.v4,
+
+          // Row 6: Room info
+          Row(
+            children: [
+              const Icon(
+                Icons.meeting_room_outlined,
+                size: 16,
+                color: Color(0xFF94A3B8),
+              ),
+              AppSpacing.h8,
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
                     style: AppTextStyles.outfit(
                       fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF475569),
+                      color: const Color(0xFF64748B),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    children: [
+                      const TextSpan(text: 'Room: '),
+                      TextSpan(
+                        text: (slot.roomNo != null && slot.roomNo!.isNotEmpty)
+                            ? slot.roomNo!
+                            : 'N/A',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
-          ],
-
-          if (slot.roomNo != null && slot.roomNo!.isNotEmpty) ...[
-            AppSpacing.v6,
-            Row(
-              children: [
-                const Icon(
-                  Icons.meeting_room_outlined,
-                  size: 15,
-                  color: Color(0xFF94A3B8),
-                ),
-                AppSpacing.h6,
-                Text(
-                  'Room: ${slot.roomNo!}',
-                  style: AppTextStyles.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ],
       ),
     );

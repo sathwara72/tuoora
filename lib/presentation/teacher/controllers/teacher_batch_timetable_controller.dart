@@ -35,7 +35,7 @@ class TeacherBatchTimetableController extends GetxController {
   void onInit() {
     super.onInit();
     batch = Get.arguments as TeacherBatch;
-    selectedDay.value = days[(DateTime.now().weekday - 1) % 7];
+    selectedDay.value = days[0]; // Monday
     fetchTimetable();
   }
 

@@ -26,7 +26,7 @@ class TimetableController extends GetxController {
 
   // Filter in the timetable view
   final selectedFilterBatchId = RxnString();
-  final selectedDay = DayOfWeek.today().obs;
+  final selectedDay = DayOfWeek.monday.obs;
 
   // Timetable slots
   final slots = <TimetableSlot>[].obs;
@@ -55,6 +55,7 @@ class TimetableController extends GetxController {
   // Validation
   final triedToSave = false.obs;
   final batchError = RxnString();
+  final isBatchLocked = false.obs;
   final subjectError = RxnString();
   final timeError = RxnString();
 
@@ -73,6 +74,7 @@ class TimetableController extends GetxController {
   }
 
   void initialize([BatchModel? batch]) {
+    selectedDay.value = DayOfWeek.monday;
     currentBatch.value = batch ?? initialBatch;
     if (currentBatch.value != null) {
       selectedFilterBatchId.value = currentBatch.value!.id;
@@ -157,6 +159,34 @@ class TimetableController extends GetxController {
     return filtered;
   }
 
+  List<TimetableSlot> get allSortedSlots {
+    final filtered = slots.where((s) {
+      return selectedFilterBatchId.value == null ||
+          s.batchId == selectedFilterBatchId.value;
+    }).toList();
+
+    const dayOrder = {
+      'monday': 1,
+      'tuesday': 2,
+      'wednesday': 3,
+      'thursday': 4,
+      'friday': 5,
+      'saturday': 6,
+      'sunday': 7,
+    };
+
+    filtered.sort((a, b) {
+      final dayA = dayOrder[a.dayOfWeek.toLowerCase()] ?? 8;
+      final dayB = dayOrder[b.dayOfWeek.toLowerCase()] ?? 8;
+      if (dayA != dayB) {
+        return dayA.compareTo(dayB);
+      }
+      return a.startTime.compareTo(b.startTime);
+    });
+
+    return filtered;
+  }
+
   int countForDay(String day) {
     final dayVal = day.toLowerCase();
     return slots.where((s) {
@@ -212,6 +242,9 @@ class TimetableController extends GetxController {
       isLoadingClasses.value = true;
       final classes = await _repository.listClasses(bId);
       batchClasses.assignAll(classes);
+      if (isEditing) {
+        _syncSelectedClassWithSubject();
+      }
     } catch (_) {
       batchClasses.clear();
     } finally {
@@ -219,9 +252,48 @@ class TimetableController extends GetxController {
     }
   }
 
+  void _syncSelectedClassWithSubject([String? targetSubject]) {
+    final subject = (targetSubject ?? subjectController.text).trim();
+    if (subject.isEmpty) {
+      selectedClassId.value = null;
+      return;
+    }
+
+    final batch = batchesList.firstWhereOrNull((b) => b.id == selectedFormBatchId.value) ?? currentBatch.value;
+
+    final classMatch = batchClasses.firstWhereOrNull(
+      (c) => c.name.trim().toLowerCase() == subject.toLowerCase(),
+    );
+    if (classMatch != null) {
+      selectedClassId.value = classMatch.id.toString();
+      return;
+    }
+
+    if (batch != null && batch.subject.trim().toLowerCase() == subject.toLowerCase()) {
+      selectedClassId.value = '__batch_subject__';
+      return;
+    }
+
+    selectedClassId.value = subject;
+  }
+
   void selectClass(String? classId) {
     selectedClassId.value = classId;
     if (classId == null) return;
+    if (classId == '__batch_subject__') {
+      final batch = batchesList.firstWhereOrNull((b) => b.id == selectedFormBatchId.value) ?? currentBatch.value;
+      if (batch != null && batch.subject.trim().isNotEmpty) {
+        subjectController.text = batch.subject.trim();
+        subjectError.value = null;
+        if (batch.staffId != null) {
+          selectedStaffId.value = batch.staffId;
+        }
+      }
+      return;
+    }
+    if (classId == '__custom__') {
+      return;
+    }
     final found = batchClasses.firstWhereOrNull((c) => c.id.toString() == classId);
     if (found != null) {
       subjectController.text = found.name;
@@ -229,30 +301,37 @@ class TimetableController extends GetxController {
       if (found.teachers.isNotEmpty) {
         selectedStaffId.value = found.teachers.first.id;
       }
+      return;
     }
+    subjectController.text = classId;
+    subjectError.value = null;
   }
 
   void selectStaff(int? id) => selectedStaffId.value = id;
 
-  void startCreate([BatchModel? batch]) {
+  void startCreate([BatchModel? batch, bool? lockBatch]) {
     clearForm();
-    final effectiveBatch = batch ?? currentBatch.value;
+    final effectiveBatch = batch ?? (lockBatch == false ? null : currentBatch.value);
     if (effectiveBatch != null) {
+      currentBatch.value = effectiveBatch;
       selectedFormBatchId.value = effectiveBatch.id;
+      isBatchLocked.value = lockBatch ?? true;
       fetchClassesForBatch(effectiveBatch.id);
-    } else if (batchesList.isNotEmpty) {
-      selectedFormBatchId.value = batchesList.first.id;
-      fetchClassesForBatch(batchesList.first.id);
+    } else {
+      isBatchLocked.value = false;
+      selectedFormBatchId.value = null;
+      batchClasses.clear();
     }
+    selectedClassId.value = null;
     formDay.value = selectedDay.value;
     fetchStaffForAssignment();
     fetchBatches();
   }
 
-  void startEdit(TimetableSlot slot) {
+  void startEdit(TimetableSlot slot, {bool? isLocked}) {
     editingSlotId.value = slot.id;
     selectedFormBatchId.value = slot.batchId;
-    fetchClassesForBatch(slot.batchId);
+    isBatchLocked.value = isLocked ?? (currentBatch.value != null);
     subjectController.text = slot.subject;
     roomNoController.text = slot.roomNo ?? '';
     descriptionController.text = slot.description ?? '';
@@ -260,6 +339,8 @@ class TimetableController extends GetxController {
     startTime.value = _parseTimeOfDay(slot.startTime);
     endTime.value = _parseTimeOfDay(slot.endTime);
     selectedStaffId.value = slot.staffId;
+    _syncSelectedClassWithSubject(slot.subject);
+    fetchClassesForBatch(slot.batchId);
     fetchStaffForAssignment();
     fetchBatches();
   }
@@ -412,13 +493,15 @@ class TimetableController extends GetxController {
 
   void clearForm() {
     editingSlotId.value = null;
+    selectedFormBatchId.value = null;
+    isBatchLocked.value = false;
     subjectController.clear();
     roomNoController.clear();
     descriptionController.clear();
     startTime.value = null;
     endTime.value = null;
     selectedStaffId.value = null;
-    selectedClassId.value = null;
+    selectedClassId.value = '__custom__';
     batchClasses.clear();
     triedToSave.value = false;
     batchError.value = null;

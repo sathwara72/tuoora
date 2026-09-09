@@ -34,7 +34,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
     final args = Get.arguments;
     if (args is BatchModel) {
       if (!controller.isEditing) {
-        controller.startCreate(args);
+        controller.startCreate(args, true);
       }
     } else if (args is String) {
       if (!controller.isEditing) {
@@ -42,9 +42,16 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
       }
     } else if (args is Map) {
       if (args['slot'] is TimetableSlot) {
-        controller.startEdit(args['slot'] as TimetableSlot);
+        controller.startEdit(
+          args['slot'] as TimetableSlot,
+          isLocked: args['batch'] != null,
+        );
       } else if (args['batch'] is BatchModel && !controller.isEditing) {
-        controller.startCreate(args['batch'] as BatchModel);
+        controller.startCreate(args['batch'] as BatchModel, true);
+      }
+    } else {
+      if (!controller.isEditing) {
+        controller.startCreate(null, false);
       }
     }
   }
@@ -185,6 +192,47 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
     return Obx(() {
       final selectedId = controller.selectedFormBatchId.value;
       final batches = controller.batchesList;
+      final isLocked = controller.isBatchLocked.value;
+
+      final selectedBatch = batches.firstWhereOrNull((b) => b.id == selectedId) ?? controller.currentBatch.value;
+      final batchTitle = selectedBatch?.title ?? (selectedId != null ? 'Batch #$selectedId' : 'Select Batch');
+
+      if (isLocked && selectedBatch != null) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.fieldBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.fieldBorder,
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  batchTitle,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Icon(
+                Icons.lock_outline_rounded,
+                size: 18,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ),
+        );
+      }
+
       final isValueInList = batches.any((b) => b.id == selectedId);
 
       return Container(
@@ -195,8 +243,8 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
           border: Border.all(
             color: controller.batchError.value != null
                 ? Colors.redAccent
-                : AppColors.primaryBrand,
-            width: 1.5,
+                : AppColors.fieldBorder,
+            width: 1.0,
           ),
         ),
         child: DropdownButtonHideUnderline(
@@ -214,23 +262,36 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
             ),
             icon: const Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: AppColors.primaryBrand,
+              color: AppColors.textMuted,
             ),
-            items: batches.map((batch) {
-              return DropdownMenuItem<String?>(
-                value: batch.id,
+            items: [
+              DropdownMenuItem<String?>(
+                value: null,
                 child: Text(
-                  batch.title,
+                  'Select Batch',
                   style: AppTextStyles.outfit(
                     fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              );
-            }).toList(),
+              ),
+              ...batches.map((batch) {
+                return DropdownMenuItem<String?>(
+                  value: batch.id,
+                  child: Text(
+                    batch.title,
+                    style: AppTextStyles.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }),
+            ],
             onChanged: (newBatchId) {
               controller.selectFormBatch(newBatchId);
             },
@@ -240,42 +301,176 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
     });
   }
 
+  bool get _isFromBatchTimetable {
+    final args = Get.arguments;
+    if (args is BatchModel) return true;
+    if (args is Map && args['batch'] != null) return true;
+    if (controller.isBatchLocked.value) return true;
+    if (controller.currentBatch.value != null) return true;
+    return false;
+  }
+
   Widget _buildClassDropdown() {
+    if (!_isFromBatchTimetable) {
+      return const SizedBox.shrink();
+    }
+
     return Obx(() {
-      if (controller.isLoadingClasses.value) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primaryBrand,
-                ),
+      final batch = controller.batchesList.firstWhereOrNull(
+            (b) => b.id == controller.selectedFormBatchId.value,
+          ) ??
+          controller.currentBatch.value;
+
+      final items = <DropdownMenuItem<String?>>[];
+
+      // 1. Placeholder
+      items.add(
+        DropdownMenuItem<String?>(
+          value: null,
+          child: Text(
+            'Select Class / Subject',
+            style: AppTextStyles.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ),
+      );
+
+      // 2. Batch Subject (if available)
+      if (batch != null && batch.subject.trim().isNotEmpty) {
+        final teacherName = batch.staffName != null && batch.staffName!.trim().isNotEmpty
+            ? ' (${batch.staffName})'
+            : '';
+        items.add(
+          DropdownMenuItem<String?>(
+            value: '__batch_subject__',
+            child: Text(
+              '${batch.subject.trim()}$teacherName',
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
-              AppSpacing.h8,
-              Text(
-                'Loading batch classes...',
-                style: AppTextStyles.outfit(
-                  fontSize: 12,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         );
       }
 
-      if (controller.batchClasses.isEmpty) {
-        return const SizedBox.shrink();
+      // 3. Batch Classes (from controller.batchClasses)
+      for (final cls in controller.batchClasses) {
+        if (batch != null &&
+            batch.subject.trim().toLowerCase() == cls.name.trim().toLowerCase()) {
+          continue;
+        }
+        final teacherInfo = cls.teachers.isNotEmpty
+            ? ' (${cls.teachers.first.fullName})'
+            : '';
+        items.add(
+          DropdownMenuItem<String?>(
+            value: cls.id.toString(),
+            child: Text(
+              '${cls.name.trim()}$teacherInfo',
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
       }
 
-      final selectedClassId = controller.selectedClassId.value;
-      final isClassInList = controller.batchClasses.any(
-        (c) => c.id.toString() == selectedClassId,
+      // 4. Custom option
+      items.add(
+        DropdownMenuItem<String?>(
+          value: '__custom__',
+          child: Text(
+            'Custom Subject (Type below)',
+            style: AppTextStyles.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.primaryBrand,
+            ),
+          ),
+        ),
       );
+
+      final currentSubject = controller.subjectController.text.trim();
+
+      // If slot has a subject and it's not in the dropdown items yet, add it
+      final bool alreadyHasCurrent = items.any((it) {
+        if (it.value == null || it.value == '__custom__') return false;
+        if (it.value == '__batch_subject__' &&
+            batch != null &&
+            batch.subject.trim().toLowerCase() == currentSubject.toLowerCase()) {
+          return true;
+        }
+        final cls = controller.batchClasses.firstWhereOrNull(
+          (c) => c.id.toString() == it.value,
+        );
+        if (cls != null &&
+            cls.name.trim().toLowerCase() == currentSubject.toLowerCase()) {
+          return true;
+        }
+        if (it.value?.toLowerCase() == currentSubject.toLowerCase()) {
+          return true;
+        }
+        return false;
+      });
+
+      if (currentSubject.isNotEmpty && !alreadyHasCurrent) {
+        items.insert(
+          items.length - 1,
+          DropdownMenuItem<String?>(
+            value: currentSubject,
+            child: Text(
+              currentSubject,
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+      }
+
+      String? selectedVal = controller.selectedClassId.value;
+
+      // In edit mode or when a subject exists, find its matching option
+      if ((selectedVal == null || selectedVal == '__custom__') && currentSubject.isNotEmpty) {
+        final matchingItem = items.firstWhereOrNull((it) {
+          if (it.value == null || it.value == '__custom__') return false;
+          if (it.value == '__batch_subject__' &&
+              batch != null &&
+              batch.subject.trim().toLowerCase() == currentSubject.toLowerCase()) {
+            return true;
+          }
+          final cls = controller.batchClasses.firstWhereOrNull(
+            (c) => c.id.toString() == it.value,
+          );
+          if (cls != null &&
+              cls.name.trim().toLowerCase() == currentSubject.toLowerCase()) {
+            return true;
+          }
+          if (it.value == currentSubject) return true;
+          return false;
+        });
+        if (matchingItem != null) {
+          selectedVal = matchingItem.value;
+        }
+      }
+
+      final isValidValue = items.any((it) => it.value == selectedVal);
+      final finalValue = isValidValue ? selectedVal : null;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -283,22 +478,17 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
           Row(
             children: [
               const InstituteLabel('SELECT CLASS / SUBJECT'),
-              AppSpacing.h6,
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryBrandLight,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Auto-fill',
-                  style: AppTextStyles.outfit(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+              if (controller.isLoadingClasses.value) ...[
+                AppSpacing.h8,
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
                     color: AppColors.primaryBrand,
                   ),
                 ),
-              ),
+              ],
             ],
           ),
           AppSpacing.v8,
@@ -308,16 +498,16 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
               color: AppColors.fieldBg,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppColors.primaryBrand.withValues(alpha: 0.5),
-                width: 1.2,
+                color: AppColors.fieldBorder,
+                width: 1.0,
               ),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 isExpanded: true,
-                value: isClassInList ? selectedClassId : null,
+                value: finalValue,
                 hint: Text(
-                  'Select from batch classes (or type below)',
+                  'Select Class / Subject',
                   style: AppTextStyles.outfit(
                     fontSize: 14,
                     color: AppColors.textMuted,
@@ -325,41 +515,11 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                 ),
                 icon: const Icon(
                   Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.primaryBrand,
+                  color: AppColors.textMuted,
                 ),
-                items: [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text(
-                      'Custom / Other Subject',
-                      style: AppTextStyles.outfit(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryBrand,
-                      ),
-                    ),
-                  ),
-                  ...controller.batchClasses.map((cls) {
-                    final teacherInfo = cls.teachers.isNotEmpty
-                        ? ' · ${cls.teachers.first.fullName}'
-                        : '';
-                    return DropdownMenuItem<String?>(
-                      value: cls.id.toString(),
-                      child: Text(
-                        '${cls.name}$teacherInfo',
-                        style: AppTextStyles.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  }),
-                ],
-                onChanged: (classId) {
-                  controller.selectClass(classId);
+                items: items,
+                onChanged: (newVal) {
+                  controller.selectClass(newVal);
                 },
               ),
             ),
@@ -381,7 +541,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         decoration: BoxDecoration(
           color: AppColors.fieldBg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primaryBrand, width: 1.5),
+          border: Border.all(color: AppColors.fieldBorder, width: 1.0),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
@@ -389,7 +549,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
             value: days.contains(currentDay) ? currentDay : days.first,
             icon: const Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: AppColors.primaryBrand,
+              color: AppColors.textMuted,
             ),
             items: days.map((day) {
               return DropdownMenuItem<String>(

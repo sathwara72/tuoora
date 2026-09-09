@@ -4,6 +4,9 @@ import 'package:tuoora/presentation/institute/models/homework_model.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:get/get.dart';
 
+import 'package:tuoora/presentation/institute/controllers/institute_controller.dart';
+import 'package:tuoora/presentation/institute/controllers/batch_details_controller.dart';
+
 class HomeworkRatingController extends GetxController {
   final HomeworkModel homework;
 
@@ -20,6 +23,63 @@ class HomeworkRatingController extends GetxController {
     super.onInit();
     submissions.assignAll(homework.submissions);
     _fetchHomeworkDetails();
+    if (Get.isRegistered<InstituteController>()) {
+      final inst = Get.find<InstituteController>();
+      if (inst.students.isEmpty) {
+        inst.fetchStudents();
+      }
+    }
+  }
+
+  String getEnrollmentIdForStudent(HomeworkSubmission sub) {
+    final direct = sub.enrollmentId?.trim() ?? '';
+    if (direct.isNotEmpty) {
+      return direct;
+    }
+
+    // 1. Try resolving from BatchDetailsController if available
+    try {
+      if (Get.isRegistered<BatchDetailsController>(tag: homework.batchId)) {
+        final bdc = Get.find<BatchDetailsController>(tag: homework.batchId);
+        final match = bdc.assignedStudents.firstWhereOrNull(
+          (bs) =>
+              bs.student.id == sub.studentId ||
+              (sub.studentName.isNotEmpty &&
+                  bs.student.name.trim().toLowerCase() ==
+                      sub.studentName.trim().toLowerCase()),
+        );
+        if (match != null) {
+          final enId = match.student.enrollmentID?.toString().trim() ?? '';
+          if (enId.isNotEmpty) return enId;
+          if (match.student.idHash.trim().isNotEmpty) {
+            return match.student.idHash.trim();
+          }
+        }
+      }
+    } catch (_) {}
+
+    // 2. Try resolving from InstituteController
+    try {
+      if (Get.isRegistered<InstituteController>()) {
+        final inst = Get.find<InstituteController>();
+        final match = inst.students.firstWhereOrNull(
+          (s) =>
+              s.id == sub.studentId ||
+              (sub.studentName.isNotEmpty &&
+                  s.name.trim().toLowerCase() ==
+                      sub.studentName.trim().toLowerCase()),
+        );
+        if (match != null) {
+          final enId = match.enrollmentID?.toString().trim() ?? '';
+          if (enId.isNotEmpty) return enId;
+          if (match.idHash.trim().isNotEmpty) {
+            return match.idHash.trim();
+          }
+        }
+      }
+    } catch (_) {}
+
+    return sub.studentId.toString();
   }
 
   Future<void> _fetchHomeworkDetails() async {

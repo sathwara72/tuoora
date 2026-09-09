@@ -32,30 +32,42 @@ class BatchResourcesScreen extends StatelessWidget {
         child: Column(
           children: [
             InstituteAppBar(
-              title: AppStrings.instBatchResourcesTitle,
+              title: 'Materials',
               onBackTap: () => Get.back(),
             ),
             Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value &&
-                    controller.resources.isEmpty) {
-                  return const CommonLoading();
-                }
-                if (controller.resources.isEmpty) {
-                  return const AppEmptyView(
-                    icon: Icons.folder_open_outlined,
-                    title: AppStrings.noResourcesFound,
+              child: RefreshIndicator(
+                color: AppColors.primaryBrand,
+                onRefresh: () => controller.fetchResources(),
+                child: Obx(() {
+                  if (controller.isLoading.value &&
+                      controller.resources.isEmpty) {
+                    return const Center(child: CommonLoading());
+                  }
+                  if (controller.resources.isEmpty) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        alignment: Alignment.center,
+                        child: const AppEmptyView(
+                          icon: Icons.folder_open_outlined,
+                          title: 'No Materials Found',
+                        ),
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: AppSpacing.all16.add(
+                      const EdgeInsets.only(bottom: 80),
+                    ),
+                    itemCount: controller.resources.length,
+                    itemBuilder: (context, index) =>
+                        _buildResourceItem(controller.resources[index], index),
                   );
-                }
-                return ListView.builder(
-                  padding: AppSpacing.all16.add(
-                    const EdgeInsets.only(bottom: 80),
-                  ),
-                  itemCount: controller.resources.length,
-                  itemBuilder: (context, index) =>
-                      _buildResourceItem(controller.resources[index], index),
-                );
-              }),
+                }),
+              ),
             ),
           ],
         ),

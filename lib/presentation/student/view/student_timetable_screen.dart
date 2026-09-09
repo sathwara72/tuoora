@@ -124,7 +124,7 @@ class StudentTimetableScreen extends GetView<StudentTimetableController> {
 
   Widget _buildSlotCard(StudentTimetableSlot slot) {
     return Container(
-      padding: AppSpacing.all16,
+      padding: AppSpacing.all12,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
@@ -154,7 +154,7 @@ class StudentTimetableScreen extends GetView<StudentTimetableController> {
                     color: AppColors.textPrimary,
                   ),
                 ),
-                AppSpacing.v8,
+                AppSpacing.v6,
                 Row(
                   children: [
                     Icon(
@@ -173,7 +173,7 @@ class StudentTimetableScreen extends GetView<StudentTimetableController> {
                   ],
                 ),
                 if (slot.staffName != null && slot.staffName!.isNotEmpty) ...[
-                  AppSpacing.v6,
+                  AppSpacing.v4,
                   Row(
                     children: [
                       Icon(
@@ -193,7 +193,7 @@ class StudentTimetableScreen extends GetView<StudentTimetableController> {
                   ),
                 ],
                 if (slot.roomNo != null && slot.roomNo!.isNotEmpty) ...[
-                  AppSpacing.v6,
+                  AppSpacing.v4,
                   Row(
                     children: [
                       Icon(

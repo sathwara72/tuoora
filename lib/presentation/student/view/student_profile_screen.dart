@@ -107,7 +107,7 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const AppVersionLabel(),
+                        const AppVersionLabel(isStudentApp: true),
                         const SizedBox(height: 16),
                       ],
                     ),

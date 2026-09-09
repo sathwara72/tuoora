@@ -16,8 +16,23 @@ enum NotificationKind {
 
   static NotificationKind fromString(String? raw) {
     if (raw == null) return NotificationKind.unknown;
+    final normalized = raw.trim().toLowerCase();
     for (final k in NotificationKind.values) {
-      if (k.value == raw) return k;
+      if (k.value == normalized) return k;
+    }
+    // Handle backend type variations
+    if (normalized == 'batch_updated' ||
+        normalized == 'batch_update' ||
+        normalized == 'batch') {
+      return NotificationKind.batchAssignment;
+    }
+    if (normalized == 'fee_reminders' ||
+        normalized == 'fees_reminder' ||
+        normalized == 'fee_payment_reminder') {
+      return NotificationKind.feeReminders;
+    }
+    if (normalized.startsWith('exam')) {
+      return NotificationKind.eventsHolidays;
     }
     return NotificationKind.unknown;
   }

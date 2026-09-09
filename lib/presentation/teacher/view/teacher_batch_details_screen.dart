@@ -74,8 +74,10 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                         childAspectRatio: 1.3,
                         children: [
                           _FeatureTile(
-                            icon: Icons.checklist_rounded,
+                            icon: Icons.assignment_ind_outlined,
                             label: 'Attendance',
+                            accent: const Color(0xFFB45309),
+                            bgColor: const Color(0xFFFFFBEB),
                             onTap: () => Get.toNamed(
                               AppRoutes.teacherMarkAttendance,
                               arguments: batch,
@@ -84,14 +86,18 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                           _FeatureTile(
                             icon: Icons.assignment_rounded,
                             label: 'Homework',
+                            accent: const Color(0xFFF43F5E),
+                            bgColor: const Color(0xFFFFF1F2),
                             onTap: () => Get.toNamed(
                               AppRoutes.teacherBatchHomework,
                               arguments: batch,
                             ),
                           ),
                           _FeatureTile(
-                            icon: Icons.quiz_rounded,
+                            icon: Icons.assignment_turned_in_outlined,
                             label: 'Exams',
+                            accent: const Color(0xFF4F46E5),
+                            bgColor: const Color(0xFFEEF2FF),
                             onTap: () => Get.toNamed(
                               AppRoutes.teacherBatchExams,
                               arguments: batch,
@@ -100,6 +106,8 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                           _FeatureTile(
                             icon: Icons.schedule_rounded,
                             label: 'Timetable',
+                            accent: const Color(0xFF2563EB),
+                            bgColor: const Color(0xFFEFF6FF),
                             onTap: () => Get.toNamed(
                               AppRoutes.teacherBatchTimetable,
                               arguments: batch,
@@ -109,6 +117,8 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                             _FeatureTile(
                               icon: Icons.currency_rupee_rounded,
                               label: 'Fees',
+                              accent: const Color(0xFF059669),
+                              bgColor: const Color(0xFFECFDF5),
                               onTap: () => Get.toNamed(
                                 AppRoutes.teacherFees,
                                 arguments: batch,
@@ -132,11 +142,15 @@ class _FeatureTile extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final Color accent;
+  final Color bgColor;
 
   const _FeatureTile({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.accent = AppColors.primaryBrand,
+    this.bgColor = const Color(0x1AF97316),
   });
 
   @override
@@ -156,10 +170,10 @@ class _FeatureTile extends StatelessWidget {
               width: AppSpacing.s48,
               height: AppSpacing.s48,
               decoration: BoxDecoration(
-                color: AppColors.primaryBrand.withValues(alpha: 0.1),
+                color: bgColor,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.primaryBrand, size: 24),
+              child: Icon(icon, color: accent, size: 24),
             ),
             AppSpacing.v8,
             Text(

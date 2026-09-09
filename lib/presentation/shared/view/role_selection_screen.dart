@@ -65,7 +65,7 @@ class RoleSelectionScreen extends StatelessWidget {
 
   Widget _buildLogo() {
     return Center(
-      child: AppLogo(height: AppSpacing.s64),
+      child: AppLogo(height: AppSpacing.s48, fit: BoxFit.contain),
     );
   }
 
