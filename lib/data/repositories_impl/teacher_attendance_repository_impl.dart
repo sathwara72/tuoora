@@ -24,4 +24,20 @@ abstract class TeacherAttendanceRepositoryImpl {
     required String status,
     String? note,
   });
+
+  Future<TeacherAttendanceCalendarData> getSelfAttendanceCalendar({
+    required int month,
+    required int year,
+  });
+
+  Future<void> applyLeave({
+    required String startDate,
+    required String endDate,
+    required String reason,
+    bool skipSundays = true,
+  });
+
+  Future<List<TeacherLeaveItem>> getAppliedLeaves();
+
+  Future<void> cancelLeave(int leaveId);
 }

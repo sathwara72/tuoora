@@ -39,9 +39,9 @@ class TeacherBatchesScreen extends GetView<TeacherBatchesController> {
                 return RefreshIndicator(
                   onRefresh: controller.fetchBatches,
                   child: ListView.separated(
-                    padding: AppSpacing.x16,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: controller.batches.length,
-                    separatorBuilder: (_, __) => AppSpacing.v12,
+                    separatorBuilder: (_, _) => AppSpacing.v12,
                     itemBuilder: (context, index) =>
                         _BatchCard(batch: controller.batches[index], onTap: () => controller.openBatch(controller.batches[index])),
                   ),

@@ -26,9 +26,12 @@ class User {
   final String? department;
   final bool mustChangePassword;
   final String? profileImage;
+  final List<TeacherInstituteInfo> institutes;
 
   bool get isEmailVerified =>
       emailVerifiedAt != null && emailVerifiedAt!.isNotEmpty;
+
+  bool get hasMultipleInstitutes => institutes.length > 1;
 
   const User({
     required this.id,
@@ -58,6 +61,7 @@ class User {
     this.department,
     this.mustChangePassword = false,
     this.profileImage,
+    this.institutes = const [],
   });
 
   factory User.fromJson(
@@ -68,6 +72,40 @@ class User {
     String? refreshToken,
   }) {
     final institute = json['institute'];
+    final instName =
+        json['institute_name'] ??
+        (institute is Map ? institute['institute_name'] ?? institute['name'] : null);
+    final instId =
+        json['institute_id'] ?? (institute is Map ? institute['id'] : null);
+    final instLogo = json['logo'] ?? (institute is Map ? institute['logo'] : null);
+
+    final rawInstitutes = json['institutes'] ?? json['available_institutes'];
+    final List<TeacherInstituteInfo> parsedInstitutes = [];
+    if (rawInstitutes is List) {
+      for (final item in rawInstitutes) {
+        if (item is Map<String, dynamic>) {
+          parsedInstitutes.add(TeacherInstituteInfo.fromJson(item));
+        } else if (item is Map) {
+          parsedInstitutes.add(
+            TeacherInstituteInfo.fromJson(Map<String, dynamic>.from(item)),
+          );
+        }
+      }
+    }
+    if (parsedInstitutes.isEmpty && instName != null && instName.isNotEmpty) {
+      final parsedId = instId is int
+          ? instId
+          : int.tryParse(instId?.toString() ?? '') ?? 0;
+      parsedInstitutes.add(
+        TeacherInstituteInfo(
+          id: parsedId,
+          name: instName.toString(),
+          logo: instLogo?.toString(),
+          address: json['address']?.toString(),
+        ),
+      );
+    }
+
     return User(
       id: json['id'],
       name: json['name'] ?? json['full_name'] ?? '',
@@ -77,13 +115,10 @@ class User {
       accessToken: accessToken ?? token,
       refreshToken: refreshToken ?? '',
       role: role,
-      instituteName:
-          json['institute_name'] ??
-          (institute is Map ? institute['institute_name'] : null),
-      logo: json['logo'] ?? (institute is Map ? institute['logo'] : null),
+      instituteName: instName?.toString(),
+      logo: instLogo?.toString(),
       address: json['address'],
-      instituteId:
-          json['institute_id'] ?? (institute is Map ? institute['id'] : null),
+      instituteId: instId is int ? instId : int.tryParse(instId?.toString() ?? ''),
       batchId: json['batch_id'],
       standard: json['standard'],
       idHash: json['id_hash'],
@@ -99,6 +134,7 @@ class User {
       department: _extractLabel(json['staff_department'] ?? json['department']),
       mustChangePassword: json['must_change_password'] == true,
       profileImage: json['profile_url'] ?? json['profile_image'],
+      institutes: parsedInstitutes,
     );
   }
 
@@ -139,6 +175,7 @@ class User {
       'staff_department': department,
       'must_change_password': mustChangePassword,
       'profile_url': profileImage,
+      'institutes': institutes.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -146,6 +183,9 @@ class User {
     String? accessToken,
     String? refreshToken,
     bool? mustChangePassword,
+    int? instituteId,
+    String? instituteName,
+    List<TeacherInstituteInfo>? institutes,
   }) {
     return User(
       id: id,
@@ -156,10 +196,10 @@ class User {
       accessToken: accessToken ?? this.accessToken,
       refreshToken: refreshToken ?? this.refreshToken,
       role: role,
-      instituteName: instituteName,
+      instituteName: instituteName ?? this.instituteName,
       logo: logo,
       address: address,
-      instituteId: instituteId,
+      instituteId: instituteId ?? this.instituteId,
       batchId: batchId,
       standard: standard,
       idHash: idHash,
@@ -175,6 +215,44 @@ class User {
       department: department,
       mustChangePassword: mustChangePassword ?? this.mustChangePassword,
       profileImage: profileImage,
+      institutes: institutes ?? this.institutes,
     );
+  }
+}
+
+class TeacherInstituteInfo {
+  final int id;
+  final String name;
+  final String? code;
+  final String? logo;
+  final String? address;
+
+  const TeacherInstituteInfo({
+    required this.id,
+    required this.name,
+    this.code,
+    this.logo,
+    this.address,
+  });
+
+  factory TeacherInstituteInfo.fromJson(Map<String, dynamic> json) {
+    final rawId = json['id'];
+    return TeacherInstituteInfo(
+      id: rawId is int ? rawId : int.tryParse(rawId?.toString() ?? '') ?? 0,
+      name: (json['name'] ?? json['institute_name'] ?? '').toString(),
+      code: json['code']?.toString(),
+      logo: json['logo']?.toString(),
+      address: json['address']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      if (code != null) 'code': code,
+      if (logo != null) 'logo': logo,
+      if (address != null) 'address': address,
+    };
   }
 }

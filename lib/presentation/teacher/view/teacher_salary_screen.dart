@@ -35,9 +35,9 @@ class TeacherSalaryScreen extends GetView<TeacherSalaryController> {
                 return RefreshIndicator(
                   onRefresh: controller.fetchSalaries,
                   child: ListView.separated(
-                    padding: AppSpacing.x16,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: controller.salaries.length,
-                    separatorBuilder: (_, __) => AppSpacing.v12,
+                    separatorBuilder: (_, _) => AppSpacing.v12,
                     itemBuilder: (context, index) {
                       final salary = controller.salaries[index];
                       final isDownloading = controller.downloadingId.value == salary.id;

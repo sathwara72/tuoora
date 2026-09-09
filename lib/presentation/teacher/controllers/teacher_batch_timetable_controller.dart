@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:tuoora/config/app_routes.dart';
@@ -66,6 +67,38 @@ class TeacherBatchTimetableController extends GetxController {
       arguments: {'batch': batch, 'slot': slot},
     );
     if (updated == true) fetchTimetable();
+  }
+
+  Future<void> confirmDeleteSlot(TeacherTimetableSlot slot) async {
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text('Delete Timetable Slot'),
+        content: Text(
+          'Are you sure you want to delete the ${slot.subject} slot (${slot.timeSlot ?? "${slot.startTime} - ${slot.endTime}"})?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Get.back(result: true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await deleteSlot(slot);
+    }
   }
 
   Future<void> deleteSlot(TeacherTimetableSlot slot) async {

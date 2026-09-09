@@ -9,81 +9,218 @@ import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
+import 'package:tuoora/presentation/teacher/widgets/teacher_institute_switcher_sheet.dart';
 
 class TeacherDashboardScreen extends StatelessWidget {
   const TeacherDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user = Get.find<AuthService>().currentUser;
+    final authService = Get.find<AuthService>();
+
+    // Enforce immediate redirect if must_change_password == true
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (authService.currentUser?.mustChangePassword == true) {
+        Get.offAllNamed(AppRoutes.teacherChangePassword, arguments: true);
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
-        child: Column(
-          children: [
-            TeacherAppBar(
-              title: 'Welcome${user?.name.isNotEmpty == true ? ', ${user!.name}' : ''}',
-              subtitle: user?.staffRole,
-              isRoot: true,
-              actions: [
-                GestureDetector(
-                  onTap: () => _confirmLogout(context),
-                  child: Container(
-                    width: AppSpacing.s40,
-                    height: AppSpacing.s40,
-                    decoration: BoxDecoration(
-                      color: AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.fieldBorder),
+        child: Obx(() {
+          final user = authService.currentUser;
+          return Column(
+            children: [
+              TeacherAppBar(
+                title:
+                    'Welcome${user?.name.isNotEmpty == true ? ', ${user!.name}' : ''}',
+                subtitle: user?.staffRole,
+                isRoot: true,
+                actions: [
+                  if (user?.hasMultipleInstitutes == true)
+                    GestureDetector(
+                      onTap: () => TeacherInstituteSwitcherSheet.show(context),
+                      child: Container(
+                        width: AppSpacing.s40,
+                        height: AppSpacing.s40,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBrand.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.primaryBrand.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.swap_horiz_rounded,
+                          color: AppColors.primaryBrand,
+                          size: AppSpacing.s20,
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.logout_rounded,
-                      color: AppColors.textPrimary,
-                      size: AppSpacing.s20,
+                  GestureDetector(
+                    onTap: () => _confirmLogout(context),
+                    child: Container(
+                      width: AppSpacing.s40,
+                      height: AppSpacing.s40,
+                      decoration: BoxDecoration(
+                        color: AppColors.fieldBg,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.fieldBorder),
+                      ),
+                      child: const Icon(
+                        Icons.logout_rounded,
+                        color: AppColors.textPrimary,
+                        size: AppSpacing.s20,
+                      ),
                     ),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 24),
+                  children: [
+                    if (user?.instituteName != null &&
+                        user!.instituteName!.isNotEmpty)
+                      _buildActiveInstituteCard(context, user),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: AppSpacing.s12,
+                      crossAxisSpacing: AppSpacing.s12,
+                      childAspectRatio: 1.3,
+                      children: [
+                        _DashboardTile(
+                          icon: Icons.groups_rounded,
+                          label: 'My Batches',
+                          onTap: () => Get.toNamed(AppRoutes.teacherBatches),
+                        ),
+                        _DashboardTile(
+                          icon: Icons.person_rounded,
+                          label: 'My Profile',
+                          onTap: () => Get.toNamed(AppRoutes.teacherProfile),
+                        ),
+                        _DashboardTile(
+                          icon: Icons.event_available_rounded,
+                          label: 'My Attendance',
+                          onTap: () =>
+                              Get.toNamed(AppRoutes.teacherSelfAttendance),
+                        ),
+                        _DashboardTile(
+                          icon: Icons.receipt_long_rounded,
+                          label: 'Salary Slips',
+                          onTap: () => Get.toNamed(AppRoutes.teacherSalaries),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildActiveInstituteCard(BuildContext context, dynamic user) {
+    final bool hasMultiple = user.hasMultipleInstitutes;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.s16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(color: AppColors.borderGrey),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBrand.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.apartment_rounded,
+              color: AppColors.primaryBrand,
+              size: 20,
+            ),
+          ),
+          AppSpacing.h12,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ACTIVE INSTITUTE',
+                  style: AppTextStyles.outfit(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textTertiary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  user.instituteName ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
-            Expanded(
-              child: ListView(
-                padding: AppSpacing.x16,
-                children: [
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: AppSpacing.s12,
-                    crossAxisSpacing: AppSpacing.s12,
-                    childAspectRatio: 1.3,
-                    children: [
-                      _DashboardTile(
-                        icon: Icons.groups_rounded,
-                        label: 'My Batches',
-                        onTap: () => Get.toNamed(AppRoutes.teacherBatches),
+          ),
+          if (hasMultiple) ...[
+            AppSpacing.h8,
+            InkWell(
+              onTap: () => TeacherInstituteSwitcherSheet.show(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBrand.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.swap_horiz_rounded,
+                      size: 16,
+                      color: AppColors.primaryBrand,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Switch',
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryBrand,
                       ),
-                      _DashboardTile(
-                        icon: Icons.person_rounded,
-                        label: 'My Profile',
-                        onTap: () => Get.toNamed(AppRoutes.teacherProfile),
-                      ),
-                      _DashboardTile(
-                        icon: Icons.event_available_rounded,
-                        label: 'My Attendance',
-                        onTap: () => Get.toNamed(AppRoutes.teacherSelfAttendance),
-                      ),
-                      _DashboardTile(
-                        icon: Icons.receipt_long_rounded,
-                        label: 'Salary Slips',
-                        onTap: () => Get.toNamed(AppRoutes.teacherSalaries),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }

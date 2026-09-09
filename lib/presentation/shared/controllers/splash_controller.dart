@@ -53,6 +53,14 @@ class SplashController extends GetxController {
       Get.offAllNamed(AppRoutes.studentDashboard);
     } else if (role == 'INSTITUTE') {
       Get.offAllNamed(AppRoutes.instituteDashboard);
+    } else if (role == 'TEACHER') {
+      final mustChangePassword =
+          _authService.currentUser?.mustChangePassword ?? false;
+      if (mustChangePassword) {
+        Get.offAllNamed(AppRoutes.teacherChangePassword, arguments: true);
+      } else {
+        Get.offAllNamed(AppRoutes.teacherDashboard);
+      }
     } else {
       Get.offAllNamed(AppRoutes.roleSelection);
     }

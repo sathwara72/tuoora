@@ -152,16 +152,27 @@ class ApiConstants {
   static const String teacherResetPassword = '/teacher/reset-password';
   static const String teacherLogout = '/teacher/logout';
   static const String teacherChangePassword = '/teacher/change-password';
+  static const String teacherSwitchInstitute = '/teacher/switch-institute';
   static const String teacherProfile = '/teacher/profile';
   static const String teacherProfileAvatar = '/teacher/profile/avatar';
   static const String teacherBatches = '/teacher/batches';
   static String teacherBatchDetail(int batchId) => '/teacher/batches/$batchId';
   static String teacherBatchStudents(int batchId) =>
       '/teacher/batches/$batchId/students';
+  static String teacherBatchStudentDetail(int batchId, int studentId) =>
+      '/teacher/batches/$batchId/students/$studentId';
+  static String teacherBatchStudentRemove(int batchId, int studentId) =>
+      '/teacher/batches/$batchId/students/$studentId/remove';
   static const String teacherAttendance = '/teacher/attendance';
   static const String teacherSelfAttendanceToday =
       '/teacher/self-attendance/today';
   static const String teacherSelfAttendance = '/teacher/self-attendance';
+  static const String teacherSelfAttendanceCalendar =
+      '/teacher/self-attendance/calendar';
+  static const String teacherAttendanceLeave = '/teacher/attendance/leave';
+  static const String teacherAttendanceLeaves = '/teacher/attendance/leaves';
+  static String teacherAttendanceLeaveCancel(int id) =>
+      '/teacher/attendance/leave/$id';
   static const String teacherHomeworks = '/teacher/homeworks';
   static String teacherHomeworkDetail(int id) => '/teacher/homeworks/$id';
   static String teacherHomeworkGrades(int id) =>
@@ -175,6 +186,10 @@ class ApiConstants {
   static const String teacherSalaries = '/teacher/salaries';
   static String teacherSalaryDownload(int id) =>
       '/teacher/salaries/$id/download';
+  static const String teacherResources = '/teacher/resources';
+  static String teacherResourceDetail(int id) => '/teacher/resources/$id';
+  static String teacherResourceDownload(int id) =>
+      '/teacher/resources/$id/download';
 
   // FCM Endpoints
   static const String fcmToken = '/fcm-token';

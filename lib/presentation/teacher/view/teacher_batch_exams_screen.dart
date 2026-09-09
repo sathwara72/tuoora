@@ -52,15 +52,15 @@ class TeacherBatchExamsScreen extends GetView<TeacherBatchExamsController> {
                 return RefreshIndicator(
                   onRefresh: controller.fetchExams,
                   child: ListView.separated(
-                    padding: AppSpacing.x16,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: controller.exams.length,
-                    separatorBuilder: (_, __) => AppSpacing.v12,
+                    separatorBuilder: (_, _) => AppSpacing.v12,
                     itemBuilder: (context, index) {
                       final exam = controller.exams[index];
                       return _ExamCard(
                         exam: exam,
                         onEdit: () => controller.editExam(exam),
-                        onDelete: () => controller.deleteExam(exam),
+                        onDelete: () => controller.confirmDeleteExam(exam),
                         onMarks: () => controller.openMarks(exam),
                       );
                     },
@@ -132,6 +132,7 @@ class _ExamCard extends StatelessWidget {
                   ),
                 ),
               ),
+              AppSpacing.h4,
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert_rounded, color: AppColors.textTertiary),
                 onSelected: (value) {
@@ -139,8 +140,26 @@ class _ExamCard extends StatelessWidget {
                   if (value == 'delete') onDelete();
                 },
                 itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  PopupMenuItem(value: 'delete', child: Text('Delete')),
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 18, color: AppColors.textPrimary),
+                        SizedBox(width: 8),
+                        Text('Edit Exam'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.bohoRed),
+                        SizedBox(width: 8),
+                        Text('Delete Exam', style: TextStyle(color: AppColors.bohoRed)),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -153,25 +172,81 @@ class _ExamCard extends StatelessWidget {
             style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
           ),
           AppSpacing.v12,
-          GestureDetector(
-            onTap: onMarks,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.primaryBrand.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Enter Marks',
-                style: AppTextStyles.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryBrand,
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: onMarks,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBrand.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.edit_note_rounded,
+                          size: 16,
+                          color: AppColors.primaryBrand,
+                        ),
+                        AppSpacing.h4,
+                        Text(
+                          'Enter Marks',
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryBrand,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+              AppSpacing.h8,
+              InkWell(
+                onTap: onEdit,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.fieldBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.fieldBorder),
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 16,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              AppSpacing.h8,
+              InkWell(
+                onTap: onDelete,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.bohoRed.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.bohoRed.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 16,
+                    color: AppColors.bohoRed,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

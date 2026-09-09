@@ -33,13 +33,19 @@ class TeacherExamMarksController extends GetxController {
     }
   }
 
+  int get totalStudents => rows.length;
+  int get absentCount => rows.where((r) => r.isAbsent).length;
+  int get presentCount => rows.where((r) => !r.isAbsent).length;
+  int get enteredCount =>
+      rows.where((r) => r.isAbsent || r.marksObtained != null).length;
+
   void updateMarks(TeacherExamMarkRow row, String value) {
-    row.marksObtained = double.tryParse(value);
+    row.marksObtained = double.tryParse(value.trim());
     rows.refresh();
   }
 
   void updateRemarks(TeacherExamMarkRow row, String value) {
-    row.remarks = value;
+    row.remarks = value.trim().isEmpty ? null : value.trim();
   }
 
   void toggleAbsent(TeacherExamMarkRow row) {
@@ -48,7 +54,24 @@ class TeacherExamMarksController extends GetxController {
     rows.refresh();
   }
 
+  void setAbsent(TeacherExamMarkRow row, bool isAbsent) {
+    row.isAbsent = isAbsent;
+    if (isAbsent) row.marksObtained = null;
+    rows.refresh();
+  }
+
   Future<void> submit() async {
+    for (final r in rows) {
+      if (!r.isAbsent &&
+          r.marksObtained != null &&
+          r.marksObtained! > exam.totalMarks) {
+        AppSnackBar.error(
+          "${r.studentName}'s marks (${r.marksObtained}) cannot exceed total marks (${exam.totalMarks})",
+        );
+        return;
+      }
+    }
+
     try {
       isSaving.value = true;
       await _repository.saveExamMarks(
@@ -64,7 +87,7 @@ class TeacherExamMarksController extends GetxController {
             )
             .toList(),
       );
-      AppSnackBar.success('Marks saved');
+      AppSnackBar.success('Exam marks saved successfully');
       Get.back(result: true);
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));

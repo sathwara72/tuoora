@@ -23,4 +23,5 @@ abstract class AuthRepositoryImpl {
   Future<String> teacherForgotPassword(String email);
   Future<String> teacherResetPassword(Map<String, dynamic> data);
   Future<void> teacherChangePassword(Map<String, dynamic> data);
+  Future<User> switchTeacherInstitute(int instituteId);
 }

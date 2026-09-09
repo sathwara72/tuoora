@@ -57,6 +57,8 @@ import 'package:tuoora/presentation/teacher/view/teacher_reset_password_screen.d
 import 'package:tuoora/presentation/teacher/view/teacher_change_password_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_batches_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_batch_details_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_batch_students_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_assign_students_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_profile_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_mark_attendance_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_self_attendance_screen.dart';
@@ -69,6 +71,7 @@ import 'package:tuoora/presentation/teacher/view/teacher_exam_marks_screen.dart'
 import 'package:tuoora/presentation/teacher/view/teacher_batch_timetable_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_add_timetable_slot_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_fees_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_batch_resources_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_salary_screen.dart';
 import 'package:tuoora/presentation/student/bindings.dart';
 import 'package:tuoora/presentation/student/view/payment_history_screen.dart';
@@ -338,6 +341,16 @@ class AppPages {
       binding: TeacherBinding(),
     ),
     GetPage(
+      name: AppRoutes.teacherBatchStudents,
+      page: () => const TeacherBatchStudentsScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherAssignStudents,
+      page: () => const TeacherAssignStudentsScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
       name: AppRoutes.teacherProfile,
       page: () => const TeacherProfileScreen(),
       binding: TeacherBinding(),
@@ -395,6 +408,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.teacherFees,
       page: () => const TeacherFeesScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherBatchResources,
+      page: () => const TeacherBatchResourcesScreen(),
       binding: TeacherBinding(),
     ),
     GetPage(
