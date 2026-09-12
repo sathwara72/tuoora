@@ -14,7 +14,7 @@ class TeacherHomeworkGradingController extends GetxController {
   final isSaving = false.obs;
   final submissions = <TeacherHomeworkSubmission>[].obs;
 
-  static const statuses = ['Pending', 'Missing', 'Late', 'Submitted', 'Reviewed'];
+  static const statuses = ['Pending', 'Submitted', 'Reviewed'];
 
   @override
   void onInit() {
@@ -36,16 +36,21 @@ class TeacherHomeworkGradingController extends GetxController {
   }
 
   void updateScore(TeacherHomeworkSubmission submission, String value) {
+    if (submission.status.toLowerCase() == 'pending') return;
     submission.score = double.tryParse(value);
     submissions.refresh();
   }
 
   void updateStatus(TeacherHomeworkSubmission submission, String status) {
     submission.status = status;
+    if (status.toLowerCase() == 'pending') {
+      submission.score = null;
+    }
     submissions.refresh();
   }
 
   Future<void> submitGrades() async {
+    if (isSaving.value) return;
     try {
       isSaving.value = true;
       await _repository.submitGrades(
@@ -54,14 +59,14 @@ class TeacherHomeworkGradingController extends GetxController {
             .map(
               (s) => {
                 'student_id': s.studentId,
-                'score': s.score,
+                'score': s.status.toLowerCase() == 'pending' ? null : s.score,
                 'status': s.status,
               },
             )
             .toList(),
       );
-      AppSnackBar.success('Grades saved');
       Get.back(result: true);
+      AppSnackBar.success('Grades saved');
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {

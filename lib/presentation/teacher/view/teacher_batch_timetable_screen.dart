@@ -12,6 +12,29 @@ import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
 class TeacherBatchTimetableScreen extends GetView<TeacherBatchTimetableController> {
   const TeacherBatchTimetableScreen({super.key});
 
+  String _getDayBadgeText(String rawDay) {
+    switch (rawDay.toLowerCase()) {
+      case 'monday':
+        return 'MON';
+      case 'tuesday':
+        return 'TUE';
+      case 'wednesday':
+        return 'WED';
+      case 'thursday':
+        return 'THU';
+      case 'friday':
+        return 'FRI';
+      case 'saturday':
+        return 'SAT';
+      case 'sunday':
+        return 'SUN';
+      default:
+        return rawDay.length > 3
+            ? rawDay.substring(0, 3).toUpperCase()
+            : rawDay.toUpperCase();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,88 +44,36 @@ class TeacherBatchTimetableScreen extends GetView<TeacherBatchTimetableControlle
           children: [
             TeacherAppBar(
               title: 'Timetable · ${controller.batch.name}',
-              actions: [
-                GestureDetector(
-                  onTap: controller.addSlot,
-                  child: Container(
-                    width: AppSpacing.s40,
-                    height: AppSpacing.s40,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBrand,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.add_rounded, color: AppColors.white),
-                  ),
-                ),
-              ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 4),
-              child: SizedBox(
-                height: AppSpacing.s44,
-                child: Obx(
-                  () => ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: AppSpacing.x16,
-                    children: TeacherBatchTimetableController.days.map((day) {
-                      final isSelected = controller.selectedDay.value == day;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.s8),
-                        child: GestureDetector(
-                          onTap: () => controller.selectDay(day),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primaryBrand : AppColors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: isSelected ? AppColors.primaryBrand : AppColors.borderGrey,
-                              ),
-                            ),
-                            child: Text(
-                              day.substring(0, 3).toUpperCase(),
-                              style: AppTextStyles.outfit(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: isSelected ? AppColors.white : AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-            ),
-            AppSpacing.v12,
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
                   return const Center(child: CommonLoading());
                 }
-                final slots = controller.slotsForSelectedDay;
+                final slots = controller.allSortedSlots;
                 if (slots.isEmpty) {
                   return Center(
                     child: Text(
-                      'No lectures scheduled.',
+                      'No lecture schedule configured yet.',
                       style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
                     ),
                   );
                 }
                 return RefreshIndicator(
+                  color: AppColors.primaryBrand,
                   onRefresh: controller.fetchTimetable,
                   child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: slots.length,
                     separatorBuilder: (_, _) => AppSpacing.v12,
                     itemBuilder: (context, index) {
                       final slot = slots[index];
                       return _SlotCard(
                         slot: slot,
-                        onEdit: () => controller.editSlot(slot),
-                        onDelete: () => controller.confirmDeleteSlot(slot),
+                        dayText: _getDayBadgeText(slot.dayOfWeek),
+                        timeDisplay: slot.timeSlot != null && slot.timeSlot!.isNotEmpty
+                            ? slot.timeSlot!
+                            : controller.formatTimeRange(slot.startTime, slot.endTime),
                       );
                     },
                   ),
@@ -118,97 +89,155 @@ class TeacherBatchTimetableScreen extends GetView<TeacherBatchTimetableControlle
 
 class _SlotCard extends StatelessWidget {
   final TeacherTimetableSlot slot;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final String dayText;
+  final String timeDisplay;
 
   const _SlotCard({
     required this.slot,
-    required this.onEdit,
-    required this.onDelete,
+    required this.dayText,
+    required this.timeDisplay,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: AppSpacing.cardPadding,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderGrey),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Row 1: Day badge (TUE, MON, etc.)
           Container(
-            width: AppSpacing.s44,
-            height: AppSpacing.s44,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.primaryBrand.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(6),
             ),
-            child: const Center(
-              child: Icon(Icons.schedule_rounded, color: AppColors.primaryBrand, size: 22),
+            child: Text(
+              dayText,
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF475569),
+                letterSpacing: 0.5,
+              ),
             ),
           ),
-          AppSpacing.h12,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          AppSpacing.v10,
+
+          // Row 2: Soft orange/brand time pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF4EC),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFFD8C2)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  slot.subject,
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                const Icon(
+                  Icons.access_time_rounded,
+                  size: 14,
+                  color: AppColors.primaryBrand,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(width: 6),
                 Text(
-                  '${slot.timeSlot ?? '${slot.startTime} - ${slot.endTime}'}'
-                  '${slot.roomNo != null && slot.roomNo!.isNotEmpty ? ' · Room ${slot.roomNo}' : ''}',
-                  style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
+                  timeDisplay,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryBrand,
+                  ),
                 ),
               ],
             ),
           ),
-          InkWell(
-            onTap: onEdit,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.fieldBg,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.fieldBorder),
-              ),
-              child: const Icon(
-                Icons.edit_outlined,
-                size: 16,
-                color: AppColors.textPrimary,
-              ),
+          AppSpacing.v10,
+
+          // Row 3: Subject Name
+          Text(
+            slot.subject,
+            style: AppTextStyles.outfit(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF0F172A),
             ),
           ),
-          AppSpacing.h8,
-          InkWell(
-            onTap: onDelete,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.bohoRed.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: AppColors.bohoRed.withValues(alpha: 0.2),
+          AppSpacing.v10,
+
+          // Row 4: Faculty info (Teacher Name)
+          Row(
+            children: [
+              const Icon(
+                Icons.person_outline_rounded,
+                size: 16,
+                color: Color(0xFF94A3B8),
+              ),
+              AppSpacing.h8,
+              Expanded(
+                child: Text(
+                  (slot.staffName != null && slot.staffName!.isNotEmpty)
+                      ? slot.staffName!
+                      : 'Faculty Not Assigned',
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF334155),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              child: const Icon(
-                Icons.delete_outline_rounded,
+            ],
+          ),
+          AppSpacing.v6,
+
+          // Row 5: Room info
+          Row(
+            children: [
+              const Icon(
+                Icons.meeting_room_outlined,
                 size: 16,
-                color: AppColors.bohoRed,
+                color: Color(0xFF94A3B8),
               ),
-            ),
+              AppSpacing.h8,
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: AppTextStyles.outfit(
+                      fontSize: 13,
+                      color: const Color(0xFF64748B),
+                    ),
+                    children: [
+                      const TextSpan(text: 'Room: '),
+                      TextSpan(
+                        text: (slot.roomNo != null && slot.roomNo!.isNotEmpty)
+                            ? slot.roomNo!
+                            : 'N/A',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ],
       ),

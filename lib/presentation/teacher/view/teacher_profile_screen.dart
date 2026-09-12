@@ -111,7 +111,9 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
                       ),
                     AppSpacing.v24,
                     _infoCard(profile),
-                    AppSpacing.v24,
+                    AppSpacing.v16,
+                    _buildMyBatchesCard(),
+                    AppSpacing.v16,
                     if (Get.find<AuthService>().currentUser?.hasMultipleInstitutes == true) ...[
                       _actionTile(
                         icon: Icons.apartment_rounded,
@@ -128,18 +130,6 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
                         arguments: false,
                       ),
                     ),
-                    AppSpacing.v8,
-                    _actionTile(
-                      icon: Icons.receipt_long_rounded,
-                      label: 'Salary Slips',
-                      onTap: () => Get.toNamed(AppRoutes.teacherSalaries),
-                    ),
-                    AppSpacing.v8,
-                    _actionTile(
-                      icon: Icons.event_available_rounded,
-                      label: 'My Attendance',
-                      onTap: () => Get.toNamed(AppRoutes.teacherSelfAttendance),
-                    ),
                     AppSpacing.v24,
                     _actionTile(
                       icon: Icons.logout_rounded,
@@ -155,6 +145,139 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
         ),
       ),
     );
+  }
+
+  Widget _buildMyBatchesCard() {
+    return Obx(() {
+      final batches = controller.batches;
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.groups_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'My Batches',
+                  style: AppTextStyles.outfit(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Batches assigned to you.',
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(height: 14),
+            if (batches.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No batches assigned yet.',
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: batches.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final batch = batches[index];
+                  final studentsCount = batch.studentsCount ?? 0;
+                  return InkWell(
+                    onTap: () => Get.toNamed(
+                      AppRoutes.teacherBatchDetails,
+                      arguments: batch,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  batch.name,
+                                  style: AppTextStyles.outfit(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$studentsCount student${studentsCount == 1 ? '' : 's'}',
+                                  style: AppTextStyles.outfit(
+                                    fontSize: 12,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 22,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _infoCard(TeacherProfile profile) {

@@ -60,6 +60,31 @@ class TeacherDashboardScreen extends StatelessWidget {
                       ),
                     ),
                   GestureDetector(
+                    onTap: () => Get.toNamed(AppRoutes.teacherProfile),
+                    child: Container(
+                      width: AppSpacing.s40,
+                      height: AppSpacing.s40,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFFCBD5E1),
+                          width: 1.2,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        _getInitials(user?.name),
+                        style: AppTextStyles.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF475569),
+                        ),
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
                     onTap: () => _confirmLogout(context),
                     child: Container(
                       width: AppSpacing.s40,
@@ -99,9 +124,9 @@ class TeacherDashboardScreen extends StatelessWidget {
                           onTap: () => Get.toNamed(AppRoutes.teacherBatches),
                         ),
                         _DashboardTile(
-                          icon: Icons.person_rounded,
-                          label: 'My Profile',
-                          onTap: () => Get.toNamed(AppRoutes.teacherProfile),
+                          icon: Icons.calendar_month_rounded,
+                          label: 'Time Table',
+                          onTap: () => Get.toNamed(AppRoutes.teacherTimetable),
                         ),
                         _DashboardTile(
                           icon: Icons.event_available_rounded,
@@ -277,6 +302,18 @@ class TeacherDashboardScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getInitials(String? name) {
+    if (name == null || name.trim().isEmpty) return 'TM';
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length >= 2) {
+      final first = parts[0].isNotEmpty ? parts[0][0] : '';
+      final second = parts[1].isNotEmpty ? parts[1][0] : '';
+      return '$first$second'.toUpperCase();
+    }
+    final single = parts[0];
+    return single.substring(0, single.length >= 2 ? 2 : 1).toUpperCase();
   }
 }
 

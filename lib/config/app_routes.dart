@@ -53,6 +53,7 @@ class AppRoutes {
   static const String teacherAddExam = '/teacher/batches/exams/add';
   static const String teacherExamMarks = '/teacher/batches/exams/marks';
   static const String teacherBatchTimetable = '/teacher/batches/timetable';
+  static const String teacherTimetable = '/teacher/timetable';
   static const String teacherAddTimetableSlot =
       '/teacher/batches/timetable/add';
   static const String teacherFees = '/teacher/batches/fees';

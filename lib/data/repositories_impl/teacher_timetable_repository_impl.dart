@@ -2,7 +2,7 @@ import 'package:tuoora/presentation/teacher/models/teacher_timetable_model.dart'
 
 abstract class TeacherTimetableRepositoryImpl {
   Future<List<TeacherTimetableSlot>> getTimetable({
-    required int batchId,
+    int? batchId,
     String? day,
   });
 

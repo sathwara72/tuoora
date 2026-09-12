@@ -25,60 +25,53 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
           children: [
             TeacherAppBar(
               title: '${controller.batch.name} Materials',
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary),
-                  tooltip: 'Refresh',
-                  onPressed: controller.fetchResources,
-                ),
-              ],
             ),
             _buildSearchAndSummary(),
             Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value && controller.resources.isEmpty) {
-                  return const Center(child: CommonLoading());
-                }
+              child: RefreshIndicator(
+                color: AppColors.primaryBrand,
+                onRefresh: controller.fetchResources,
+                child: Obx(() {
+                  if (controller.isLoading.value && controller.resources.isEmpty) {
+                    return const Center(child: CommonLoading());
+                  }
 
-                final list = controller.filteredResources;
-                if (list.isEmpty) {
-                  return Center(
-                    child: Padding(
+                  final list = controller.filteredResources;
+                  if (list.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.folder_open_rounded,
-                            size: 64,
-                            color: AppColors.textTertiary.withValues(alpha: 0.5),
+                      children: [
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.folder_open_rounded,
+                                size: 64,
+                                color: AppColors.textTertiary.withValues(alpha: 0.5),
+                              ),
+                              AppSpacing.v12,
+                              Text(
+                                controller.searchQuery.value.isEmpty
+                                    ? 'No study materials uploaded for this batch yet.'
+                                    : 'No materials matching "${controller.searchQuery.value}"',
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
-                          AppSpacing.v12,
-                          Text(
-                            controller.searchQuery.value.isEmpty
-                                ? 'No study materials uploaded for this batch yet.'
-                                : 'No materials matching "${controller.searchQuery.value}"',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.outfit(
-                              fontSize: 14,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          AppSpacing.v16,
-                          if (controller.searchQuery.value.isEmpty)
-                            AppButton(
-                              label: 'Upload First Material',
-                              onPressed: () => _showUploadBottomSheet(context),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
+                        ),
+                      ],
+                    );
+                  }
 
-                return RefreshIndicator(
-                  onRefresh: controller.fetchResources,
-                  child: ListView.separated(
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: list.length,
                     separatorBuilder: (_, _) => AppSpacing.v12,
@@ -91,9 +84,9 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                         onDelete: () => _confirmDelete(context, item),
                       );
                     },
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
             _buildBottomActionBar(context),
           ],
@@ -173,118 +166,183 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
         ],
       ),
       child: AppButton(
-        label: 'Upload Study Material',
+        label: 'Upload Material',
         icon: Icons.upload_file_rounded,
-        onPressed: () => _showUploadBottomSheet(context),
+        onPressed: () => _showUploadDialog(context),
       ),
     );
   }
 
-  void _showUploadBottomSheet(BuildContext context) {
+  void _showUploadDialog(BuildContext context) {
     final titleCtrl = TextEditingController();
-    final subjectCtrl = TextEditingController(text: controller.batch.subject ?? '');
     final descCtrl = TextEditingController();
     final pickedFilePath = RxnString();
     final pickedFileName = RxnString();
 
-    Get.bottomSheet(
-      Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
+    Get.dialog(
+      Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 420),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header banner
+              Container(
+                color: const Color(0xFFFF6B00),
+                padding: const EdgeInsets.fromLTRB(20, 18, 14, 18),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Upload Material',
-                      style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Upload New Content',
+                            style: AppTextStyles.outfit(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Distribute learning materials to this batch',
+                            style: AppTextStyles.outfit(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Text(
-                      'Share files with ${controller.batch.name}',
-                      style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => Get.back(),
                     ),
                   ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Get.back(),
-                ),
-              ],
-            ),
-            const Divider(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _inputField(
-                      label: 'Title *',
-                      hint: 'e.g. Chapter 4 Notes, Practice Quiz',
-                      controller: titleCtrl,
-                      icon: Icons.title_rounded,
-                    ),
-                    _inputField(
-                      label: 'Subject',
-                      hint: 'e.g. Mathematics, Physics',
-                      controller: subjectCtrl,
-                      icon: Icons.subject_rounded,
-                    ),
-                    _inputField(
-                      label: 'Description (Optional)',
-                      hint: 'Brief summary of contents...',
-                      controller: descCtrl,
-                      icon: Icons.description_outlined,
-                      maxLines: 2,
-                    ),
-                    AppSpacing.v8,
-                    Text(
-                      'Select File (PDF, Docs, Images, etc.) *',
-                      style: AppTextStyles.outfit(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+              ),
+
+              // Form fields
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // TITLE Field
+                      Text(
+                        'TITLE',
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF94A3B8),
+                          letterSpacing: 0.6,
+                        ),
                       ),
-                    ),
-                    AppSpacing.v8,
-                    Obx(() {
-                      final hasFile = pickedFilePath.value != null;
-                      return GestureDetector(
-                        onTap: () async {
-                          final result = await FilePicker.pickFiles(
-                            type: FileType.any,
-                            allowMultiple: false,
-                          );
-                          if (result != null && result.files.single.path != null) {
-                            pickedFilePath.value = result.files.single.path;
-                            pickedFileName.value = result.files.single.name;
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                        ),
+                        child: TextField(
+                          controller: titleCtrl,
+                          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. Week 4 - Study Material',
+                            hintStyle: AppTextStyles.outfit(fontSize: 13, color: const Color(0xFF94A3B8)),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // DESCRIPTION Field
+                      Text(
+                        'DESCRIPTION',
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF94A3B8),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                        ),
+                        child: TextField(
+                          controller: descCtrl,
+                          minLines: 3,
+                          maxLines: 4,
+                          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
+                          decoration: InputDecoration(
+                            hintText: 'Brief notes or instructions...',
+                            hintStyle: AppTextStyles.outfit(fontSize: 13, color: const Color(0xFF94A3B8)),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // FILE ATTACHMENT Field
+                      Text(
+                        'FILE ATTACHMENT',
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF94A3B8),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Obx(() {
+                        final hasFile = pickedFilePath.value != null;
+                        return Container(
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: hasFile ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                            color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: hasFile ? const Color(0xFF059669) : AppColors.borderGrey,
-                              style: BorderStyle.solid,
+                              color: hasFile ? const Color(0xFFFF6B00) : const Color(0xFFCBD5E1),
+                              width: 1,
                             ),
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                hasFile ? Icons.check_circle_rounded : Icons.cloud_upload_outlined,
-                                color: hasFile ? const Color(0xFF059669) : AppColors.primaryBrand,
-                                size: 28,
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFEDE1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_upward_rounded,
+                                  color: Color(0xFFFF6B00),
+                                  size: 22,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -296,94 +354,173 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                                       style: AppTextStyles.outfit(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: hasFile ? const Color(0xFF059669) : AppColors.textPrimary,
+                                        color: const Color(0xFF1E293B),
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
+                                    const SizedBox(height: 2),
                                     Text(
                                       hasFile ? 'File attached' : 'Supports PDF, Word, PPT, JPG, PNG',
                                       style: AppTextStyles.outfit(
                                         fontSize: 11,
-                                        color: AppColors.textTertiary,
+                                        color: const Color(0xFF94A3B8),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              if (hasFile)
-                                IconButton(
-                                  icon: const Icon(Icons.clear_rounded, size: 18),
-                                  onPressed: () {
-                                    pickedFilePath.value = null;
-                                    pickedFileName.value = null;
-                                  },
+                              const SizedBox(width: 8),
+                              InkWell(
+                                onTap: () async {
+                                  final result = await FilePicker.pickFiles(
+                                    type: FileType.any,
+                                    allowMultiple: false,
+                                  );
+                                  if (result != null && result.files.single.path != null) {
+                                    pickedFilePath.value = result.files.single.path;
+                                    pickedFileName.value = result.files.single.name;
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                                  ),
+                                  child: Text(
+                                    hasFile ? 'Change' : 'Browse',
+                                    style: AppTextStyles.outfit(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF334155),
+                                    ),
+                                  ),
                                 ),
+                              ),
                             ],
                           ),
-                        ),
-                      );
-                    }),
-                  ],
+                        );
+                      }),
+
+                      const SizedBox(height: 8),
+
+                      // Format category indicator dots
+                      Row(
+                        children: [
+                          _buildFormatDot(const Color(0xFFFF6B00), 'Images'),
+                          const SizedBox(width: 14),
+                          _buildFormatDot(const Color(0xFF2563EB), 'Videos'),
+                          const SizedBox(width: 14),
+                          _buildFormatDot(const Color(0xFFE11D48), 'Documents'),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Actions: Cancel & Upload
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Get.back(),
+                            child: Text(
+                              'Cancel',
+                              style: AppTextStyles.outfit(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Obx(
+                            () => ElevatedButton(
+                              onPressed: controller.isUploading.value
+                                  ? null
+                                  : () async {
+                                      if (titleCtrl.text.trim().isEmpty) {
+                                        AppSnackBar.error('Please enter a title for the material.');
+                                        return;
+                                      }
+                                      if (pickedFilePath.value == null) {
+                                        AppSnackBar.error('Please select a file to upload.');
+                                        return;
+                                      }
+                                      final ok = await controller.uploadNewResource(
+                                        title: titleCtrl.text.trim(),
+                                        subject: controller.batch.subject,
+                                        description: descCtrl.text.trim(),
+                                        filePath: pickedFilePath.value!,
+                                      );
+                                      if (ok) Get.back();
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF6B00),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: controller.isUploading.value
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Upload',
+                                      style: AppTextStyles.outfit(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            AppSpacing.v12,
-            Obx(
-              () => AppButton(
-                label: 'Upload File',
-                isLoading: controller.isUploading.value,
-                onPressed: () async {
-                  if (titleCtrl.text.trim().isEmpty) {
-                    AppSnackBar.error('Please enter a title for the study material.');
-                    return;
-                  }
-                  if (pickedFilePath.value == null) {
-                    AppSnackBar.error('Please select a file to upload.');
-                    return;
-                  }
-                  final ok = await controller.uploadNewResource(
-                    title: titleCtrl.text.trim(),
-                    subject: subjectCtrl.text.trim(),
-                    description: descCtrl.text.trim(),
-                    filePath: pickedFilePath.value!,
-                  );
-                  if (ok) Get.back();
-                },
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-      isScrollControlled: true,
+      barrierDismissible: true,
     );
   }
 
-  Widget _inputField({
-    required String label,
-    required String hint,
-    required TextEditingController controller,
-    required IconData icon,
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          labelStyle: AppTextStyles.outfit(fontSize: 13, color: AppColors.textSecondary),
-          hintStyle: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
-          prefixIcon: Icon(icon, size: 20, color: AppColors.textTertiary),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.borderGrey),
+  Widget _buildFormatDot(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         ),
-      ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: AppTextStyles.outfit(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF64748B),
+          ),
+        ),
+      ],
     );
   }
 

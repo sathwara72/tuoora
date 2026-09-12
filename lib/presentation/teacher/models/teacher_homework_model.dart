@@ -23,8 +23,33 @@ class TeacherHomework {
     final due = DateTime.tryParse(dueDate);
     if (due == null) return false;
     final today = DateTime.now();
-    return DateTime(due.year, due.month, due.day)
-        .isBefore(DateTime(today.year, today.month, today.day));
+    final todayMidnight = DateTime(today.year, today.month, today.day);
+    final dueMidnight = DateTime(due.year, due.month, due.day);
+    return dueMidnight.isBefore(todayMidnight);
+  }
+
+  int? get daysLeft {
+    final due = DateTime.tryParse(dueDate);
+    if (due == null) return null;
+    final today = DateTime.now();
+    final todayMidnight = DateTime(today.year, today.month, today.day);
+    final dueMidnight = DateTime(due.year, due.month, due.day);
+    return dueMidnight.difference(todayMidnight).inDays;
+  }
+
+  String get daysLeftText {
+    final d = daysLeft;
+    if (d == null) return '';
+    if (d < 0) {
+      final daysAgo = d.abs();
+      return daysAgo == 1 ? 'Overdue by 1 day' : 'Overdue by $daysAgo days';
+    } else if (d == 0) {
+      return 'Due Today';
+    } else if (d == 1) {
+      return '1 day left';
+    } else {
+      return '$d days left';
+    }
   }
 
   factory TeacherHomework.fromJson(Map<String, dynamic> json) {
@@ -83,16 +108,47 @@ class TeacherHomeworkSubmission {
     this.attachmentUrl,
   });
 
+  static String normalizeStatus(dynamic raw, {dynamic score, dynamic attachmentUrl, dynamic submittedAt, dynamic note}) {
+    final s = raw?.toString().trim().toLowerCase() ?? '';
+    if (s == 'reviewed' || s == 'graded' || s == 'checked') {
+      return 'Reviewed';
+    }
+    if (s == 'submitted' || s == 'done' || s == 'complete' || s == 'completed' || s == 'turned_in') {
+      return 'Submitted';
+    }
+    // If student has a score assigned already, mark as Reviewed or Submitted
+    if (score != null && double.tryParse('$score') != null) {
+      return 'Reviewed';
+    }
+    // If student has submitted an attachment or submission time or submission note
+    if ((attachmentUrl != null && attachmentUrl.toString().trim().isNotEmpty) ||
+        (submittedAt != null && submittedAt.toString().trim().isNotEmpty)) {
+      return 'Submitted';
+    }
+    return 'Pending';
+  }
+
   factory TeacherHomeworkSubmission.fromJson(Map<String, dynamic> json) {
     final student = json['student'] ?? {};
+    final rawScore = json['score'];
+    final rawAttachment = json['attachment_url'] ?? json['attachment'] ?? json['file_url'];
+    final rawSubmittedAt = json['submitted_at'] ?? json['submittedAt'];
+    final rawNote = json['note'];
+
     return TeacherHomeworkSubmission(
-      studentId: json['student_id'] ?? student['id'],
-      studentName: student['name'] ?? '',
-      profileImageUrl: student['profile_image_url'],
-      status: json['status'] ?? 'Pending',
-      score: json['score'] != null ? double.tryParse('${json['score']}') : null,
-      note: json['note'],
-      attachmentUrl: json['attachment_url'],
+      studentId: json['student_id'] ?? student['id'] ?? 0,
+      studentName: student['name'] ?? json['student_name'] ?? '',
+      profileImageUrl: student['profile_image_url'] ?? json['profile_image_url'],
+      status: normalizeStatus(
+        json['status'],
+        score: rawScore,
+        attachmentUrl: rawAttachment,
+        submittedAt: rawSubmittedAt,
+        note: rawNote,
+      ),
+      score: rawScore != null ? double.tryParse('$rawScore') : null,
+      note: rawNote,
+      attachmentUrl: rawAttachment,
     );
   }
 }

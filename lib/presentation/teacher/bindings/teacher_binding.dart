@@ -38,6 +38,7 @@ import 'package:tuoora/presentation/teacher/controllers/teacher_homework_grading
 import 'package:tuoora/presentation/teacher/controllers/teacher_mark_attendance_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_profile_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_salary_controller.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_timetable_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_self_attendance_controller.dart';
 
 class TeacherBinding extends Bindings {
@@ -148,6 +149,12 @@ class TeacherBinding extends Bindings {
     );
     Get.lazyPut(
       () => TeacherFeesController(Get.find<TeacherFeeRepositoryImpl>()),
+    );
+    Get.lazyPut(
+      () => TeacherTimetableController(
+        Get.find<TeacherTimetableRepositoryImpl>(),
+        Get.find<TeacherBatchRepositoryImpl>(),
+      ),
     );
     Get.lazyPut(
       () => TeacherSalaryController(Get.find<TeacherSalaryRepositoryImpl>()),

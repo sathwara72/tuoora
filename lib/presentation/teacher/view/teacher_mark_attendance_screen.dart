@@ -198,7 +198,6 @@ class TeacherMarkAttendanceScreen
                 _counterBadge('Total', '${controller.totalCount}', AppColors.textSecondary),
                 _counterBadge('Present', '${controller.presentCount}', AppColors.primaryBrand),
                 _counterBadge('Absent', '${controller.absentCount}', AppColors.bohoRed),
-                _counterBadge('Late', '${controller.lateCount}', Colors.amber.shade800),
                 if (controller.unmarkedCount > 0)
                   _counterBadge('Unmarked', '${controller.unmarkedCount}', Colors.grey.shade600),
               ],
@@ -339,9 +338,7 @@ class _StudentRow extends StatelessWidget {
               ? AppColors.primaryBrand.withValues(alpha: 0.3)
               : status == 'absent'
                   ? AppColors.bohoRed.withValues(alpha: 0.3)
-                  : status == 'late'
-                      ? Colors.amber.shade300
-                      : AppColors.borderGrey,
+                  : AppColors.borderGrey,
         ),
       ),
       child: Row(
@@ -397,7 +394,7 @@ class _StudentRow extends StatelessWidget {
           ),
           AppSpacing.h8,
 
-          // Quick Toggles: Present, Absent, Late
+          // Quick Toggles: Present, Absent
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -408,20 +405,12 @@ class _StudentRow extends StatelessWidget {
                 activeColor: AppColors.primaryBrand,
                 currentStatus: status,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               _quickToggle(
                 statusKey: 'absent',
                 label: 'A',
                 icon: Icons.close_rounded,
                 activeColor: AppColors.bohoRed,
-                currentStatus: status,
-              ),
-              const SizedBox(width: 6),
-              _quickToggle(
-                statusKey: 'late',
-                label: 'L',
-                icon: Icons.schedule_rounded,
-                activeColor: Colors.amber.shade800,
                 currentStatus: status,
               ),
             ],
@@ -437,8 +426,6 @@ class _StudentRow extends StatelessWidget {
         return AppColors.primaryBrand.withValues(alpha: 0.1);
       case 'absent':
         return AppColors.bohoRed.withValues(alpha: 0.1);
-      case 'late':
-        return Colors.amber.shade50;
       default:
         return AppColors.fieldBg;
     }
@@ -450,8 +437,6 @@ class _StudentRow extends StatelessWidget {
         return AppColors.primaryBrand;
       case 'absent':
         return AppColors.bohoRed;
-      case 'late':
-        return Colors.amber.shade900;
       default:
         return AppColors.textSecondary;
     }

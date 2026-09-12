@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -25,13 +26,6 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
           children: [
             TeacherAppBar(
               title: '${controller.batch.name} Students',
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.refresh_rounded, color: AppColors.textPrimary),
-                  tooltip: 'Refresh',
-                  onPressed: controller.fetchStudents,
-                ),
-              ],
             ),
             _buildSearchAndSummary(),
             Expanded(
@@ -86,8 +80,8 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                       final student = list[index];
                       return _StudentCard(
                         student: student,
+                        onView: () => _showStudentDetailsSheet(context, student),
                         onEdit: () => _showEditStudentDialog(context, student),
-                        onRemove: () => _confirmRemoveStudent(context, student),
                       );
                     },
                   ),
@@ -171,46 +165,27 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _navigateToAssignStudents(context),
-              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-              label: Text(
-                'Assign Existing',
-                style: AppTextStyles.outfit(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryBrand,
-                side: const BorderSide(color: AppColors.primaryBrand),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _navigateToAssignStudents(context),
+          icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+          label: Text(
+            'Assign Student',
+            style: AppTextStyles.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.white,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _showRegisterStudentDialog(context),
-              icon: const Icon(Icons.add_rounded, size: 18),
-              label: Text(
-                'Register New',
-                style: AppTextStyles.outfit(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.white,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryBrand,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
-              ),
-            ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryBrand,
+            foregroundColor: AppColors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            elevation: 0,
           ),
-        ],
+        ),
       ),
     );
   }
@@ -462,151 +437,528 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
       ),
     );
   }
-}
 
-class _StudentCard extends StatelessWidget {
-  final TeacherBatchStudent student;
-  final VoidCallback onEdit;
-  final VoidCallback onRemove;
+  void _showStudentDetailsSheet(BuildContext context, TeacherBatchStudent student) {
+    final enrollmentId = student.enrollmentId != null && student.enrollmentId!.isNotEmpty
+        ? student.enrollmentId!
+        : student.id.toString();
 
-  const _StudentCard({
-    required this.student,
-    required this.onEdit,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderGrey),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAvatar(),
-              const SizedBox(width: 12),
-              Expanded(
+    Get.bottomSheet(
+      Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Student Details',
+                  style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Get.back(),
+                ),
+              ],
+            ),
+            const Divider(),
+            Expanded(
+              child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    AppSpacing.v12,
+                    Center(
+                      child: _hasValidPhoto(student.profileImageUrl)
+                          ? CachedNetworkImage(
+                              imageUrl: student.profileImageUrl!,
+                              imageBuilder: (context, imageProvider) => CircleAvatar(
+                                radius: 36,
+                                backgroundImage: imageProvider,
+                              ),
+                              placeholder: (context, url) => _buildSheetInitials(student.name),
+                              errorWidget: (context, url, error) => _buildSheetInitials(student.name),
+                            )
+                          : _buildSheetInitials(student.name),
+                    ),
+                    AppSpacing.v12,
                     Text(
                       student.name,
                       style: AppTextStyles.outfit(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
                       ),
+                      textAlign: TextAlign.center,
                     ),
-                    if (student.enrollmentId != null && student.enrollmentId!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(Icons.badge_outlined, size: 14, color: AppColors.textTertiary),
-                          const SizedBox(width: 4),
-                          Text(
-                            student.enrollmentId!,
+                    AppSpacing.v6,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Text(
+                            'ID: $enrollmentId',
                             style: AppTextStyles.outfit(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF64748B),
                             ),
                           ),
-                        ],
-                      ),
-                    ],
-                    if (student.phone != null && student.phone!.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      GestureDetector(
-                        onTap: () {
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'ACTIVE',
+                            style: AppTextStyles.outfit(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF10B981),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    AppSpacing.v20,
+                    _detailTile(
+                      icon: Icons.school_outlined,
+                      label: 'Standard',
+                      value: student.standard?.isNotEmpty == true ? student.standard! : '-',
+                    ),
+                    _detailTile(
+                      icon: Icons.family_restroom_outlined,
+                      label: 'Guardian Name',
+                      value: student.guardianName?.isNotEmpty == true ? student.guardianName! : '-',
+                    ),
+                    if (student.phone != null && student.phone!.isNotEmpty)
+                      _detailTile(
+                        icon: Icons.phone_outlined,
+                        label: 'Phone',
+                        value: student.phone!,
+                        actionIcon: Icons.call_outlined,
+                        onTapAction: () {
                           final uri = Uri(scheme: 'tel', path: student.phone);
                           launchUrl(uri);
                         },
-                        child: Row(
-                          children: [
-                            Icon(Icons.phone_outlined, size: 14, color: AppColors.primaryBrand),
-                            const SizedBox(width: 4),
-                            Text(
-                              student.phone!,
-                              style: AppTextStyles.outfit(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.primaryBrand,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
+                    if (student.email != null && student.email!.isNotEmpty)
+                      _detailTile(
+                        icon: Icons.email_outlined,
+                        label: 'Email',
+                        value: student.email!,
+                        actionIcon: Icons.mail_outline,
+                        onTapAction: () {
+                          final uri = Uri(scheme: 'mailto', path: student.email);
+                          launchUrl(uri);
+                        },
+                      ),
+                    if (controller.batch.teacherCanViewFees) ...[
+                      _detailTile(
+                        icon: Icons.account_balance_wallet_outlined,
+                        label: 'Fee Status',
+                        value: student.feeStatus ?? 'Pending',
+                      ),
+                      if (student.totalDue > 0)
+                        _detailTile(
+                          icon: Icons.money_off_outlined,
+                          label: 'Total Due',
+                          value: '₹${student.totalDue}',
+                          valueColor: Colors.redAccent,
+                        ),
+                      if (student.totalPaid > 0)
+                        _detailTile(
+                          icon: Icons.attach_money_outlined,
+                          label: 'Total Paid',
+                          value: '₹${student.totalPaid}',
+                          valueColor: const Color(0xFF059669),
+                        ),
                     ],
                   ],
                 ),
               ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                onSelected: (val) {
-                  if (val == 'edit') onEdit();
-                  if (val == 'remove') onRemove();
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
-                        const SizedBox(width: 8),
-                        Text('Edit Info', style: AppTextStyles.outfit(fontSize: 13)),
-                      ],
+            ),
+            AppSpacing.v12,
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Get.back();
+                      _confirmRemoveStudent(context, student);
+                    },
+                    icon: const Icon(Icons.person_remove_outlined, size: 18, color: Colors.redAccent),
+                    label: Text(
+                      'Remove',
+                      style: AppTextStyles.outfit(color: Colors.redAccent, fontWeight: FontWeight.w600),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.redAccent),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  PopupMenuItem(
-                    value: 'remove',
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Get.back();
+                      _showEditStudentDialog(context, student);
+                    },
+                    icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                    label: Text(
+                      'Edit Info',
+                      style: AppTextStyles.outfit(color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryBrand,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _detailTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    IconData? actionIcon,
+    VoidCallback? onTapAction,
+    Color? valueColor,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.scaffoldBg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.borderGrey.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.textTertiary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.outfit(fontSize: 11, color: AppColors.textTertiary),
+                ),
+                Text(
+                  value,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: valueColor ?? AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (actionIcon != null && onTapAction != null)
+            IconButton(
+              icon: Icon(actionIcon, size: 20, color: AppColors.primaryBrand),
+              onPressed: onTapAction,
+            ),
+        ],
+      ),
+    );
+  }
+
+  bool _hasValidPhoto(String? url) {
+    return url != null &&
+        url.isNotEmpty &&
+        url.startsWith('http') &&
+        !url.contains('ui-avatars.com');
+  }
+
+  Widget _buildSheetInitials(String name) {
+    final initials = name.isNotEmpty
+        ? name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        : '?';
+    return Container(
+      width: 72,
+      height: 72,
+      decoration: const BoxDecoration(
+        color: Color(0xFFEFF6FF),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: AppTextStyles.outfit(
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF6366F1),
+        ),
+      ),
+    );
+  }
+}
+
+class _StudentCard extends StatelessWidget {
+  final TeacherBatchStudent student;
+  final VoidCallback onView;
+  final VoidCallback onEdit;
+
+  const _StudentCard({
+    required this.student,
+    required this.onView,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enrollmentId = student.enrollmentId != null && student.enrollmentId!.isNotEmpty
+        ? student.enrollmentId!
+        : student.id.toString();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        'ID: $enrollmentId',
+                        style: AppTextStyles.outfit(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'ACTIVE',
+                        style: AppTextStyles.outfit(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF10B981),
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _buildAvatar(),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            student.name,
+                            style: AppTextStyles.outfit(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF0F172A),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (student.email != null && student.email!.isNotEmpty) ...[
+                            const SizedBox(height: 1),
+                            Text(
+                              student.email!,
+                              style: AppTextStyles.outfit(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w400,
+                                color: const Color(0xFF64748B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          if (student.phone != null && student.phone!.isNotEmpty) ...[
+                            const SizedBox(height: 1),
+                            GestureDetector(
+                              onTap: () {
+                                final uri = Uri(scheme: 'tel', path: student.phone);
+                                launchUrl(uri);
+                              },
+                              child: Text(
+                                student.phone!,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF1E293B),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'STANDARD',
+                      style: AppTextStyles.outfit(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF94A3B8),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Text(
+                      student.standard?.isNotEmpty == true ? student.standard! : '-',
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'GUARDIAN',
+                      style: AppTextStyles.outfit(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF94A3B8),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Text(
+                      student.guardianName?.isNotEmpty == true ? student.guardianName! : '-',
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFFFBFDFF),
+              border: Border(
+                top: BorderSide(color: Color(0xFFF1F5F9)),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                InkWell(
+                  onTap: onView,
+                  borderRadius: BorderRadius.circular(6),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.person_remove_outlined, size: 18, color: Colors.redAccent),
-                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.visibility_outlined,
+                          size: 16,
+                          color: Color(0xFFFF6B00),
+                        ),
+                        const SizedBox(width: 5),
                         Text(
-                          'Remove from Batch',
-                          style: AppTextStyles.outfit(fontSize: 13, color: Colors.redAccent),
+                          'View',
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFFF6B00),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: AppColors.borderGrey),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildFeeBadge(student.feeStatus),
-              if (student.totalDue > 0)
-                Text(
-                  'Due: ₹${student.totalDue}',
-                  style: AppTextStyles.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.redAccent,
-                  ),
-                )
-              else if (student.totalPaid > 0)
-                Text(
-                  'Paid: ₹${student.totalPaid}',
-                  style: AppTextStyles.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF059669),
-                  ),
                 ),
-            ],
+                IconButton(
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: Color(0xFF94A3B8),
+                  ),
+                  splashRadius: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: onEdit,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -614,67 +966,47 @@ class _StudentCard extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    final hasImg = student.profileImageUrl != null && student.profileImageUrl!.isNotEmpty;
-    if (hasImg) {
-      return CircleAvatar(
-        radius: 22,
-        backgroundImage: NetworkImage(student.profileImageUrl!),
-        backgroundColor: AppColors.primaryBrand.withOpacity(0.1),
+    final bool hasPhoto = student.profileImageUrl != null &&
+        student.profileImageUrl!.isNotEmpty &&
+        student.profileImageUrl!.startsWith('http') &&
+        !student.profileImageUrl!.contains('ui-avatars.com');
+
+    if (hasPhoto) {
+      return CachedNetworkImage(
+        imageUrl: student.profileImageUrl!,
+        imageBuilder: (context, imageProvider) => Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
+          ),
+        ),
+        placeholder: (context, url) => _buildAvatarInitials(student.name),
+        errorWidget: (context, url, error) => _buildAvatarInitials(student.name),
       );
     }
-    final initials = student.name.isNotEmpty
-        ? student.name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+    return _buildAvatarInitials(student.name);
+  }
+
+  Widget _buildAvatarInitials(String name) {
+    final initials = name.isNotEmpty
+        ? name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
         : '?';
-    return CircleAvatar(
-      radius: 22,
-      backgroundColor: const Color(0xFFEFF6FF),
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: const BoxDecoration(
+        color: Color(0xFFEFF6FF),
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
       child: Text(
         initials,
         style: AppTextStyles.outfit(
           fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFF2563EB),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeeBadge(String? status) {
-    final s = (status ?? 'pending').toLowerCase();
-    Color bg;
-    Color text;
-    String label;
-
-    if (s.contains('paid') && !s.contains('un')) {
-      bg = const Color(0xFFECFDF5);
-      text = const Color(0xFF059669);
-      label = 'Fee Paid';
-    } else if (s.contains('partial')) {
-      bg = const Color(0xFFFFFBEB);
-      text = const Color(0xFFD97706);
-      label = 'Partial Fee';
-    } else if (s.contains('overdue')) {
-      bg = const Color(0xFFFEF2F2);
-      text = const Color(0xFFDC2626);
-      label = 'Overdue';
-    } else {
-      bg = const Color(0xFFFFF1F2);
-      text = const Color(0xFFE11D48);
-      label = status != null && status.isNotEmpty ? status.capitalizeFirst! : 'Fee Due';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.outfit(
-          fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: text,
+          color: const Color(0xFF6366F1),
         ),
       ),
     );

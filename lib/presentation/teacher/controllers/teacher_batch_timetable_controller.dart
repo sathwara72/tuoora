@@ -19,7 +19,6 @@ class TeacherBatchTimetableController extends GetxController {
     'thursday',
     'friday',
     'saturday',
-    'sunday',
   ];
 
   late final TeacherBatch batch;
@@ -27,10 +26,55 @@ class TeacherBatchTimetableController extends GetxController {
   final allSlots = <TeacherTimetableSlot>[].obs;
   final selectedDay = ''.obs;
 
-  List<TeacherTimetableSlot> get slotsForSelectedDay => allSlots
-      .where((s) => s.dayOfWeek == selectedDay.value)
-      .toList()
-    ..sort((a, b) => a.startTime.compareTo(b.startTime));
+  List<TeacherTimetableSlot> get allSortedSlots {
+    final list = List<TeacherTimetableSlot>.from(allSlots);
+    const dayOrder = {
+      'monday': 1,
+      'tuesday': 2,
+      'wednesday': 3,
+      'thursday': 4,
+      'friday': 5,
+      'saturday': 6,
+      'sunday': 7,
+    };
+    list.sort((a, b) {
+      final dayA = dayOrder[a.dayOfWeek.toLowerCase()] ?? 8;
+      final dayB = dayOrder[b.dayOfWeek.toLowerCase()] ?? 8;
+      if (dayA != dayB) {
+        return dayA.compareTo(dayB);
+      }
+      return a.startTime.compareTo(b.startTime);
+    });
+    return list;
+  }
+
+  String formatTimeRange(String? start, String? end) {
+    if ((start == null || start.isEmpty) && (end == null || end.isEmpty)) {
+      return '';
+    }
+    final formattedStart = _formatSingleTime(start);
+    final formattedEnd = _formatSingleTime(end);
+    if (formattedStart.isNotEmpty && formattedEnd.isNotEmpty) {
+      return '$formattedStart - $formattedEnd';
+    }
+    return formattedStart.isNotEmpty ? formattedStart : formattedEnd;
+  }
+
+  String _formatSingleTime(String? timeStr) {
+    if (timeStr == null || timeStr.trim().isEmpty) return '';
+    try {
+      final parts = timeStr.trim().split(':');
+      if (parts.length >= 2) {
+        int h = int.parse(parts[0]);
+        final m = int.parse(parts[1].split(' ').first);
+        final isPm = h >= 12;
+        final hourOfPeriod = h % 12 == 0 ? 12 : h % 12;
+        final period = isPm ? 'PM' : 'AM';
+        return '${hourOfPeriod.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')} $period';
+      }
+    } catch (_) {}
+    return timeStr;
+  }
 
   @override
   void onInit() {

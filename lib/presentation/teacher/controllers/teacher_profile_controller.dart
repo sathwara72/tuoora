@@ -5,7 +5,9 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
+import 'package:tuoora/data/repositories_impl/teacher_batch_repository_impl.dart';
 import 'package:tuoora/data/repositories_impl/teacher_profile_repository_impl.dart';
+import 'package:tuoora/presentation/teacher/models/teacher_batch_model.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_profile_model.dart';
 
 class TeacherProfileController extends GetxController {
@@ -16,6 +18,7 @@ class TeacherProfileController extends GetxController {
   final isLoading = true.obs;
   final isUploadingAvatar = false.obs;
   final Rxn<TeacherProfile> profile = Rxn<TeacherProfile>();
+  final batches = <TeacherBatch>[].obs;
 
   @override
   void onInit() {
@@ -26,7 +29,12 @@ class TeacherProfileController extends GetxController {
   Future<void> fetchProfile() async {
     try {
       isLoading.value = true;
-      profile.value = await _repository.getProfile();
+      final results = await Future.wait([
+        _repository.getProfile(),
+        Get.find<TeacherBatchRepositoryImpl>().getBatches().catchError((_) => <TeacherBatch>[]),
+      ]);
+      profile.value = results[0] as TeacherProfile;
+      batches.value = results[1] as List<TeacherBatch>;
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {

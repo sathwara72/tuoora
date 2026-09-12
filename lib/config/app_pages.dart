@@ -69,6 +69,7 @@ import 'package:tuoora/presentation/teacher/view/teacher_batch_exams_screen.dart
 import 'package:tuoora/presentation/teacher/view/teacher_add_exam_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_exam_marks_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_batch_timetable_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_timetable_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_add_timetable_slot_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_fees_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_batch_resources_screen.dart';
@@ -398,6 +399,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.teacherBatchTimetable,
       page: () => const TeacherBatchTimetableScreen(),
+      binding: TeacherBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.teacherTimetable,
+      page: () => const TeacherTimetableScreen(),
       binding: TeacherBinding(),
     ),
     GetPage(

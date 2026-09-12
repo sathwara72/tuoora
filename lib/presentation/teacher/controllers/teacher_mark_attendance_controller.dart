@@ -42,8 +42,6 @@ class TeacherMarkAttendanceController extends GetxController {
       rows.where((r) => r.status?.toLowerCase() == 'present').length;
   int get absentCount =>
       rows.where((r) => r.status?.toLowerCase() == 'absent').length;
-  int get lateCount =>
-      rows.where((r) => r.status?.toLowerCase() == 'late').length;
   int get unmarkedCount =>
       rows.where((r) => r.status == null || r.status!.isEmpty).length;
   int get totalCount => rows.length;

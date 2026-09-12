@@ -170,10 +170,11 @@ class TeacherAssignStudentsScreen extends GetView<TeacherAssignStudentsControlle
       ),
       child: Obx(() {
         final count = controller.selectedStudentIds.length;
+        final isSubmitting = controller.isSubmitting.value;
         return AppButton(
           label: count > 0 ? 'Assign ($count) to Batch' : 'Select Students to Assign',
-          isLoading: controller.isSubmitting.value,
-          onPressed: count > 0 ? controller.assignSelectedStudents : null,
+          isLoading: isSubmitting,
+          onPressed: (count > 0 && !isSubmitting) ? controller.assignSelectedStudents : null,
         );
       }),
     );
