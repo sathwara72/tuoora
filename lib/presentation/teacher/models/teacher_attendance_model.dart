@@ -96,9 +96,15 @@ class TeacherCalendarDay {
   });
 
   factory TeacherCalendarDay.fromJson(Map<String, dynamic> json) {
+    final rawDate = json['date'] ?? json['attendance_date'] ?? json['day'] ?? json['attendanceDate'];
+    String cleanDate = '';
+    if (rawDate != null) {
+      cleanDate = rawDate.toString().split(' ').first.split('T').first;
+    }
+    final rawStatus = json['status'] ?? json['attendance_status'] ?? json['attendance'] ?? json['type'] ?? '';
     return TeacherCalendarDay(
-      date: json['date']?.toString() ?? '',
-      status: json['status']?.toString() ?? 'Absent',
+      date: cleanDate,
+      status: rawStatus.toString(),
       note: json['note']?.toString(),
       inTime: json['in_time']?.toString(),
       outTime: json['out_time']?.toString(),
@@ -134,14 +140,41 @@ class TeacherAttendanceCalendarData {
     final summary = data['summary'] as Map? ?? {};
 
     final Map<String, TeacherCalendarDay> mappedDays = {};
-    final rawCalendar = data['calendar'] ?? data['records'] ?? data['days'];
+    // The self-attendance endpoint nests the day map one level deeper, as
+    // data.calendar.days (data.calendar itself also carries month/year/
+    // month_label) — drill into it first so those siblings aren't mistaken
+    // for a flat day map.
+    final calendarBlock = data['calendar'];
+    final rawCalendar = (calendarBlock is Map && calendarBlock['days'] != null)
+        ? calendarBlock['days']
+        : (calendarBlock ?? data['records'] ?? data['days'] ?? data['attendance'] ?? data['data']);
+
+    void addMapped(String key, TeacherCalendarDay day) {
+      final cleanKey = key.split(' ').first.split('T').first;
+      mappedDays[cleanKey] = day;
+      if (day.date.isNotEmpty) {
+        mappedDays[day.date] = day;
+        try {
+          final parsed = DateTime.tryParse(day.date);
+          if (parsed != null) {
+            mappedDays[parsed.day.toString()] = day;
+            mappedDays[parsed.day.toString().padLeft(2, '0')] = day;
+          }
+        } catch (_) {}
+      }
+      final intKey = int.tryParse(cleanKey);
+      if (intKey != null) {
+        mappedDays[intKey.toString()] = day;
+        mappedDays[intKey.toString().padLeft(2, '0')] = day;
+      }
+    }
 
     if (rawCalendar is List) {
       for (final item in rawCalendar) {
         if (item is Map) {
           final day = TeacherCalendarDay.fromJson(Map<String, dynamic>.from(item));
           if (day.date.isNotEmpty) {
-            mappedDays[day.date] = day;
+            addMapped(day.date, day);
           }
         }
       }
@@ -150,12 +183,14 @@ class TeacherAttendanceCalendarData {
         if (value is Map) {
           final valMap = Map<String, dynamic>.from(value);
           valMap['date'] ??= key.toString();
-          mappedDays[key.toString()] = TeacherCalendarDay.fromJson(valMap);
+          final day = TeacherCalendarDay.fromJson(valMap);
+          addMapped(key.toString(), day);
         } else if (value is String) {
-          mappedDays[key.toString()] = TeacherCalendarDay(
+          final day = TeacherCalendarDay(
             date: key.toString(),
             status: value,
           );
+          addMapped(key.toString(), day);
         }
       });
     }

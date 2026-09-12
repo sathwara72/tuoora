@@ -69,8 +69,9 @@ class TeacherSelfAttendanceController extends GetxController {
 
       // Select today if in current month/year, else first day of month
       final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      if (res.days.containsKey(todayStr)) {
-        selectedDay.value = res.days[todayStr];
+      final todayDay = _resolveDay(todayStr);
+      if (todayDay != null) {
+        selectedDay.value = todayDay;
       } else if (res.days.isNotEmpty) {
         selectedDay.value = res.days.values.first;
       } else {
@@ -97,14 +98,34 @@ class TeacherSelfAttendanceController extends GetxController {
   }
 
   void onDaySelected(String dateKey) {
-    if (calendarData.value?.days.containsKey(dateKey) == true) {
-      selectedDay.value = calendarData.value!.days[dateKey];
-    } else {
-      selectedDay.value = TeacherCalendarDay(
-        date: dateKey,
-        status: 'Not Marked',
-      );
-    }
+    selectedDay.value = _resolveDay(dateKey) ??
+        TeacherCalendarDay(date: dateKey, status: 'Not Marked');
+  }
+
+  /// The calendar endpoint keys each day by its bare day-of-month (e.g.
+  /// "12"), not a full ISO date, so a lookup by "yyyy-MM-dd" alone always
+  /// misses. Fall back to the day-of-month and stamp the real ISO date
+  /// back on so the detail card can still format it properly.
+  TeacherCalendarDay? _resolveDay(String isoDateStr) {
+    final days = calendarData.value?.days;
+    if (days == null) return null;
+
+    final direct = days[isoDateStr];
+    if (direct != null) return direct;
+
+    final parsed = DateTime.tryParse(isoDateStr);
+    if (parsed == null) return null;
+    final byDayNumber =
+        days[parsed.day.toString()] ?? days[parsed.day.toString().padLeft(2, '0')];
+    if (byDayNumber == null) return null;
+
+    return TeacherCalendarDay(
+      date: isoDateStr,
+      status: byDayNumber.status,
+      note: byDayNumber.note,
+      inTime: byDayNumber.inTime,
+      outTime: byDayNumber.outTime,
+    );
   }
 
   Future<void> markToday(String status, {String? note}) async {
