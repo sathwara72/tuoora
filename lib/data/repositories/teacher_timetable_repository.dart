@@ -10,10 +10,11 @@ class TeacherTimetableRepository implements TeacherTimetableRepositoryImpl {
 
   @override
   Future<List<TeacherTimetableSlot>> getTimetable({
-    required int batchId,
+    int? batchId,
     String? day,
   }) async {
-    final query = <String, String>{'batch_id': batchId.toString()};
+    final query = <String, String>{};
+    if (batchId != null) query['batch_id'] = batchId.toString();
     if (day != null) query['day'] = day;
     final response = await _apiClient.get(ApiConstants.teacherTimetable, query: query);
     if (response.status.hasError) {

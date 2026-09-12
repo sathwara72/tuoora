@@ -90,6 +90,7 @@ class TeacherAddHomeworkController extends GetxController {
   }
 
   Future<void> submit() async {
+    if (isLoading.value) return;
     if (!_validate()) return;
     try {
       isLoading.value = true;
@@ -100,15 +101,16 @@ class TeacherAddHomeworkController extends GetxController {
       };
       if (isEditing) {
         await _repository.updateHomework(editingHomework!.id, data);
+        Get.back(result: true);
         AppSnackBar.success('Homework updated');
       } else {
         await _repository.createHomework(
           {...data, 'batch_id': batch.id},
           attachmentPath: selectedAttachment.value,
         );
+        Get.back(result: true);
         AppSnackBar.success('Homework created');
       }
-      Get.back(result: true);
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {

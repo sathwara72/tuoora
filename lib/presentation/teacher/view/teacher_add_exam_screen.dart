@@ -6,6 +6,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
+import 'package:tuoora/core/widgets/app_pickers.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_exam_controller.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
 
@@ -38,47 +39,18 @@ class TeacherAddExamScreen extends GetView<TeacherAddExamController> {
                       ),
                     ),
                     AppSpacing.v16,
+                    _label('Class (optional)'),
+                    _field(controller: controller.classController, hint: 'e.g. Class 10, Grade 9'),
+                    AppSpacing.v16,
                     _label('Subject (optional)'),
                     _field(controller: controller.subjectController, hint: 'e.g. Mathematics'),
-                    AppSpacing.v16,
-                    _label('Exam Type'),
-                    Obx(
-                      () => Wrap(
-                        spacing: AppSpacing.s8,
-                        runSpacing: AppSpacing.s8,
-                        children: TeacherAddExamController.examTypes.map((type) {
-                          final isSelected = controller.examType.value == type;
-                          return GestureDetector(
-                            onTap: () => controller.selectExamType(type),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primaryBrand : AppColors.fieldBg,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: isSelected ? AppColors.primaryBrand : AppColors.fieldBorder,
-                                ),
-                              ),
-                              child: Text(
-                                type.replaceAll('_', ' '),
-                                style: AppTextStyles.outfit(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected ? AppColors.white : AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
                     AppSpacing.v16,
                     _label('Exam Date'),
                     Obx(
                       () => GestureDetector(
                         onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
+                          final picked = await AppPickers.date(
+                            context,
                             initialDate: controller.examDate.value ?? DateTime.now(),
                             firstDate: DateTime.now().subtract(const Duration(days: 30)),
                             lastDate: DateTime.now().add(const Duration(days: 730)),
@@ -110,6 +82,116 @@ class TeacherAddExamScreen extends GetView<TeacherAddExamController> {
                           ),
                         ),
                       ),
+                    ),
+                    AppSpacing.v16,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _label('Start Time'),
+                              Obx(
+                                () => GestureDetector(
+                                  onTap: () async {
+                                    final picked = await AppPickers.time(
+                                      context,
+                                      initialTime: controller.startTime.value ??
+                                          const TimeOfDay(hour: 9, minute: 0),
+                                    );
+                                    if (picked != null) controller.pickStartTime(picked);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.fieldBg,
+                                      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                                      border: Border.all(color: AppColors.fieldBorder),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.access_time_rounded,
+                                          size: 16,
+                                          color: AppColors.primaryBrand,
+                                        ),
+                                        AppSpacing.h8,
+                                        Expanded(
+                                          child: Text(
+                                            controller.startTime.value != null
+                                                ? controller.formatTimeOfDay(controller.startTime.value)
+                                                : 'Start time',
+                                            style: AppTextStyles.outfit(
+                                              fontSize: 13,
+                                              color: controller.startTime.value != null
+                                                  ? AppColors.textPrimary
+                                                  : AppColors.fieldLabel,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        AppSpacing.h12,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _label('End Time'),
+                              Obx(
+                                () => GestureDetector(
+                                  onTap: () async {
+                                    final picked = await AppPickers.time(
+                                      context,
+                                      initialTime: controller.endTime.value ??
+                                          const TimeOfDay(hour: 12, minute: 0),
+                                    );
+                                    if (picked != null) controller.pickEndTime(picked);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.fieldBg,
+                                      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                                      border: Border.all(color: AppColors.fieldBorder),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.access_time_filled_rounded,
+                                          size: 16,
+                                          color: AppColors.primaryBrand,
+                                        ),
+                                        AppSpacing.h8,
+                                        Expanded(
+                                          child: Text(
+                                            controller.endTime.value != null
+                                                ? controller.formatTimeOfDay(controller.endTime.value)
+                                                : 'End time',
+                                            style: AppTextStyles.outfit(
+                                              fontSize: 13,
+                                              color: controller.endTime.value != null
+                                                  ? AppColors.textPrimary
+                                                  : AppColors.fieldLabel,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     AppSpacing.v16,
                     Row(

@@ -454,7 +454,9 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                 final dayNumber = index - (startingWeekday - 1) + 1;
                 final date = DateTime(year, month, dayNumber);
                 final dateStr = DateFormat('yyyy-MM-dd').format(date);
-                final dayData = controller.calendarData.value?.days[dateStr];
+                final dayData = controller.calendarData.value?.days[dateStr] ??
+                    controller.calendarData.value?.days[dayNumber.toString()] ??
+                    controller.calendarData.value?.days[dayNumber.toString().padLeft(2, '0')];
                 final isSunday = date.weekday == DateTime.sunday;
                 final isToday = DateFormat('yyyy-MM-dd').format(DateTime.now()) == dateStr;
                 final isSelected = controller.selectedDay.value?.date == dateStr;
@@ -487,24 +489,30 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
     Color textColor = AppColors.textPrimary;
     Color? dotColor;
 
-    final status = (dayData?.status ?? '').toLowerCase();
-    if (status.contains('present')) {
+    final status = (dayData?.status ?? '').trim().toLowerCase();
+    final isPresent = status == 'present' || status == 'p' || status == '1' || status.contains('present');
+    final isAbsent = status == 'absent' || status == 'a' || status == '0' || status.contains('absent');
+    final isHalfDay = status == 'half day' || status == 'halfday' || status == 'half_day' || status == 'h' || status.contains('half');
+    final isLate = status == 'late' || status == 'l' || status.contains('late');
+    final isLeave = status == 'leave' || status.contains('leave');
+
+    if (isPresent) {
       bg = const Color(0xFFECFDF5);
       textColor = const Color(0xFF059669);
       dotColor = const Color(0xFF10B981);
-    } else if (status.contains('absent')) {
+    } else if (isAbsent) {
       bg = const Color(0xFFFEF2F2);
       textColor = const Color(0xFFDC2626);
       dotColor = const Color(0xFFEF4444);
-    } else if (status.contains('half')) {
+    } else if (isHalfDay) {
       bg = const Color(0xFFFFFBEB);
       textColor = const Color(0xFFD97706);
       dotColor = const Color(0xFFF59E0B);
-    } else if (status.contains('late')) {
+    } else if (isLate) {
       bg = const Color(0xFFFFF7ED);
       textColor = const Color(0xFFEA580C);
       dotColor = const Color(0xFFF97316);
-    } else if (status.contains('leave')) {
+    } else if (isLeave) {
       bg = const Color(0xFFF5F3FF);
       textColor = const Color(0xFF7C3AED);
       dotColor = const Color(0xFF8B5CF6);
@@ -520,38 +528,21 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
           color: bg,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected
-                ? AppColors.primaryBrand
-                : isToday
-                    ? AppColors.primaryBrand.withValues(alpha: 0.5)
-                    : Colors.transparent,
+            color: (isSelected || isToday)
+                ? (dotColor ?? AppColors.primaryBrand)
+                : Colors.transparent,
             width: isSelected ? 2.0 : 1.0,
           ),
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Text(
-              '$dayNumber',
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: textColor,
-              ),
+        child: Center(
+          child: Text(
+            '$dayNumber',
+            style: AppTextStyles.outfit(
+              fontSize: 12,
+              fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: textColor,
             ),
-            if (dotColor != null)
-              Positioned(
-                bottom: 3,
-                child: Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: dotColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );
@@ -701,11 +692,6 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                         'No leave applications found.',
                         style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
                       ),
-                      AppSpacing.v16,
-                      AppButton(
-                        label: 'Apply for Leave',
-                        onPressed: () => _showApplyLeaveBottomSheet(context),
-                      ),
                     ],
                   ),
                 ),
@@ -717,7 +703,7 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
               child: ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: controller.leaves.length,
-                separatorBuilder: (_, ___) => AppSpacing.v12,
+                separatorBuilder: (context, index) => AppSpacing.v12,
                 itemBuilder: (context, index) {
                   final leave = controller.leaves[index];
                   return _LeaveCard(

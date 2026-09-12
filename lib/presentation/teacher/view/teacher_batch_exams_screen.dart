@@ -132,36 +132,6 @@ class _ExamCard extends StatelessWidget {
                   ),
                 ),
               ),
-              AppSpacing.h4,
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.textTertiary),
-                onSelected: (value) {
-                  if (value == 'edit') onEdit();
-                  if (value == 'delete') onDelete();
-                },
-                itemBuilder: (context) => const [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined, size: 18, color: AppColors.textPrimary),
-                        SizedBox(width: 8),
-                        Text('Edit Exam'),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.bohoRed),
-                        SizedBox(width: 8),
-                        Text('Delete Exam', style: TextStyle(color: AppColors.bohoRed)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
             ],
           ),
           AppSpacing.v4,
@@ -175,36 +145,65 @@ class _ExamCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: onMarks,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 9),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBrand.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.edit_note_rounded,
-                          size: 16,
-                          color: AppColors.primaryBrand,
+                child: exam.isScheduled
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.fieldBg,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.fieldBorder),
                         ),
-                        AppSpacing.h4,
-                        Text(
-                          'Enter Marks',
-                          style: AppTextStyles.outfit(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryBrand,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.lock_outline_rounded,
+                              size: 15,
+                              color: AppColors.textTertiary,
+                            ),
+                            AppSpacing.h6,
+                            Text(
+                              exam.opensOnText,
+                              style: AppTextStyles.outfit(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: onMarks,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 9),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBrand.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.edit_note_rounded,
+                                size: 16,
+                                color: AppColors.primaryBrand,
+                              ),
+                              AppSpacing.h4,
+                              Text(
+                                'Enter Marks',
+                                style: AppTextStyles.outfit(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primaryBrand,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
+                      ),
               ),
               AppSpacing.h8,
               InkWell(

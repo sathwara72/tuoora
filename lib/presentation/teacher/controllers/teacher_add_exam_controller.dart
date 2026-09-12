@@ -28,19 +28,22 @@ class TeacherAddExamController extends GetxController {
   bool get isEditing => editingExam != null;
 
   final titleController = TextEditingController();
+  final classController = TextEditingController();
   final subjectController = TextEditingController();
   final totalMarksController = TextEditingController();
   final passingMarksController = TextEditingController();
   final descriptionController = TextEditingController();
 
-  final examType = 'other'.obs;
   final examDate = Rxn<DateTime>();
+  final startTime = Rxn<TimeOfDay>();
+  final endTime = Rxn<TimeOfDay>();
   final isLoading = false.obs;
 
   final titleError = RxnString();
   final totalMarksError = RxnString();
   final passingMarksError = RxnString();
   final dateError = RxnString();
+  final timeError = RxnString();
 
   @override
   void onInit() {
@@ -55,6 +58,7 @@ class TeacherAddExamController extends GetxController {
         teacherCanViewFees: false,
       );
       titleController.text = args.title;
+      classController.text = args.className ?? '';
       subjectController.text = args.subject ?? '';
       totalMarksController.text = args.totalMarks == args.totalMarks.roundToDouble()
           ? args.totalMarks.toInt().toString()
@@ -64,14 +68,61 @@ class TeacherAddExamController extends GetxController {
               ? args.passingMarks.toInt().toString()
               : args.passingMarks.toString();
       descriptionController.text = args.description ?? '';
-      examType.value = args.examType ?? 'other';
       examDate.value = DateTime.tryParse(args.examDate);
+      if (args.startTime != null && args.startTime!.isNotEmpty) {
+        startTime.value = _parseTimeString(args.startTime!);
+      }
+      if (args.endTime != null && args.endTime!.isNotEmpty) {
+        endTime.value = _parseTimeString(args.endTime!);
+      }
     } else {
       batch = args as TeacherBatch;
     }
   }
 
-  void selectExamType(String type) => examType.value = type;
+  static TimeOfDay? _parseTimeString(String timeStr) {
+    try {
+      final parts = timeStr.trim().split(':');
+      if (parts.length >= 2) {
+        final h = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1].split(' ').first);
+        if (h != null && m != null) {
+          if (timeStr.toLowerCase().contains('pm') && h < 12) {
+            return TimeOfDay(hour: h + 12, minute: m);
+          } else if (timeStr.toLowerCase().contains('am') && h == 12) {
+            return TimeOfDay(hour: 0, minute: m);
+          }
+          return TimeOfDay(hour: h, minute: m);
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  void pickStartTime(TimeOfDay time) {
+    startTime.value = time;
+    timeError.value = null;
+  }
+
+  void pickEndTime(TimeOfDay time) {
+    endTime.value = time;
+    timeError.value = null;
+  }
+
+  String formatTimeOfDay(TimeOfDay? time) {
+    if (time == null) return '';
+    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  String formatTimeOfDay24(TimeOfDay? time) {
+    if (time == null) return '';
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
 
   void pickExamDate(DateTime date) {
     examDate.value = date;
@@ -120,15 +171,25 @@ class TeacherAddExamController extends GetxController {
     if (!_validate()) return;
     try {
       isLoading.value = true;
-      final data = {
+      final data = <String, dynamic>{
         'title': titleController.text.trim(),
+        'class': classController.text.trim(),
+        'class_name': classController.text.trim(),
         'subject': subjectController.text.trim(),
-        'exam_type': examType.value,
         'exam_date': DateFormat('yyyy-MM-dd').format(examDate.value!),
         'total_marks': double.tryParse(totalMarksController.text.trim()),
         'passing_marks': double.tryParse(passingMarksController.text.trim()),
         'description': descriptionController.text.trim(),
       };
+      if (startTime.value != null) {
+        data['start_time'] = formatTimeOfDay24(startTime.value);
+      }
+      if (endTime.value != null) {
+        data['end_time'] = formatTimeOfDay24(endTime.value);
+      }
+      if (editingExam?.examType != null) {
+        data['exam_type'] = editingExam!.examType;
+      }
       if (isEditing) {
         await _repository.updateExam(editingExam!.id, data);
         AppSnackBar.success('Exam updated');
@@ -151,6 +212,7 @@ class TeacherAddExamController extends GetxController {
   @override
   void onClose() {
     titleController.dispose();
+    classController.dispose();
     subjectController.dispose();
     totalMarksController.dispose();
     passingMarksController.dispose();

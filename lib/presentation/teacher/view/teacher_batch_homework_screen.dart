@@ -151,6 +151,32 @@ class _HomeworkCard extends StatelessWidget {
                 '${homework.submissionsCount ?? 0} submissions',
                 style: AppTextStyles.outfit(fontSize: 11, color: AppColors.textTertiary),
               ),
+              if (homework.daysLeftText.isNotEmpty) ...[
+                AppSpacing.h12,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: homework.isOverdue
+                        ? AppColors.bohoRed.withOpacity(0.1)
+                        : (homework.daysLeft == 0
+                            ? Colors.amber.withOpacity(0.15)
+                            : AppColors.primaryBrand.withOpacity(0.08)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    homework.daysLeftText,
+                    style: AppTextStyles.outfit(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: homework.isOverdue
+                          ? AppColors.bohoRed
+                          : (homework.daysLeft == 0
+                              ? Colors.amber.shade900
+                              : AppColors.primaryBrand),
+                    ),
+                  ),
+                ),
+              ],
               const Spacer(),
               GestureDetector(
                 onTap: onGrade,

@@ -73,13 +73,14 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                         physics: const NeverScrollableScrollPhysics(),
                         mainAxisSpacing: AppSpacing.s12,
                         crossAxisSpacing: AppSpacing.s12,
-                        childAspectRatio: 1.3,
+                        childAspectRatio: 1.35,
                         children: [
                           _FeatureTile(
-                            icon: Icons.people_alt_outlined,
+                            icon: Icons.groups_outlined,
                             label: 'Students',
-                            accent: const Color(0xFF0284C7),
-                            bgColor: const Color(0xFFF0F9FF),
+                            subtitle: 'MANAGE ENROLLMENTS',
+                            accent: const Color(0xFFF97316),
+                            bgColor: const Color(0xFFFFF7ED),
                             onTap: () async {
                               await Get.toNamed(
                                 AppRoutes.teacherBatchStudents,
@@ -89,8 +90,9 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                             },
                           ),
                           _FeatureTile(
-                            icon: Icons.assignment_ind_outlined,
+                            icon: Icons.account_circle_outlined,
                             label: 'Attendance',
+                            subtitle: 'TRACK STUDENT PRESENCE',
                             accent: const Color(0xFFB45309),
                             bgColor: const Color(0xFFFFFBEB),
                             onTap: () => Get.toNamed(
@@ -99,10 +101,11 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                             ),
                           ),
                           _FeatureTile(
-                            icon: Icons.assignment_rounded,
+                            icon: Icons.menu_book_outlined,
                             label: 'Homework',
-                            accent: const Color(0xFFF43F5E),
-                            bgColor: const Color(0xFFFFF1F2),
+                            subtitle: 'MANAGE ASSIGNMENTS',
+                            accent: const Color(0xFF0D9488),
+                            bgColor: const Color(0xFFF0FDF4),
                             onTap: () => Get.toNamed(
                               AppRoutes.teacherBatchHomework,
                               arguments: batch,
@@ -111,7 +114,8 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                           _FeatureTile(
                             icon: Icons.assignment_turned_in_outlined,
                             label: 'Exams',
-                            accent: const Color(0xFF4F46E5),
+                            subtitle: 'TESTS & MARKS ENTRY',
+                            accent: const Color(0xFF6366F1),
                             bgColor: const Color(0xFFEEF2FF),
                             onTap: () => Get.toNamed(
                               AppRoutes.teacherBatchExams,
@@ -119,8 +123,9 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                             ),
                           ),
                           _FeatureTile(
-                            icon: Icons.schedule_rounded,
-                            label: 'Timetable',
+                            icon: Icons.calendar_today_outlined,
+                            label: 'TimeTable',
+                            subtitle: 'SCHEDULE & LECTURES',
                             accent: const Color(0xFF2563EB),
                             bgColor: const Color(0xFFEFF6FF),
                             onTap: () => Get.toNamed(
@@ -129,10 +134,11 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                             ),
                           ),
                           _FeatureTile(
-                            icon: Icons.folder_shared_outlined,
+                            icon: Icons.folder_outlined,
                             label: 'Materials',
-                            accent: const Color(0xFF0D9488),
-                            bgColor: const Color(0xFFF0FDFA),
+                            subtitle: 'MATERIALS AND DOCUMENTS',
+                            accent: const Color(0xFF10B981),
+                            bgColor: const Color(0xFFECFDF5),
                             onTap: () => Get.toNamed(
                               AppRoutes.teacherBatchResources,
                               arguments: batch,
@@ -140,8 +146,9 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                           ),
                           if (batch.teacherCanViewFees)
                             _FeatureTile(
-                              icon: Icons.currency_rupee_rounded,
+                              icon: Icons.account_balance_wallet_outlined,
                               label: 'Fees',
+                              subtitle: 'FEES & COLLECTIONS',
                               accent: const Color(0xFF059669),
                               bgColor: const Color(0xFFECFDF5),
                               onTap: () => Get.toNamed(
@@ -166,6 +173,7 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
 class _FeatureTile extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String subtitle;
   final VoidCallback onTap;
   final Color accent;
   final Color bgColor;
@@ -173,9 +181,10 @@ class _FeatureTile extends StatelessWidget {
   const _FeatureTile({
     required this.icon,
     required this.label,
+    required this.subtitle,
     required this.onTap,
-    this.accent = AppColors.primaryBrand,
-    this.bgColor = const Color(0x1AF97316),
+    required this.accent,
+    required this.bgColor,
   });
 
   @override
@@ -183,31 +192,68 @@ class _FeatureTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          border: Border.all(color: AppColors.borderGrey),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              width: AppSpacing.s48,
-              height: AppSpacing.s48,
-              decoration: BoxDecoration(
-                color: bgColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: accent, size: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, color: accent, size: 20),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFFCBD5E1),
+                  size: 20,
+                ),
+              ],
             ),
-            AppSpacing.v8,
-            Text(
-              label,
-              style: AppTextStyles.outfit(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F172A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.outfit(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF94A3B8),
+                    letterSpacing: 0.5,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ],
         ),

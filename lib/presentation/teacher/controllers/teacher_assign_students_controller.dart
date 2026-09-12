@@ -79,6 +79,7 @@ class TeacherAssignStudentsController extends GetxController {
   }
 
   Future<void> assignSelectedStudents() async {
+    if (isSubmitting.value) return;
     if (selectedStudentIds.isEmpty) {
       AppSnackBar.error('Please select at least one student to assign.');
       return;
@@ -87,10 +88,10 @@ class TeacherAssignStudentsController extends GetxController {
     isSubmitting.value = true;
     try {
       await _repository.assignStudentsToBatch(batch.id, selectedStudentIds.toList());
+      Get.back(result: true);
       AppSnackBar.success(
         '${selectedStudentIds.length} student(s) assigned to ${batch.name} successfully.',
       );
-      Get.back(result: true);
     } catch (e) {
       AppSnackBar.error(e.toString());
     } finally {

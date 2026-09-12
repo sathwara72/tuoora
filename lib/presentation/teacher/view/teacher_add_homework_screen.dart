@@ -126,7 +126,7 @@ class TeacherAddHomeworkScreen extends GetView<TeacherAddHomeworkController> {
                     Obx(
                       () => AppButton(
                         label: controller.isEditing ? 'Save Changes' : 'Create Homework',
-                        onPressed: controller.submit,
+                        onPressed: controller.isLoading.value ? null : controller.submit,
                         isLoading: controller.isLoading.value,
                       ),
                     ),

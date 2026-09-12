@@ -54,6 +54,7 @@ class TeacherExam {
   final String? description;
   final String status;
   final String? batchName;
+  final String? className;
   final TeacherExamStats? stats;
   final String? formattedDate;
 
@@ -71,6 +72,7 @@ class TeacherExam {
     this.description,
     required this.status,
     this.batchName,
+    this.className,
     this.stats,
     this.formattedDate,
   });
@@ -91,11 +93,41 @@ class TeacherExam {
       description: json['description'],
       status: json['status'] ?? 'scheduled',
       batchName: batch is Map ? batch['name'] : null,
+      className: json['class_name'] ?? json['class'] ?? json['classroom'] ?? (batch is Map ? (batch['class'] ?? batch['classroom']) : null),
       stats: json['stats'] != null
           ? TeacherExamStats.fromJson(Map<String, dynamic>.from(json['stats']))
           : null,
       formattedDate: json['formatted_date'],
     );
+  }
+
+  bool get isScheduled {
+    final s = status.trim().toLowerCase();
+    if (s == 'scheduled') return true;
+    if (s == 'completed' || s == 'cancelled' || s == 'ongoing' || s == 'active') return false;
+    final parsed = DateTime.tryParse(examDate);
+    if (parsed != null) {
+      final now = DateTime.now();
+      final todayMidnight = DateTime(now.year, now.month, now.day);
+      final examMidnight = DateTime(parsed.year, parsed.month, parsed.day);
+      if (examMidnight.isAfter(todayMidnight)) return true;
+    }
+    return false;
+  }
+
+  String get opensOnText {
+    if (formattedDate != null && formattedDate!.isNotEmpty) {
+      return 'Opens on $formattedDate';
+    }
+    final parsed = DateTime.tryParse(examDate);
+    if (parsed != null) {
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      ];
+      return 'Opens on ${parsed.day} ${months[parsed.month - 1]}, ${parsed.year}';
+    }
+    return 'Opens on $examDate';
   }
 }
 
