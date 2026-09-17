@@ -464,7 +464,14 @@ class _SubmissionForm extends StatelessWidget {
             ),
           ),
           AppSpacing.v12,
-          Obx(() => _AttachmentPicker(assignment: assignment, controller: controller)),
+          Obx(() {
+            final newPath = controller.newAttachmentLocalPath.value;
+            return _AttachmentPicker(
+              assignment: assignment,
+              controller: controller,
+              newPath: newPath,
+            );
+          }),
           AppSpacing.v16,
           Obx(() {
             final submitting = controller.isSubmitting.value;
@@ -528,12 +535,17 @@ class _SubmissionForm extends StatelessWidget {
 class _AttachmentPicker extends StatelessWidget {
   final Assignment assignment;
   final AssignmentsController controller;
+  final String? newPath;
 
-  const _AttachmentPicker({required this.assignment, required this.controller});
+  const _AttachmentPicker({
+    required this.assignment,
+    required this.controller,
+    required this.newPath,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final newPath = controller.newAttachmentLocalPath.value;
+    final newPath = this.newPath;
     final existingUrl = assignment.submissionAttachmentUrl;
 
     String? displayName;
