@@ -3,9 +3,7 @@ import 'dart:io' show File, Platform;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
-import 'package:tuoora/core/constants/url_constants.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
@@ -37,13 +35,7 @@ class WhiteLabelScreen extends GetView<WhiteLabelController> {
           child: Column(
             children: [
               const InstituteAppBar(title: 'White Label', isRoot: false),
-              Expanded(
-                child: SubscriptionManageOnWebView(
-                  title: AppStrings.whiteLabelManageOnWebTitle,
-                  message: AppStrings.whiteLabelManageOnWebMessage,
-                  url: UrlConstants.urlInstituteWhiteLabel,
-                ),
-              ),
+              const Expanded(child: SubscriptionManageOnWebView()),
             ],
           ),
         ),

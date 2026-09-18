@@ -663,6 +663,11 @@ class AppStrings {
   static const String loginFailed = 'Login Failed';
   static const String errEmailNotVerified =
       'Your email is not verified yet. Please complete OTP verification to continue.';
+  static const String errAccountNotFoundIOS =
+      "We couldn't find an account matching these details. Please contact "
+      'your institute administrator or Tuoora support for help.';
+  static const String contactAdministrationMessage =
+      'Please contact your administration for assistance.';
   static const String sessionExpiredTitle = 'Session expired';
   static const String errSessionExpired =
       'Your session has timed out. Please log in again.';
@@ -737,6 +742,7 @@ class AppStrings {
   static const String goToToday = 'GO TO TODAY';
   static const String nothingToShowYet = 'Nothing to show yet';
   static const String assignments = 'ASSIGNMENTS';
+  static const String upcomingExams = 'UPCOMING EXAMS';
   static const String todaySAttendance = 'TODAY\'S ATTENDANCE';
   static const String studyMaterialThisWeek = 'STUDY MATERIAL THIS WEEK';
   static const String pendingFees = 'PENDING FEES';

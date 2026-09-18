@@ -8,6 +8,7 @@ class StudentTimetableSlot {
   final String? timeSlot;
   final String? staffName;
   final String? roomNo;
+  final String? batchName;
 
   StudentTimetableSlot({
     required this.id,
@@ -19,6 +20,7 @@ class StudentTimetableSlot {
     this.timeSlot,
     this.staffName,
     this.roomNo,
+    this.batchName,
   });
 
   factory StudentTimetableSlot.fromJson(Map<String, dynamic> json) {
@@ -32,6 +34,7 @@ class StudentTimetableSlot {
       timeSlot: json['time_slot'],
       staffName: json['staff']?['full_name'],
       roomNo: json['room_no'],
+      batchName: json['batch']?['name'],
     );
   }
 }

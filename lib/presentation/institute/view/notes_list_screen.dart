@@ -114,16 +114,18 @@ class NotesListScreen extends GetView<NotesController> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => SubscriptionGuard.runAddAction(() {
-          controller.prepareForAdd();
-          Get.toNamed(AppRoutes.instituteAddEditNote);
-        }),
-        backgroundColor: SubscriptionGuard.blocksAdd
-            ? AppColors.textMuted
-            : AppColors.primaryBrand,
-        child: const Icon(Icons.add, color: AppColors.white),
-      ),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : FloatingActionButton(
+              onPressed: () => SubscriptionGuard.runAddAction(() {
+                controller.prepareForAdd();
+                Get.toNamed(AppRoutes.instituteAddEditNote);
+              }),
+              backgroundColor: SubscriptionGuard.blocksAdd
+                  ? AppColors.textMuted
+                  : AppColors.primaryBrand,
+              child: const Icon(Icons.add, color: AppColors.white),
+            ),
     );
   }
 

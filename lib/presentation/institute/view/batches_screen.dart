@@ -128,16 +128,18 @@ class _BatchesScreenState extends State<BatchesScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => SubscriptionGuard.runAddAction(() {
-          controller.initAddMode();
-          _pushAndRefresh(Get.toNamed(AppRoutes.instituteAddBatch));
-        }),
-        backgroundColor: SubscriptionGuard.blocksAdd
-            ? AppColors.textMuted
-            : AppColors.primaryBrand,
-        child: const Icon(Icons.add, color: AppColors.white, size: 28),
-      ),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : FloatingActionButton(
+              onPressed: () => SubscriptionGuard.runAddAction(() {
+                controller.initAddMode();
+                _pushAndRefresh(Get.toNamed(AppRoutes.instituteAddBatch));
+              }),
+              backgroundColor: SubscriptionGuard.blocksAdd
+                  ? AppColors.textMuted
+                  : AppColors.primaryBrand,
+              child: const Icon(Icons.add, color: AppColors.white, size: 28),
+            ),
     );
   }
 

@@ -2,8 +2,10 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:tuoora/config/app_routes.dart';
+import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
 import 'package:tuoora/data/repositories_impl/teacher_batch_repository_impl.dart';
 import 'package:tuoora/data/repositories_impl/teacher_profile_repository_impl.dart';
@@ -65,5 +67,22 @@ class TeacherProfileController extends GetxController {
     } catch (_) {}
     await Get.find<AuthService>().clearSession();
     Get.offAllNamed(AppRoutes.roleSelection);
+  }
+
+  Future<void> deleteAccount() async {
+    try {
+      CommonLoading.show();
+      await _repository.deleteAccount();
+      await Get.find<AuthService>().clearSession();
+      Get.offAllNamed(AppRoutes.roleSelection);
+      AppSnackBar.success(AppStrings.accountDeletedSuccessfully);
+    } catch (e) {
+      AppSnackBar.error(
+        e.toString().replaceAll('Exception: ', ''),
+        title: AppStrings.accountDeletionFailed,
+      );
+    } finally {
+      CommonLoading.dismiss();
+    }
   }
 }

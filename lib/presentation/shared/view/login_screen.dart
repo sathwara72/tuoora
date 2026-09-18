@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/widgets/app_logo.dart';
@@ -279,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                     ),
-                    if (_selectedRole == 'INSTITUTE') ...[
+                    if (_selectedRole == 'INSTITUTE' && !Platform.isIOS) ...[
                       AppSpacing.v32,
                       Padding(
                         padding: AppSpacing.x24,

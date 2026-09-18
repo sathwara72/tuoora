@@ -2,6 +2,7 @@
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/presentation/institute/controllers/staff_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/data/models/staff_model.dart';
@@ -54,6 +55,7 @@ class SalaryHistoryScreen extends GetView<StaffController> {
   }
 
   Widget _buildAddSalaryButton() {
+    if (SubscriptionGuard.hideAddOnIOS) return const SizedBox.shrink();
     return GestureDetector(
       onTap: () {
         final staff = controller.selectedStaff.value;

@@ -109,15 +109,10 @@ class InstituteSettingsScreen extends StatelessWidget {
             title: AppStrings.labelChangePassword,
             subtitle: AppStrings.updateYourLoginCredentials,
             onTap: () => Get.toNamed(AppRoutes.instituteChangePassword),
-          ),
-          _buildSettingsItem(
-            icon: Icons.chat_bubble_outline_rounded,
-            title: AppStrings.instWhatsAppIntegration,
-            subtitle: AppStrings.automateAlertsViaMetaApi,
-            isComingSoon: true,
-            onTap: () => _showWhatsAppComingSoonDialog(context),
             isLast: true,
           ),
+          // WhatsApp Integration is unfinished (coming-soon placeholder) —
+          // hidden until the feature actually ships.
         ],
       ),
     );

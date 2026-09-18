@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:get/get.dart';
@@ -26,13 +28,19 @@ class SplashController extends GetxController {
 
     // Authenticated but profile setup not finished.
     if (_authService.isAuthenticated && !isProfileSetup) {
-      if (_authService.isLoggedIn && user?.role == 'INSTITUTE') {
+      if (_authService.isLoggedIn &&
+          user?.role == 'INSTITUTE' &&
+          !Platform.isIOS) {
         // The user has already signed in with their credentials — resume
-        // profile setup so they can finish onboarding.
+        // profile setup so they can finish onboarding. Not offered on iOS:
+        // that screen belongs to the self-signup flow, which iOS builds
+        // don't expose, so an incomplete-profile session is simply logged
+        // out below instead of being routed there.
         Get.offAllNamed(AppRoutes.instituteProfileSetup);
         return;
       }
-      // Session came only from OTP verification (the user never logged in).
+      // Session came only from OTP verification (the user never logged in),
+      // or (iOS) is an institute account that hasn't finished onboarding.
       // Force a login; the login response's is_profile_setup flag then routes
       // them onward. clearSession keeps the remembered email for prefill.
       await _authService.clearSession();

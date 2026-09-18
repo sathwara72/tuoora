@@ -65,4 +65,15 @@ class TeacherProfileRepository implements TeacherProfileRepositoryImpl {
       Map<String, dynamic>.from(response.body['data']),
     );
   }
+
+  @override
+  Future<void> deleteAccount() async {
+    final response = await _apiClient.delete(ApiConstants.teacherAccountDelete);
+    if (response.status.hasError) {
+      throw Exception(
+        response.body?['message']?.toString() ??
+            'Failed to delete account: ${response.statusText}',
+      );
+    }
+  }
 }

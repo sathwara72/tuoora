@@ -2,28 +2,27 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
-import 'package:tuoora/core/constants/url_constants.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
-import 'package:tuoora/core/utils/url_launcher_utils.dart';
 
 class SubscriptionBanner extends StatelessWidget {
   const SubscriptionBanner({super.key});
 
   void _handleRenewAction() {
-    if (Platform.isIOS) {
-      UrlLauncherUtils.openExternal(UrlConstants.urlInstituteSubscription);
-    } else {
-      Get.toNamed(AppRoutes.instituteSubscription);
-    }
+    Get.toNamed(AppRoutes.instituteSubscription);
   }
 
   @override
   Widget build(BuildContext context) {
+    // No subscription/renewal screen ships on iOS, so this banner — which
+    // exists only to surface subscription status and a renew action — has
+    // nothing to show or link to there.
+    if (Platform.isIOS) return const SizedBox.shrink();
+
     final authService = Get.find<AuthService>();
 
     return Obx(() {

@@ -27,6 +27,20 @@ class TeacherAttendanceRow {
   }
 }
 
+class QrAttendanceResult {
+  final int studentId;
+  final String studentName;
+
+  QrAttendanceResult({required this.studentId, required this.studentName});
+
+  factory QrAttendanceResult.fromJson(Map<String, dynamic> json) {
+    return QrAttendanceResult(
+      studentId: json['student_id'],
+      studentName: json['student_name'] ?? '',
+    );
+  }
+}
+
 class TeacherStaffAttendance {
   final int id;
   final String date;

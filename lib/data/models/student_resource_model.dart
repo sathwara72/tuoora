@@ -22,6 +22,8 @@ class StudentResourceModel {
   final String description;
   final String subject;
   final String batchName;
+  final String resourceType;
+  final String? youtubeUrl;
   final String fileType;
   final String fileSize;
   final String fileUrl;
@@ -29,12 +31,16 @@ class StudentResourceModel {
   final String downloadUrl;
   final String timeLabel;
 
+  bool get isYoutube => resourceType == 'youtube';
+
   StudentResourceModel({
     required this.id,
     required this.title,
     required this.description,
     required this.subject,
     required this.batchName,
+    required this.resourceType,
+    this.youtubeUrl,
     required this.fileType,
     required this.fileSize,
     required this.fileUrl,
@@ -50,6 +56,8 @@ class StudentResourceModel {
       description: json['description'] ?? '',
       subject: json['subject'] ?? '',
       batchName: json['batch_name'] ?? '',
+      resourceType: json['resource_type'] ?? 'file',
+      youtubeUrl: json['youtube_url'],
       fileType: json['file_type'] ?? '',
       fileSize: json['file_size'] ?? '',
       fileUrl: json['file_url'] ?? '',

@@ -65,7 +65,9 @@ class AttendanceHistoryScreen extends GetView<StaffController> {
           ],
         ),
       ),
-      floatingActionButton: _buildLogAttendanceButton(),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : _buildLogAttendanceButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }

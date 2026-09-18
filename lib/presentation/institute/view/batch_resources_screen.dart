@@ -72,15 +72,17 @@ class BatchResourcesScreen extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => SubscriptionGuard.runAddAction(
-          () => _showUploadDialog(context, controller),
-        ),
-        backgroundColor: SubscriptionGuard.blocksAdd
-            ? AppColors.textMuted
-            : AppColors.primaryBrand,
-        child: const Icon(Icons.add, color: AppColors.white),
-      ),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : FloatingActionButton(
+              onPressed: () => SubscriptionGuard.runAddAction(
+                () => _showUploadDialog(context, controller),
+              ),
+              backgroundColor: SubscriptionGuard.blocksAdd
+                  ? AppColors.textMuted
+                  : AppColors.primaryBrand,
+              child: const Icon(Icons.add, color: AppColors.white),
+            ),
     );
   }
 

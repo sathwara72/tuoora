@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -65,7 +66,18 @@ class LoginController extends GetxController {
       }
 
       if (user != null) {
-        if (role == 'INSTITUTE' && !user.isEmailVerified) {
+        if (role == 'INSTITUTE' && Platform.isIOS) {
+          // iOS only allows login into fully verified, fully onboarded
+          // institute accounts — the OTP-verification and profile-setup
+          // continuation flows (which share UI with institute self-signup)
+          // stay off the iOS build entirely, so an account that hasn't
+          // finished either step is treated as unavailable here rather
+          // than routed into that flow.
+          if (!user.isEmailVerified || !user.isProfileSetup) {
+            accountError.value = AppStrings.errAccountNotFoundIOS;
+            return;
+          }
+        } else if (role == 'INSTITUTE' && !user.isEmailVerified) {
           accountError.value = AppStrings.errEmailNotVerified;
           await Future<void>.delayed(const Duration(seconds: 10));
           Get.toNamed(

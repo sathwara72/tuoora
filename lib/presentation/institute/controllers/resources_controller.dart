@@ -45,13 +45,25 @@ class ResourcesController extends GetxController {
   // Dialog Controllers
   final subjectController = TextEditingController();
   final descriptionController = TextEditingController();
+  final youtubeUrlController = TextEditingController();
   final selectedFileName = ''.obs;
   final selectedFilePath = ''.obs;
   final selectedType = ResourceType.document.obs;
+  final isYoutubeMode = false.obs;
 
   final triedToSave = false.obs;
   final subjectError = RxnString();
   final fileError = RxnString();
+
+  static final RegExp _youtubeUrlPattern = RegExp(
+    r'^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|shorts\/)|youtu\.be\/)',
+    caseSensitive: false,
+  );
+
+  void setUploadMode(bool youtube) {
+    isYoutubeMode.value = youtube;
+    fileError.value = null;
+  }
 
   bool validateForm() {
     bool isValid = true;
@@ -63,7 +75,14 @@ class ResourcesController extends GetxController {
       subjectError.value = null;
     }
 
-    if (selectedFilePath.isEmpty) {
+    if (isYoutubeMode.value) {
+      if (!_youtubeUrlPattern.hasMatch(youtubeUrlController.text.trim())) {
+        fileError.value = 'Please enter a valid YouTube link';
+        isValid = false;
+      } else {
+        fileError.value = null;
+      }
+    } else if (selectedFilePath.isEmpty) {
       fileError.value = 'Please select a file';
       isValid = false;
     } else {
@@ -201,17 +220,28 @@ class ResourcesController extends GetxController {
         barrierDismissible: false,
       );
 
-      final String typeStr = selectedType.value == ResourceType.image
-          ? 'image'
-          : (selectedType.value == ResourceType.video ? 'video' : 'document');
-
-      final Map<String, dynamic> data = {
-        'batch_id': batch.id,
-        'title': subjectController.text,
-        'description': descriptionController.text,
-        'file_type': typeStr,
-        'file': selectedFilePath.value,
-      };
+      final Map<String, dynamic> data;
+      if (isYoutubeMode.value) {
+        data = {
+          'batch_id': batch.id,
+          'title': subjectController.text,
+          'description': descriptionController.text,
+          'resource_type': 'youtube',
+          'youtube_url': youtubeUrlController.text.trim(),
+        };
+      } else {
+        final String typeStr = selectedType.value == ResourceType.image
+            ? 'image'
+            : (selectedType.value == ResourceType.video ? 'video' : 'document');
+        data = {
+          'batch_id': batch.id,
+          'title': subjectController.text,
+          'description': descriptionController.text,
+          'resource_type': 'file',
+          'file_type': typeStr,
+          'file': selectedFilePath.value,
+        };
+      }
 
       final responseData = await _repository.uploadResource(data);
 
@@ -236,8 +266,10 @@ class ResourcesController extends GetxController {
   void clearForm() {
     subjectController.clear();
     descriptionController.clear();
+    youtubeUrlController.clear();
     selectedFileName.value = '';
     selectedFilePath.value = '';
+    isYoutubeMode.value = false;
     triedToSave.value = false;
     subjectError.value = null;
     fileError.value = null;
@@ -247,6 +279,7 @@ class ResourcesController extends GetxController {
   void onClose() {
     subjectController.dispose();
     descriptionController.dispose();
+    youtubeUrlController.dispose();
     super.onClose();
   }
 }

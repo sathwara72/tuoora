@@ -4,8 +4,10 @@ import 'package:get/get.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_profile_controller.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_profile_model.dart';
@@ -136,6 +138,18 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
                       label: 'Logout',
                       isDestructive: true,
                       onTap: controller.logout,
+                    ),
+                    AppSpacing.v8,
+                    _actionTile(
+                      icon: Icons.delete_forever_rounded,
+                      label: AppStrings.deleteAccount,
+                      isDestructive: true,
+                      onTap: () => CommonDialog.showDeleteConfirmation(
+                        title: AppStrings.deleteAccountConfirmTitle,
+                        description: AppStrings.deleteAccountConfirmMessage,
+                        confirmText: AppStrings.deleteAccountConfirmButton,
+                        onConfirm: controller.deleteAccount,
+                      ),
                     ),
                   ],
                 );

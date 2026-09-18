@@ -10,6 +10,7 @@ class ResourceModel {
   final String batchId;
   final String? fileUrl;
   final String? downloadUrl;
+  final String? youtubeUrl;
 
   ResourceModel({
     required this.id,
@@ -21,6 +22,7 @@ class ResourceModel {
     required this.batchId,
     this.fileUrl,
     this.downloadUrl,
+    this.youtubeUrl,
   });
 
   String get displayFileName {
@@ -54,11 +56,14 @@ class ResourceModel {
       subject: json['title'] ?? '',
       description: json['description'] ?? '',
       fileName: json['file_path'] ?? '',
-      type: parseType(json['file_type'] ?? 'document'),
+      type: json['resource_type'] == 'youtube'
+          ? ResourceType.youtube
+          : parseType(json['file_type'] ?? 'document'),
       uploadedAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       batchId: json['batch_id']?.toString() ?? '',
       fileUrl: json['file_url'],
       downloadUrl: json['download_url'],
+      youtubeUrl: json['youtube_url'],
     );
   }
 }

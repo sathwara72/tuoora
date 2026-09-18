@@ -155,6 +155,7 @@ class ApiConstants {
   static const String teacherSwitchInstitute = '/teacher/switch-institute';
   static const String teacherProfile = '/teacher/profile';
   static const String teacherProfileAvatar = '/teacher/profile/avatar';
+  static const String teacherAccountDelete = '/teacher/profile/delete';
   static const String teacherBatches = '/teacher/batches';
   static String teacherBatchDetail(int batchId) => '/teacher/batches/$batchId';
   static String teacherBatchStudents(int batchId) =>
@@ -164,6 +165,7 @@ class ApiConstants {
   static String teacherBatchStudentRemove(int batchId, int studentId) =>
       '/teacher/batches/$batchId/students/$studentId/remove';
   static const String teacherAttendance = '/teacher/attendance';
+  static const String teacherAttendanceQrScan = '/teacher/attendance/qr-scan';
   static const String teacherSelfAttendanceToday =
       '/teacher/self-attendance/today';
   static const String teacherSelfAttendance = '/teacher/self-attendance';

@@ -1,4 +1,5 @@
 import 'package:tuoora/presentation/student/models/assignment_model.dart';
+import 'package:tuoora/presentation/student/models/student_exam_model.dart';
 import 'package:tuoora/data/models/student_resource_model.dart';
 
 class StudentDashboardData {
@@ -13,6 +14,7 @@ class StudentDashboardData {
   final List<WeekAttendanceDay> weekAttendanceDays;
   final List<Assignment> todayAssignments;
   final TodayAttendance todayAttendance;
+  final List<StudentExamListItem> upcomingExams;
   final List<StudentResourceModel> studyMaterials;
   final List<PendingFee> pendingFees;
   final bool isBirthdayToday;
@@ -29,6 +31,7 @@ class StudentDashboardData {
     required this.weekAttendanceDays,
     required this.todayAssignments,
     required this.todayAttendance,
+    required this.upcomingExams,
     required this.studyMaterials,
     required this.pendingFees,
     required this.isBirthdayToday,
@@ -56,6 +59,10 @@ class StudentDashboardData {
       todayAttendance: json['today_attendance'] != null
           ? TodayAttendance.fromJson(json['today_attendance'])
           : TodayAttendance(status: '', text: ''),
+      upcomingExams: (json['upcoming_exams'] as List?)
+              ?.map((e) => StudentExamListItem.fromJson(Map<String, dynamic>.from(e)))
+              .toList() ??
+          [],
       studyMaterials: (json['study_materials'] as List?)
               ?.map((e) => StudentResourceModel.fromJson(e))
               .toList() ??

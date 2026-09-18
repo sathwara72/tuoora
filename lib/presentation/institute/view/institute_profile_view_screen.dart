@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
@@ -76,13 +78,19 @@ class InstituteProfileViewScreen extends StatelessWidget {
                         AppSpacing.v16,
                         _buildContactCard(p),
                         AppSpacing.v16,
-                        _buildActivePlanCard(),
-                        AppSpacing.v16,
+                        // Subscription status and Add-ons both lead only to
+                        // purchase-adjacent screens, which iOS ships none of.
+                        if (!Platform.isIOS) ...[
+                          _buildActivePlanCard(),
+                          AppSpacing.v16,
+                        ],
                         _buildUpiPaymentCard(context, controller),
                         AppSpacing.v16,
                         _buildSettingsNavigationCard(),
-                        AppSpacing.v16,
-                        _buildAddOnsNavigationCard(),
+                        if (!Platform.isIOS) ...[
+                          AppSpacing.v16,
+                          _buildAddOnsNavigationCard(),
+                        ],
                         AppSpacing.v16,
                         _buildSupportCard(),
                         AppSpacing.v16,

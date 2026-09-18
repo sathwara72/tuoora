@@ -50,16 +50,18 @@ class BatchStudentsScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: InstituteBottomButton(
-        label: AppStrings.assignStudent,
-        icon: Icons.person_add_alt_1_rounded,
-        onTap: () => SubscriptionGuard.runAddAction(
-          () => Get.toNamed(
-            AppRoutes.instituteAssignToBatch,
-            arguments: controller.batch,
-          ),
-        ),
-      ),
+      bottomNavigationBar: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : InstituteBottomButton(
+              label: AppStrings.assignStudent,
+              icon: Icons.person_add_alt_1_rounded,
+              onTap: () => SubscriptionGuard.runAddAction(
+                () => Get.toNamed(
+                  AppRoutes.instituteAssignToBatch,
+                  arguments: controller.batch,
+                ),
+              ),
+            ),
     );
   }
 

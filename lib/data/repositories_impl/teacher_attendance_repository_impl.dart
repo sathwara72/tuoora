@@ -12,6 +12,12 @@ abstract class TeacherAttendanceRepositoryImpl {
     required List<Map<String, dynamic>> attendance,
   });
 
+  Future<QrAttendanceResult> markAttendanceByQr({
+    required int batchId,
+    required String date,
+    required String qrPayload,
+  });
+
   Future<TeacherStaffAttendance?> getSelfAttendanceToday();
 
   Future<TeacherSelfAttendanceHistory> getSelfAttendanceHistory({
