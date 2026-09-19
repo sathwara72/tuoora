@@ -15,6 +15,7 @@
 #     --app-name "Bright Future Academy" \
 #     --package-id com.brightfuture.academy \
 #     --logo /path/to/square_logo.png \
+#     [--wide-logo /path/to/logo_with_name_transparent.png] \
 #     --primary-color "#2563EB" \
 #     [--primary-color-light "#DCE9FE"] \
 #     [--google-services-json /path/to/google-services.json] \
@@ -45,6 +46,7 @@ set -euo pipefail
 FORMAT="appbundle"
 GOOGLE_SERVICES_JSON=""
 PRIMARY_COLOR_LIGHT=""
+WIDE_LOGO_PATH=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -52,6 +54,7 @@ while [[ $# -gt 0 ]]; do
     --app-name) APP_NAME="$2"; shift 2 ;;
     --package-id) PACKAGE_ID="$2"; shift 2 ;;
     --logo) LOGO_PATH="$2"; shift 2 ;;
+    --wide-logo) WIDE_LOGO_PATH="$2"; shift 2 ;;
     --primary-color) PRIMARY_COLOR="$2"; shift 2 ;;
     --primary-color-light) PRIMARY_COLOR_LIGHT="$2"; shift 2 ;;
     --google-services-json) GOOGLE_SERVICES_JSON="$2"; shift 2 ;;
@@ -127,6 +130,19 @@ YAML
 echo "Regenerating launcher icon from $LOGO_PATH..."
 dart run flutter_launcher_icons -f "$ICON_CONFIG"
 
+# Bundle the logo as an asset so in-app screens (splash, login, ...) render
+# it instantly from local storage instead of fetching a URL at runtime.
+mkdir -p assets/branding
+# --wide-logo (transparent, with the institute name) suits the in-app
+# headers best; without it we fall back to the square launcher logo.
+IN_APP_LOGO="${WIDE_LOGO_PATH:-$LOGO_PATH}"
+if [[ ! -f "$IN_APP_LOGO" ]]; then
+  echo "In-app logo not found: $IN_APP_LOGO" >&2
+  exit 1
+fi
+cp "$IN_APP_LOGO" assets/branding/logo.png
+echo "Bundled in-app logo ($IN_APP_LOGO) at assets/branding/logo.png."
+
 DART_DEFINES=(
   "--dart-define=INSTITUTE_ID=$INSTITUTE_ID"
   "--dart-define=BRAND_PRIMARY_COLOR=$PRIMARY_COLOR_DART"
@@ -149,7 +165,7 @@ else
   echo "  build/app/outputs/flutter-apk/app-release.apk"
 fi
 echo
-echo "Reminder: the launcher icon files under android/app/src/main/res and"
+echo "Reminder: assets/branding/logo.png (in-app logo) and the launcher icon files under android/app/src/main/res and"
 echo "ios/Runner/Assets.xcassets were just overwritten for this institute."
 echo "Commit them to a dedicated whitelabel/<institute-slug> branch if you"
 echo "want a record to rebuild from later — don't merge that to main."
