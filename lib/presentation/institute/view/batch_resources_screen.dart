@@ -6,6 +6,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/enums/app_enums.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_input_field.dart';
+import 'package:tuoora/core/widgets/resource_mode_toggle.dart';
 import 'package:tuoora/presentation/institute/controllers/resources_controller.dart';
 import 'package:tuoora/presentation/institute/models/batch_model.dart';
 import 'package:tuoora/presentation/institute/models/resource_model.dart';
@@ -31,10 +32,7 @@ class BatchResourcesScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            InstituteAppBar(
-              title: 'Materials',
-              onBackTap: () => Get.back(),
-            ),
+            InstituteAppBar(title: 'Materials', onBackTap: () => Get.back()),
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.primaryBrand,
@@ -228,10 +226,38 @@ class BatchResourcesScreen extends StatelessWidget {
             maxLines: 3,
           ),
           AppSpacing.v24,
-          const InstituteLabel(AppStrings.attachments),
-          AppSpacing.v4,
-          _buildAttachmentButton(controller),
+          ResourceModeToggle(
+            isLink: controller.isLinkMode,
+            onChanged: controller.setUploadMode,
+          ),
+          AppSpacing.v16,
+          Obx(
+            () => controller.isLinkMode.value
+                ? _buildLinkField(controller)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const InstituteLabel(AppStrings.attachments),
+                      AppSpacing.v4,
+                      _buildAttachmentButton(controller),
+                    ],
+                  ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLinkField(ResourcesController controller) {
+    return Obx(
+      () => AppInputField(
+        label: 'Link',
+        controller: controller.linkUrlController,
+        hint: 'https://...',
+        keyboardType: TextInputType.url,
+        errorText: controller.triedToSave.value
+            ? controller.fileError.value
+            : null,
       ),
     );
   }
@@ -309,6 +335,8 @@ class BatchResourcesScreen extends StatelessWidget {
         return Icons.video_library_outlined;
       case ResourceType.document:
         return Icons.description_outlined;
+      case ResourceType.youtube:
+        return Icons.link_rounded;
     }
   }
 
@@ -320,6 +348,8 @@ class BatchResourcesScreen extends StatelessWidget {
         return Colors.orange;
       case ResourceType.document:
         return AppColors.primaryBrand;
+      case ResourceType.youtube:
+        return Colors.red;
     }
   }
 }

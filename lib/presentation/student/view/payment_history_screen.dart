@@ -4,7 +4,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/widgets/payment_item_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:get/get.dart';
+import 'package:tuoora/core/widgets/app_back_button.dart';
 
 class PaymentHistoryScreen extends StatelessWidget {
   final String title;
@@ -22,13 +22,10 @@ class PaymentHistoryScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.darkSlate,
-            size: 20,
-          ),
-          onPressed: () => Get.back(),
+        leadingWidth: 64,
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 16),
+          child: Center(child: AppBackButton()),
         ),
         title: Text(
           title,

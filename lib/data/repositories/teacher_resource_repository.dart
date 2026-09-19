@@ -35,6 +35,39 @@ class TeacherResourceRepository implements TeacherResourceRepositoryImpl {
   }
 
   @override
+  Future<TeacherResource> addLinkResource({
+    required int batchId,
+    required String title,
+    String? subject,
+    String? description,
+    required String linkUrl,
+  }) async {
+    final formData = FormData({
+      'batch_id': batchId,
+      'title': title,
+      if (subject != null && subject.isNotEmpty) 'subject': subject,
+      if (description != null && description.isNotEmpty)
+        'description': description,
+      'resource_type': 'link',
+      'link_url': linkUrl,
+    });
+
+    final response = await _apiClient.post(
+      ApiConstants.teacherResources,
+      formData,
+    );
+
+    if (response.status.hasError) {
+      throw Exception(response.body?['message'] ?? 'Failed to add link');
+    }
+
+    final data = response.body['data'] is Map
+        ? response.body['data']
+        : response.body;
+    return TeacherResource.fromJson(Map<String, dynamic>.from(data));
+  }
+
+  @override
   Future<TeacherResource> uploadResource({
     required int batchId,
     required String title,
@@ -49,7 +82,8 @@ class TeacherResourceRepository implements TeacherResourceRepositoryImpl {
       'batch_id': batchId,
       'title': title,
       if (subject != null && subject.isNotEmpty) 'subject': subject,
-      if (description != null && description.isNotEmpty) 'description': description,
+      if (description != null && description.isNotEmpty)
+        'description': description,
       'file': MultipartFile(file, filename: fileName),
     });
 
@@ -64,7 +98,9 @@ class TeacherResourceRepository implements TeacherResourceRepositoryImpl {
       );
     }
 
-    final data = response.body['data'] is Map ? response.body['data'] : response.body;
+    final data = response.body['data'] is Map
+        ? response.body['data']
+        : response.body;
     return TeacherResource.fromJson(Map<String, dynamic>.from(data));
   }
 
@@ -103,9 +139,7 @@ class TeacherResourceRepository implements TeacherResourceRepositoryImpl {
       ApiConstants.teacherResourceDetail(resourceId),
     );
     if (response.status.hasError) {
-      throw Exception(
-        response.body?['message'] ?? 'Failed to delete resource',
-      );
+      throw Exception(response.body?['message'] ?? 'Failed to delete resource');
     }
   }
 }

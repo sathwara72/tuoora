@@ -11,6 +11,7 @@ class StudentStudyMaterialDetailController extends GetxController {
   late final StudentResourceModel material;
   late final List<AssignmentAttachment> attachments;
 
+  bool get isLink => material.isLink;
   bool get isYoutube => material.isYoutube;
 
   @override
@@ -19,9 +20,9 @@ class StudentStudyMaterialDetailController extends GetxController {
     material = Get.arguments as StudentResourceModel;
 
     // Convert the single file into an AssignmentAttachment so we can reuse the tile.
-    // YouTube-link resources don't have a downloadable file, so they skip this
-    // entirely and are rendered/opened separately (see openYoutube()).
-    attachments = isYoutube
+    // Link resources don't have a downloadable file, so they skip this
+    // entirely and are rendered/opened separately (see openLink()).
+    attachments = isLink
         ? []
         : [
             AssignmentAttachment(
@@ -34,12 +35,13 @@ class StudentStudyMaterialDetailController extends GetxController {
           ];
   }
 
-  Future<void> openYoutube() async {
-    final url = material.youtubeUrl;
+  Future<void> openLink() async {
+    final url = material.linkUrl;
     if (url == null || url.isEmpty) return;
     final uri = Uri.tryParse(url);
-    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      AppSnackBar.error('Could not open YouTube link');
+    if (uri == null ||
+        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      AppSnackBar.error('Could not open link');
     }
   }
 

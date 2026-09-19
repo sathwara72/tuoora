@@ -83,6 +83,7 @@ class StudentStudyMaterialScreen
 
     final isVideo = item.fileType.toLowerCase() == 'video';
     final isYoutube = item.isYoutube;
+    final isLink = item.isLink;
 
     return GestureDetector(
       onTap: () =>
@@ -155,15 +156,17 @@ class StudentStudyMaterialScreen
                 Icon(
                   isYoutube
                       ? Icons.smart_display_rounded
+                      : isLink
+                      ? Icons.link_rounded
                       : isVideo
-                          ? Icons.play_circle_outline_rounded
-                          : Icons.insert_drive_file_outlined,
+                      ? Icons.play_circle_outline_rounded
+                      : Icons.insert_drive_file_outlined,
                   size: 14,
                   color: AppColors.textTertiary,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  isYoutube ? 'YouTube' : AppStrings.k1File,
+                  isYoutube ? 'YouTube' : (isLink ? 'Link' : AppStrings.k1File),
                   style: AppTextStyles.outfit(
                     fontSize: 11,
                     color: AppColors.textSecondary,

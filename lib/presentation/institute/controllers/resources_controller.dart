@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'package:tuoora/core/widgets/resource_mode_toggle.dart';
 
 class ResourcesController extends GetxController {
   final BatchModel batch;
@@ -45,23 +46,18 @@ class ResourcesController extends GetxController {
   // Dialog Controllers
   final subjectController = TextEditingController();
   final descriptionController = TextEditingController();
-  final youtubeUrlController = TextEditingController();
+  final linkUrlController = TextEditingController();
   final selectedFileName = ''.obs;
   final selectedFilePath = ''.obs;
   final selectedType = ResourceType.document.obs;
-  final isYoutubeMode = false.obs;
+  final isLinkMode = false.obs;
 
   final triedToSave = false.obs;
   final subjectError = RxnString();
   final fileError = RxnString();
 
-  static final RegExp _youtubeUrlPattern = RegExp(
-    r'^https?:\/\/(www\.)?(youtube\.com\/(watch\?v=|shorts\/)|youtu\.be\/)',
-    caseSensitive: false,
-  );
-
-  void setUploadMode(bool youtube) {
-    isYoutubeMode.value = youtube;
+  void setUploadMode(bool link) {
+    isLinkMode.value = link;
     fileError.value = null;
   }
 
@@ -75,9 +71,9 @@ class ResourcesController extends GetxController {
       subjectError.value = null;
     }
 
-    if (isYoutubeMode.value) {
-      if (!_youtubeUrlPattern.hasMatch(youtubeUrlController.text.trim())) {
-        fileError.value = 'Please enter a valid YouTube link';
+    if (isLinkMode.value) {
+      if (!isValidHttpUrl(linkUrlController.text)) {
+        fileError.value = 'Please enter a valid link (https://...)';
         isValid = false;
       } else {
         fileError.value = null;
@@ -195,6 +191,7 @@ class ResourcesController extends GetxController {
       case ResourceType.video:
         return _videoMaxMb;
       case ResourceType.document:
+      case ResourceType.youtube:
         return _documentMaxMb;
     }
   }
@@ -207,6 +204,8 @@ class ResourcesController extends GetxController {
         return 'Video';
       case ResourceType.document:
         return 'Document';
+      case ResourceType.youtube:
+        return 'Link';
     }
   }
 
@@ -221,13 +220,13 @@ class ResourcesController extends GetxController {
       );
 
       final Map<String, dynamic> data;
-      if (isYoutubeMode.value) {
+      if (isLinkMode.value) {
         data = {
           'batch_id': batch.id,
           'title': subjectController.text,
           'description': descriptionController.text,
-          'resource_type': 'youtube',
-          'youtube_url': youtubeUrlController.text.trim(),
+          'resource_type': 'link',
+          'link_url': linkUrlController.text.trim(),
         };
       } else {
         final String typeStr = selectedType.value == ResourceType.image
@@ -266,10 +265,10 @@ class ResourcesController extends GetxController {
   void clearForm() {
     subjectController.clear();
     descriptionController.clear();
-    youtubeUrlController.clear();
+    linkUrlController.clear();
     selectedFileName.value = '';
     selectedFilePath.value = '';
-    isYoutubeMode.value = false;
+    isLinkMode.value = false;
     triedToSave.value = false;
     subjectError.value = null;
     fileError.value = null;
@@ -279,7 +278,7 @@ class ResourcesController extends GetxController {
   void onClose() {
     subjectController.dispose();
     descriptionController.dispose();
-    youtubeUrlController.dispose();
+    linkUrlController.dispose();
     super.onClose();
   }
 }

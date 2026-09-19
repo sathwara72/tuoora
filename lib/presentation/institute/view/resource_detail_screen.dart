@@ -104,7 +104,8 @@ class ResourceDetailScreen extends StatelessWidget {
   // Tapping opens the right player in the in-app viewer (see [_openViewer]).
   Widget _buildPreviewThumbnail(ResourceModel resource) {
     final Color accent = _accentFor(resource.type);
-    final bool hasUrl = resource.fileUrl != null && resource.fileUrl!.isNotEmpty;
+    final bool hasUrl =
+        resource.fileUrl != null && resource.fileUrl!.isNotEmpty;
 
     return GestureDetector(
       onTap: hasUrl ? () => _openViewer(resource) : null,
@@ -196,17 +197,15 @@ class ResourceDetailScreen extends StatelessWidget {
     return Container(
       color: accent.withValues(alpha: 0.08),
       child: Center(
-        child: Icon(
-          _iconFor(resource.type),
-          color: accent,
-          size: 80,
-        ),
+        child: Icon(_iconFor(resource.type), color: accent, size: 80),
       ),
     );
   }
 
   void _openViewer(ResourceModel resource) {
-    final url = resource.fileUrl;
+    final url = resource.type == ResourceType.youtube
+        ? (resource.youtubeUrl ?? resource.fileUrl)
+        : resource.fileUrl;
     if (url == null || url.isEmpty) return;
     Widget viewer;
     switch (resource.type) {
@@ -223,6 +222,7 @@ class ResourceDetailScreen extends StatelessWidget {
         );
         break;
       case ResourceType.document:
+      case ResourceType.youtube:
         viewer = InAppResourceViewer.web(
           url: url,
           title: resource.displayFileName,
@@ -240,6 +240,8 @@ class ResourceDetailScreen extends StatelessWidget {
         return Icons.play_circle_outline_rounded;
       case ResourceType.document:
         return Icons.description_rounded;
+      case ResourceType.youtube:
+        return Icons.link_rounded;
     }
   }
 
@@ -251,6 +253,8 @@ class ResourceDetailScreen extends StatelessWidget {
         return Colors.orange;
       case ResourceType.document:
         return AppColors.primaryBrand;
+      case ResourceType.youtube:
+        return Colors.red;
     }
   }
 

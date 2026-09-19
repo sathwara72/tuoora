@@ -30,8 +30,8 @@ class StudentStudyMaterialDetailScreen
                 children: [
                   _buildHeaderCard(material),
                   const SizedBox(height: 16),
-                  if (controller.isYoutube)
-                    _buildYoutubeCard(controller)
+                  if (controller.isLink)
+                    _buildLinkCard(controller)
                   else ...[
                     Text(
                       AppStrings.files,
@@ -61,19 +61,21 @@ class StudentStudyMaterialDetailScreen
     );
   }
 
-  Widget _buildYoutubeCard(StudentStudyMaterialDetailController controller) {
+  Widget _buildLinkCard(StudentStudyMaterialDetailController controller) {
     return Material(
       color: AppColors.white,
       borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       child: InkWell(
-        onTap: controller.openYoutube,
+        onTap: controller.openLink,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         child: Ink(
           padding: AppSpacing.cardPadding,
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: AppColors.borderGrey.withValues(alpha: 0.5),
+            ),
           ),
           child: Row(
             children: [
@@ -84,16 +86,18 @@ class StudentStudyMaterialDetailScreen
                   color: const Color(0xFFFFE5E5),
                   borderRadius: BorderRadius.circular(AppSpacing.s12),
                 ),
-                child: const Icon(
-                  Icons.smart_display_rounded,
-                  color: Color(0xFFCC0000),
+                child: Icon(
+                  controller.isYoutube
+                      ? Icons.smart_display_rounded
+                      : Icons.link_rounded,
+                  color: const Color(0xFFCC0000),
                   size: 20,
                 ),
               ),
               AppSpacing.h12,
               Expanded(
                 child: Text(
-                  'Watch on YouTube',
+                  controller.isYoutube ? 'Watch on YouTube' : 'Open link',
                   style: AppTextStyles.outfit(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -101,7 +105,11 @@ class StudentStudyMaterialDetailScreen
                   ),
                 ),
               ),
-              const Icon(Icons.open_in_new_rounded, color: AppColors.textMuted, size: 18),
+              const Icon(
+                Icons.open_in_new_rounded,
+                color: AppColors.textMuted,
+                size: 18,
+              ),
             ],
           ),
         ),

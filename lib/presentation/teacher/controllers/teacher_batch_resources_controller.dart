@@ -31,7 +31,12 @@ class TeacherBatchResourcesController extends GetxController {
     } else if (args is Map && args['batch'] is TeacherBatch) {
       batch = args['batch'] as TeacherBatch;
     } else {
-      batch = const TeacherBatch(id: 0, name: 'Batch', status: 'active', teacherCanViewFees: false);
+      batch = const TeacherBatch(
+        id: 0,
+        name: 'Batch',
+        status: 'active',
+        teacherCanViewFees: false,
+      );
     }
     fetchResources();
   }
@@ -85,7 +90,41 @@ class TeacherBatchResourcesController extends GetxController {
     }
   }
 
+  Future<bool> addLink({
+    required String title,
+    String? subject,
+    String? description,
+    required String linkUrl,
+  }) async {
+    isUploading.value = true;
+    try {
+      final res = await _repository.addLinkResource(
+        batchId: batch.id,
+        title: title,
+        subject: subject,
+        description: description,
+        linkUrl: linkUrl,
+      );
+      resources.insert(0, res);
+      AppSnackBar.success('Link added successfully.');
+      return true;
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      return false;
+    } finally {
+      isUploading.value = false;
+    }
+  }
+
   Future<void> downloadOrView(TeacherResource resource) async {
+    if (resource.isLink) {
+      final uri = Uri.tryParse(resource.linkUrl!);
+      if (uri == null ||
+          !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        AppSnackBar.error('Could not open link.');
+      }
+      return;
+    }
     if (downloadingId.value != null) return;
     downloadingId.value = resource.id;
 

@@ -4,6 +4,24 @@ class AppStrings {
 
   // Login / Splash / Signup brand tagline
   static const String tagLine = 'A bridge of knowledge for all.';
+  static const String betterEducationBrighterTomorrow =
+      'Better\nEducation\nBrighter\nTomorrow';
+  static const String chooseYourRole = 'Choose your role to continue';
+  static const String resetYourPassword = 'Reset Your Password';
+  static const String resetPasswordHint =
+      'Enter your registered email address and\nwe\u2019ll send you an OTP to reset your password.';
+  static const String hintEnterRegisteredEmail = 'Enter your registered email';
+  static const String rememberYourPassword = 'REMEMBER YOUR PASSWORD?';
+  static const String backToLogin = 'Back to Login';
+  static const String welcomeBack = 'Welcome Back!';
+  static const String hintEnterEmailAddress = 'Enter your email address';
+  static const String hintEnterPassword = 'Enter your password';
+  static const String smartInstituteErp = 'SMART INSTITUTE ERP';
+  static const String splashTagline = 'Manage Today.\nBuild Brighter Tomorrows.';
+  static const String learnManageGrow = 'Learn\nManage\nGrow';
+  static const String chooseHowToContinue = 'Choose how you want to continue';
+  static const String educationTodayBrighterTomorrow =
+      'EDUCATION  TODAY  BRIGHTER  TOMORROW';
   static const String rememberMe = 'Remember Me';
   static const String signInButton = 'Sign In';
 

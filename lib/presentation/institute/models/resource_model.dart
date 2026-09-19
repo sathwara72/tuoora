@@ -26,6 +26,9 @@ class ResourceModel {
   });
 
   String get displayFileName {
+    if (type == ResourceType.youtube && (youtubeUrl ?? '').isNotEmpty) {
+      return youtubeUrl!;
+    }
     if (fileName.isEmpty) return 'Unnamed File';
 
     // Get the actual file name from the path
@@ -56,14 +59,16 @@ class ResourceModel {
       subject: json['title'] ?? '',
       description: json['description'] ?? '',
       fileName: json['file_path'] ?? '',
-      type: json['resource_type'] == 'youtube'
+      type:
+          (json['resource_type'] == 'youtube' ||
+              json['resource_type'] == 'link')
           ? ResourceType.youtube
           : parseType(json['file_type'] ?? 'document'),
       uploadedAt: DateTime.tryParse(json['created_at'] ?? '') ?? DateTime.now(),
       batchId: json['batch_id']?.toString() ?? '',
       fileUrl: json['file_url'],
       downloadUrl: json['download_url'],
-      youtubeUrl: json['youtube_url'],
+      youtubeUrl: json['link_url'] ?? json['youtube_url'],
     );
   }
 }

@@ -41,7 +41,11 @@ class AppLogo extends StatelessWidget {
 
   /// Decodes at display size rather than the asset's full resolution. Shares
   /// its [ResizeImage] key with [precache] so a precached logo is a cache hit.
-  static ImageProvider _provider(double pixelRatio, double? height, bool brand) {
+  static ImageProvider _provider(
+    double pixelRatio,
+    double? height,
+    bool brand,
+  ) {
     final asset = AssetImage(
       brand ? AppImages.brandLogo : AppImages.logoWithName,
     );
@@ -53,8 +57,11 @@ class AppLogo extends StatelessWidget {
   static Future<void> precache(BuildContext context) async {
     final px = MediaQuery.devicePixelRatioOf(context);
     await Future.wait([
-      for (final h in const [56.0, 48.0])
-        precacheImage(_provider(px, h, _useBrandLogo), context).catchError((_) {}),
+      for (final h in const [64.0, 56.0, 48.0])
+        precacheImage(
+          _provider(px, h, _useBrandLogo),
+          context,
+        ).catchError((_) {}),
     ]);
   }
 }

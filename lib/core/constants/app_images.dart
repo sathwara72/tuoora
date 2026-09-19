@@ -5,8 +5,13 @@ class AppImages {
   // --- Brand ---
   /// Full Tuoora logo with wordmark, used in auth headers + splash.
   static const String logoWithName = '$_iconsPath/logo_w_name.png';
+  static const String roleInstitute = 'assets/illustrations/role_institute.png';
+  static const String roleStudent = 'assets/illustrations/role_student.png';
+  static const String roleTeacher = 'assets/illustrations/role_teacher.png';
+
   /// In-app logo bundled per white-label build by tool/build_white_label.sh.
   static const String brandLogo = 'assets/branding/logo.png';
+
   /// Square app logo / launcher emblem.
   static const String appLogo = '$_iconsPath/logo_square_white.png';
   static const String logoSquare = '$_iconsPath/logo_square_white.png';

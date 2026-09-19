@@ -6,7 +6,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:tuoora/core/widgets/app_back_button.dart';
 
 class StudentHomeworkDetailScreen extends StatefulWidget {
   const StudentHomeworkDetailScreen({super.key});
@@ -36,9 +36,10 @@ class _StudentHomeworkDetailScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primaryBrand),
-          onPressed: () => Get.back(),
+        leadingWidth: 64,
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 16),
+          child: Center(child: AppBackButton()),
         ),
         title: Text(
           AppStrings.homeworkDetails,

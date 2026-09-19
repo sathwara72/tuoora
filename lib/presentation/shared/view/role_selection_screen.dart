@@ -1,135 +1,273 @@
-import 'package:tuoora/config/app_routes.dart';
-import 'package:tuoora/core/constants/app_strings.dart';
-import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:tuoora/core/widgets/app_logo.dart';
-import 'package:tuoora/core/theme/app_spacing.dart';
-import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:tuoora/config/app_routes.dart';
+import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/constants/app_images.dart';
+import 'package:tuoora/core/constants/app_strings.dart';
+import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/services/branding_service.dart';
+import 'package:tuoora/core/widgets/app_logo.dart';
+import 'package:tuoora/core/widgets/brand_backdrop.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
 
+  static const _studentBlue = Color(0xFF1D7AF2);
+  static const _teacherGreen = Color(0xFF16A860);
+
+  void _select(String role) {
+    GetStorage().write('last_selected_role', role);
+    Get.toNamed(AppRoutes.login, arguments: role);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final appName = Get.isRegistered<BrandingService>()
+        ? Get.find<BrandingService>().appName
+        : AppStrings.appName;
+
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      body: SafeArea(
-        child: Padding(
-          padding: AppSpacing.x16,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLogo(),
-              AppSpacing.v24,
-              _buildRoleCard(
-                title: AppStrings.loginAsInstitute,
-                subtitle: AppStrings.manageStudentsBatchesAndAcademicOperations,
-                icon: Icons.business_rounded,
-                iconColor: AppColors.primaryBrand,
-                onTap: () {
-                  GetStorage().write('last_selected_role', 'INSTITUTE');
-                  Get.toNamed(AppRoutes.login, arguments: 'INSTITUTE');
-                },
+      backgroundColor: Colors.white,
+      body: BrandBackdrop(
+        child: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 100),
+                      const AppLogo(height: 56),
+                      const SizedBox(height: 10),
+                      Text(
+                        AppStrings.smartInstituteErp,
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textTertiary,
+                          letterSpacing: 4,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Text(
+                        'Welcome to ${appName.toUpperCase()}',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.outfit(
+                          fontSize: 27,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        AppStrings.chooseYourRole,
+                        style: AppTextStyles.outfit(
+                          fontSize: 16,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const DotsDivider(),
+                      const SizedBox(height: 22),
+                      RoleCard(
+                        title: 'Institute',
+                        subtitle:
+                            'Manage students, batches, and academic operations.',
+                        image: AppImages.roleInstitute,
+                        color: AppColors.primaryBrand,
+                        onTap: () => _select('INSTITUTE'),
+                      ),
+                      const SizedBox(height: 16),
+                      RoleCard(
+                        title: 'Student',
+                        subtitle: 'View your classes, fees, homework and more.',
+                        image: AppImages.roleStudent,
+                        color: _studentBlue,
+                        onTap: () => _select('STUDENT'),
+                      ),
+                      const SizedBox(height: 16),
+                      RoleCard(
+                        title: 'Teacher',
+                        subtitle:
+                            'Manage your batches, attendance, and grades.',
+                        image: AppImages.roleTeacher,
+                        color: _teacherGreen,
+                        onTap: () => _select('TEACHER'),
+                      ),
+                      const SizedBox(height: 28),
+                      const TaglineFooter(),
+                      const SizedBox(height: 110),
+                    ],
+                  ),
+                ),
               ),
-              AppSpacing.v16,
-              _buildRoleCard(
-                title: AppStrings.loginAsStudent,
-                subtitle: AppStrings.viewYourClassesFeesHomeworkAnd,
-                icon: Icons.school_rounded,
-                iconColor: AppColors.primaryBrand,
-                onTap: () {
-                  GetStorage().write('last_selected_role', 'STUDENT');
-                  Get.toNamed(AppRoutes.login, arguments: 'STUDENT');
-                },
-              ),
-              AppSpacing.v16,
-              _buildRoleCard(
-                title: AppStrings.loginAsTeacher,
-                subtitle: AppStrings.manageYourBatchesAttendanceAndGrades,
-                icon: Icons.co_present_rounded,
-                iconColor: AppColors.primaryBrand,
-                onTap: () {
-                  GetStorage().write('last_selected_role', 'TEACHER');
-                  Get.toNamed(AppRoutes.login, arguments: 'TEACHER');
-                },
-              ),
-              AppSpacing.v48,
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildLogo() {
-    return Center(
-      child: AppLogo(height: AppSpacing.s48, fit: BoxFit.contain),
+/// Orange / amber / teal dots between two hairlines.
+class DotsDivider extends StatelessWidget {
+  const DotsDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget line() =>
+        Container(width: 56, height: 1, color: AppColors.borderGrey);
+    Widget dot(Color c) => Container(
+      width: 8,
+      height: 8,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        line(),
+        const SizedBox(width: 10),
+        dot(AppColors.primaryBrand),
+        dot(const Color(0xFFF6B94B)),
+        dot(const Color(0xFF1FA593)),
+        const SizedBox(width: 10),
+        line(),
+      ],
     );
   }
+}
 
-  Widget _buildRoleCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
-    required VoidCallback onTap,
-  }) {
+class TaglineFooter extends StatelessWidget {
+  const TaglineFooter({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget line() =>
+        Expanded(child: Container(height: 1, color: AppColors.borderGrey));
+    return Row(
+      children: [
+        line(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            AppStrings.tagLine.toUpperCase(),
+            style: AppTextStyles.outfit(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textTertiary,
+              letterSpacing: 1.8,
+            ),
+          ),
+        ),
+        line(),
+      ],
+    );
+  }
+}
+
+class RoleCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String image;
+  final Color color;
+  final VoidCallback onTap;
+
+  const RoleCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.image,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // The coloured strip along the bottom edge is the outer container peeking
+    // out below the inner card.
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: AppSpacing.cardPadding,
+        padding: const EdgeInsets.only(bottom: 4),
         decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          border: Border.all(color: AppColors.borderGrey, width: 1),
+          color: color,
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: color.withValues(alpha: 0.18),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Container(
-              width: AppSpacing.s72,
-              height: AppSpacing.s72,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-              ),
-              child: Center(child: Icon(icon, color: iconColor, size: 32)),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 12, 14, 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: color.withValues(alpha: 0.14)),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                Color.alphaBlend(color.withValues(alpha: 0.07), Colors.white),
+                Colors.white,
+              ],
             ),
-            AppSpacing.h16,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTextStyles.outfit(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  AppSpacing.v4,
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textTertiary,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
+          ),
+          child: Row(
+            children: [
+              Image.asset(
+                image,
+                width: 96,
+                height: 86,
+                fit: BoxFit.contain,
+                cacheWidth: 300,
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.outfit(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        color: AppColors.textTertiary,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: color,
+                  size: 28,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
