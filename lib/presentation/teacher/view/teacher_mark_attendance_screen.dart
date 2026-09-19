@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
@@ -21,7 +22,31 @@ class TeacherMarkAttendanceScreen
       body: SafeArea(
         child: Column(
           children: [
-            TeacherAppBar(title: 'Attendance · ${controller.batch.name}'),
+            TeacherAppBar(
+              title: 'Attendance · ${controller.batch.name}',
+              actions: [
+                Obx(
+                  () => controller.isEditable
+                      ? GestureDetector(
+                          onTap: () => _scanQr(context),
+                          child: Container(
+                            width: AppSpacing.s40,
+                            height: AppSpacing.s40,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryBrand.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.qr_code_scanner_rounded,
+                              color: AppColors.primaryBrand,
+                              size: AppSpacing.s20,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
             _buildDateBar(context),
             Obx(() {
               if (controller.isLoading.value || controller.rows.isEmpty) {
@@ -100,6 +125,13 @@ class TeacherMarkAttendanceScreen
         ),
       ),
     );
+  }
+
+  Future<void> _scanQr(BuildContext context) async {
+    final scanned = await Get.toNamed(AppRoutes.teacherAttendanceQrScan);
+    if (scanned is String && scanned.isNotEmpty) {
+      await controller.markByQr(scanned);
+    }
   }
 
   Widget _buildDateBar(BuildContext context) {

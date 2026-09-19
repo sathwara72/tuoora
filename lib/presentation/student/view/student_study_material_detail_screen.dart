@@ -30,28 +30,88 @@ class StudentStudyMaterialDetailScreen
                 children: [
                   _buildHeaderCard(material),
                   const SizedBox(height: 16),
-                  Text(
-                    AppStrings.files,
-                    style: AppTextStyles.outfit(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...controller.attachments.map((attachment) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: StudentAttachmentTile(
-                        attachment: attachment,
-                        onTap: () => controller.openAttachment(attachment),
+                  if (controller.isLink)
+                    _buildLinkCard(controller)
+                  else ...[
+                    Text(
+                      AppStrings.files,
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
                       ),
-                    );
-                  }),
+                    ),
+                    const SizedBox(height: 12),
+                    ...controller.attachments.map((attachment) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: StudentAttachmentTile(
+                          attachment: attachment,
+                          onTap: () => controller.openAttachment(attachment),
+                        ),
+                      );
+                    }),
+                  ],
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLinkCard(StudentStudyMaterialDetailController controller) {
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: InkWell(
+        onTap: controller.openLink,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        child: Ink(
+          padding: AppSpacing.cardPadding,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(
+              color: AppColors.borderGrey.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: AppSpacing.s40,
+                height: AppSpacing.s40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE5E5),
+                  borderRadius: BorderRadius.circular(AppSpacing.s12),
+                ),
+                child: Icon(
+                  controller.isYoutube
+                      ? Icons.smart_display_rounded
+                      : Icons.link_rounded,
+                  color: const Color(0xFFCC0000),
+                  size: 20,
+                ),
+              ),
+              AppSpacing.h12,
+              Expanded(
+                child: Text(
+                  controller.isYoutube ? 'Watch on YouTube' : 'Open link',
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.open_in_new_rounded,
+                color: AppColors.textMuted,
+                size: 18,
+              ),
+            ],
+          ),
         ),
       ),
     );

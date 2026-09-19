@@ -12,6 +12,7 @@ import 'config/app_pages.dart';
 import 'config/app_routes.dart';
 import 'config/app_theme.dart';
 import 'package:tuoora/core/api/api_client.dart';
+import 'package:tuoora/core/widgets/app_logo.dart';
 import 'package:tuoora/core/widgets/dotted_background.dart';
 import 'package:tuoora/core/services/app_update_service.dart';
 import 'package:tuoora/core/services/auth_service.dart';
@@ -58,6 +59,14 @@ void main() async {
   });
 }
 
+bool _logoPrecached = false;
+
+void _precacheLogo(BuildContext context) {
+  if (_logoPrecached) return;
+  _logoPrecached = true;
+  AppLogo.precache(context);
+}
+
 class FeeEasyApp extends StatelessWidget {
   const FeeEasyApp({super.key});
 
@@ -73,6 +82,7 @@ class FeeEasyApp extends StatelessWidget {
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
       builder: (context, child) {
+        _precacheLogo(context);
         return DottedBackground(child: child ?? const SizedBox.shrink());
       },
     );

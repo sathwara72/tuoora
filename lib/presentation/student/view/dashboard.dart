@@ -13,7 +13,9 @@ import 'package:tuoora/presentation/student/widgets/student_app_bar.dart';
 import 'package:tuoora/presentation/student/widgets/student_section_header.dart';
 import 'package:tuoora/presentation/student/controllers/assignments_controller.dart';
 import 'package:tuoora/presentation/student/controllers/student_dashboard_controller.dart';
+import 'package:tuoora/presentation/student/controllers/student_exams_controller.dart';
 import 'package:tuoora/presentation/student/models/assignment_model.dart';
+import 'package:tuoora/presentation/student/models/student_exam_model.dart';
 import 'package:tuoora/data/models/student_dashboard_model.dart';
 import 'package:tuoora/data/models/student_resource_model.dart';
 
@@ -66,6 +68,7 @@ class StudentDashboard extends GetView<StudentDashboardController> {
 
           final todayClass = controller.todayClassDisplay;
           final assignmentItems = controller.dashboardAssignments;
+          final examItems = controller.dashboardUpcomingExams;
 
           return Column(
             children: [
@@ -109,6 +112,27 @@ class StudentDashboard extends GetView<StudentDashboardController> {
                                 onTap: () =>
                                     _openAssignmentDetail(item.assignment),
                                 child: _AssignmentTile(item: item),
+                              ),
+                            );
+                          }),
+                          const SizedBox(height: AppSpacing.s16),
+                        ],
+                        if (examItems.isNotEmpty) ...[
+                          StudentSectionHeader(
+                            title: AppStrings.upcomingExams,
+                            showSeeAll: true,
+                            onActionTap: () =>
+                                Get.toNamed(AppRoutes.studentExams),
+                          ),
+                          const SizedBox(height: AppSpacing.s12),
+                          ...examItems.map((exam) {
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.s8,
+                              ),
+                              child: GestureDetector(
+                                onTap: () => _openExamDetail(exam),
+                                child: _ExamTile(exam: exam),
                               ),
                             );
                           }),
@@ -203,6 +227,13 @@ class StudentDashboard extends GetView<StudentDashboardController> {
     }
     final ctrl = Get.find<AssignmentsController>();
     ctrl.openAssignment(assignment);
+  }
+
+  static void _openExamDetail(StudentExamListItem exam) {
+    if (!Get.isRegistered<StudentExamsController>()) {
+      Get.put(StudentExamsController());
+    }
+    Get.find<StudentExamsController>().openExam(exam);
   }
 
   static void _openAttendanceTab() {
@@ -513,6 +544,82 @@ class _AssignmentTile extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExamTile extends StatelessWidget {
+  final StudentExamListItem exam;
+  const _ExamTile({required this.exam});
+
+  @override
+  Widget build(BuildContext context) {
+    final metaParts = <String>[
+      if ((exam.subject ?? '').isNotEmpty) exam.subject!,
+      exam.examTypeLabel,
+      if ((exam.formattedDate ?? '').isNotEmpty) exam.formattedDate!,
+    ];
+
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: AppSpacing.s40,
+            height: AppSpacing.s40,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBrandLight,
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            ),
+            child: const Icon(
+              Icons.fact_check_outlined,
+              color: AppColors.primaryBrand,
+              size: 20,
+            ),
+          ),
+          AppSpacing.h12,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  exam.title,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  metaParts.join('  •  '),
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: AppColors.textTertiary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
         ],
       ),
     );

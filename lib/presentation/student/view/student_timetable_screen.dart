@@ -172,6 +172,26 @@ class StudentTimetableScreen extends GetView<StudentTimetableController> {
                     ),
                   ],
                 ),
+                if (slot.batchName != null && slot.batchName!.isNotEmpty) ...[
+                  AppSpacing.v4,
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.class_outlined,
+                        size: 14,
+                        color: AppColors.textTertiary,
+                      ),
+                      AppSpacing.h6,
+                      Text(
+                        slot.batchName!,
+                        style: AppTextStyles.outfit(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (slot.staffName != null && slot.staffName!.isNotEmpty) ...[
                   AppSpacing.v4,
                   Row(

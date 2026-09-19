@@ -4,6 +4,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/widgets/app_back_button.dart';
 
 class InstituteAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -80,6 +81,7 @@ class InstituteAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildLeadingButton(BuildContext context) {
+    if (!isRoot) return AppBackButton(onTap: onBackTap);
     return GestureDetector(
       onTap: isRoot
           ? (onMenuTap ?? () => Scaffold.of(context).openDrawer())
@@ -130,4 +132,3 @@ class InstituteAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(80);
 }
-

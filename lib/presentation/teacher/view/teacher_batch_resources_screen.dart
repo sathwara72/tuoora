@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/widgets/resource_mode_toggle.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -13,7 +14,8 @@ import 'package:tuoora/presentation/teacher/controllers/teacher_batch_resources_
 import 'package:tuoora/presentation/teacher/models/teacher_resource_model.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
 
-class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesController> {
+class TeacherBatchResourcesScreen
+    extends GetView<TeacherBatchResourcesController> {
   const TeacherBatchResourcesScreen({super.key});
 
   @override
@@ -23,16 +25,15 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
       body: SafeArea(
         child: Column(
           children: [
-            TeacherAppBar(
-              title: '${controller.batch.name} Materials',
-            ),
+            TeacherAppBar(title: '${controller.batch.name} Materials'),
             _buildSearchAndSummary(),
             Expanded(
               child: RefreshIndicator(
                 color: AppColors.primaryBrand,
                 onRefresh: controller.fetchResources,
                 child: Obx(() {
-                  if (controller.isLoading.value && controller.resources.isEmpty) {
+                  if (controller.isLoading.value &&
+                      controller.resources.isEmpty) {
                     return const Center(child: CommonLoading());
                   }
 
@@ -42,7 +43,9 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.all(24),
                       children: [
-                        SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.15,
+                        ),
                         Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -50,7 +53,9 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                               Icon(
                                 Icons.folder_open_rounded,
                                 size: 64,
-                                color: AppColors.textTertiary.withValues(alpha: 0.5),
+                                color: AppColors.textTertiary.withValues(
+                                  alpha: 0.5,
+                                ),
                               ),
                               AppSpacing.v12,
                               Text(
@@ -79,7 +84,8 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                       final item = list[index];
                       return _ResourceCard(
                         resource: item,
-                        isDownloading: controller.downloadingId.value == item.id,
+                        isDownloading:
+                            controller.downloadingId.value == item.id,
                         onDownload: () => controller.downloadOrView(item),
                         onDelete: () => _confirmDelete(context, item),
                       );
@@ -109,20 +115,34 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
             ),
             child: TextField(
               onChanged: (val) => controller.searchQuery.value = val,
-              style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
               decoration: InputDecoration(
                 hintText: 'Search study materials by title or subject...',
-                hintStyle: AppTextStyles.outfit(fontSize: 13, color: AppColors.textTertiary),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textTertiary, size: 20),
+                hintStyle: AppTextStyles.outfit(
+                  fontSize: 13,
+                  color: AppColors.textTertiary,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.textTertiary,
+                  size: 20,
+                ),
                 suffixIcon: Obx(() {
-                  if (controller.searchQuery.value.isEmpty) return const SizedBox.shrink();
+                  if (controller.searchQuery.value.isEmpty)
+                    return const SizedBox.shrink();
                   return IconButton(
                     icon: const Icon(Icons.clear_rounded, size: 18),
                     onPressed: () => controller.searchQuery.value = '',
                   );
                 }),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -134,7 +154,11 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                 : '${controller.filteredResources.length} of $total File${total == 1 ? '' : 's'}';
             return Row(
               children: [
-                Icon(Icons.attachment_rounded, size: 16, color: AppColors.primaryBrand),
+                Icon(
+                  Icons.attachment_rounded,
+                  size: 16,
+                  color: AppColors.primaryBrand,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   countText,
@@ -178,6 +202,8 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
     final descCtrl = TextEditingController();
     final pickedFilePath = RxnString();
     final pickedFileName = RxnString();
+    final linkCtrl = TextEditingController();
+    final isLink = false.obs;
 
     Get.dialog(
       Dialog(
@@ -226,7 +252,11 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () => Get.back(),
@@ -257,16 +287,28 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1.2,
+                          ),
                         ),
                         child: TextField(
                           controller: titleCtrl,
-                          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
+                          style: AppTextStyles.outfit(
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
                           decoration: InputDecoration(
                             hintText: 'e.g. Week 4 - Study Material',
-                            hintStyle: AppTextStyles.outfit(fontSize: 13, color: const Color(0xFF94A3B8)),
+                            hintStyle: AppTextStyles.outfit(
+                              fontSize: 13,
+                              color: const Color(0xFF94A3B8),
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ),
@@ -288,135 +330,242 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1.2,
+                          ),
                         ),
                         child: TextField(
                           controller: descCtrl,
                           minLines: 3,
                           maxLines: 4,
-                          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
+                          style: AppTextStyles.outfit(
+                            fontSize: 14,
+                            color: AppColors.textPrimary,
+                          ),
                           decoration: InputDecoration(
                             hintText: 'Brief notes or instructions...',
-                            hintStyle: AppTextStyles.outfit(fontSize: 13, color: const Color(0xFF94A3B8)),
+                            hintStyle: AppTextStyles.outfit(
+                              fontSize: 13,
+                              color: const Color(0xFF94A3B8),
+                            ),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
                           ),
                         ),
                       ),
 
                       const SizedBox(height: 18),
 
-                      // FILE ATTACHMENT Field
-                      Text(
-                        'FILE ATTACHMENT',
-                        style: AppTextStyles.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF94A3B8),
-                          letterSpacing: 0.6,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      ResourceModeToggle(isLink: isLink),
+                      const SizedBox(height: 18),
                       Obx(() {
-                        final hasFile = pickedFilePath.value != null;
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: hasFile ? const Color(0xFFFF6B00) : const Color(0xFFCBD5E1),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
+                        if (!isLink.value) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFEDE1),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                  Icons.arrow_upward_rounded,
-                                  color: Color(0xFFFF6B00),
-                                  size: 22,
+                              // FILE ATTACHMENT Field
+                              Text(
+                                'FILE ATTACHMENT',
+                                style: AppTextStyles.outfit(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF94A3B8),
+                                  letterSpacing: 0.6,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      hasFile ? pickedFileName.value! : 'Tap to choose file',
-                                      style: AppTextStyles.outfit(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF1E293B),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      hasFile ? 'File attached' : 'Supports PDF, Word, PPT, JPG, PNG',
-                                      style: AppTextStyles.outfit(
-                                        fontSize: 11,
-                                        color: const Color(0xFF94A3B8),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              InkWell(
-                                onTap: () async {
-                                  final result = await FilePicker.pickFiles(
-                                    type: FileType.any,
-                                    allowMultiple: false,
-                                  );
-                                  if (result != null && result.files.single.path != null) {
-                                    pickedFilePath.value = result.files.single.path;
-                                    pickedFileName.value = result.files.single.name;
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              const SizedBox(height: 8),
+                              Obx(() {
+                                final hasFile = pickedFilePath.value != null;
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                                  ),
-                                  child: Text(
-                                    hasFile ? 'Change' : 'Browse',
-                                    style: AppTextStyles.outfit(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF334155),
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: hasFile
+                                          ? const Color(0xFFFF6B00)
+                                          : const Color(0xFFCBD5E1),
+                                      width: 1,
                                     ),
                                   ),
-                                ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 44,
+                                        height: 44,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFFEDE1),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.arrow_upward_rounded,
+                                          color: Color(0xFFFF6B00),
+                                          size: 22,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              hasFile
+                                                  ? pickedFileName.value!
+                                                  : 'Tap to choose file',
+                                              style: AppTextStyles.outfit(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: const Color(0xFF1E293B),
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              hasFile
+                                                  ? 'File attached'
+                                                  : 'Supports PDF, Word, PPT, JPG, PNG',
+                                              style: AppTextStyles.outfit(
+                                                fontSize: 11,
+                                                color: const Color(0xFF94A3B8),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      InkWell(
+                                        onTap: () async {
+                                          final result =
+                                              await FilePicker.pickFiles(
+                                                type: FileType.any,
+                                                allowMultiple: false,
+                                              );
+                                          if (result != null &&
+                                              result.files.single.path !=
+                                                  null) {
+                                            pickedFilePath.value =
+                                                result.files.single.path;
+                                            pickedFileName.value =
+                                                result.files.single.name;
+                                          }
+                                        },
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 7,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(0xFFCBD5E1),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            hasFile ? 'Change' : 'Browse',
+                                            style: AppTextStyles.outfit(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF334155),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+
+                              const SizedBox(height: 8),
+
+                              // Format category indicator dots
+                              Row(
+                                children: [
+                                  _buildFormatDot(
+                                    const Color(0xFFFF6B00),
+                                    'Images',
+                                  ),
+                                  const SizedBox(width: 14),
+                                  _buildFormatDot(
+                                    const Color(0xFF2563EB),
+                                    'Videos',
+                                  ),
+                                  const SizedBox(width: 14),
+                                  _buildFormatDot(
+                                    const Color(0xFFE11D48),
+                                    'Documents',
+                                  ),
+                                ],
                               ),
                             ],
-                          ),
+                          );
+                        }
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'LINK',
+                              style: AppTextStyles.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF94A3B8),
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: const Color(0xFFE2E8F0),
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: TextField(
+                                controller: linkCtrl,
+                                keyboardType: TextInputType.url,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'https://...',
+                                  hintStyle: AppTextStyles.outfit(
+                                    fontSize: 13,
+                                    color: const Color(0xFF94A3B8),
+                                  ),
+                                  prefixIcon: const Icon(Icons.link_rounded),
+                                  border: InputBorder.none,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'YouTube, Google Drive or any web link',
+                              style: AppTextStyles.outfit(
+                                fontSize: 11,
+                                color: const Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
                         );
                       }),
-
-                      const SizedBox(height: 8),
-
-                      // Format category indicator dots
-                      Row(
-                        children: [
-                          _buildFormatDot(const Color(0xFFFF6B00), 'Images'),
-                          const SizedBox(width: 14),
-                          _buildFormatDot(const Color(0xFF2563EB), 'Videos'),
-                          const SizedBox(width: 14),
-                          _buildFormatDot(const Color(0xFFE11D48), 'Documents'),
-                        ],
-                      ),
 
                       const SizedBox(height: 24),
 
@@ -442,26 +591,49 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
                                   ? null
                                   : () async {
                                       if (titleCtrl.text.trim().isEmpty) {
-                                        AppSnackBar.error('Please enter a title for the material.');
+                                        AppSnackBar.error(
+                                          'Please enter a title for the material.',
+                                        );
                                         return;
                                       }
-                                      if (pickedFilePath.value == null) {
-                                        AppSnackBar.error('Please select a file to upload.');
-                                        return;
+                                      final bool ok;
+                                      if (isLink.value) {
+                                        if (!isValidHttpUrl(linkCtrl.text)) {
+                                          AppSnackBar.error(
+                                            'Please enter a valid link (https://...).',
+                                          );
+                                          return;
+                                        }
+                                        ok = await controller.addLink(
+                                          title: titleCtrl.text.trim(),
+                                          subject: controller.batch.subject,
+                                          description: descCtrl.text.trim(),
+                                          linkUrl: linkCtrl.text.trim(),
+                                        );
+                                      } else {
+                                        if (pickedFilePath.value == null) {
+                                          AppSnackBar.error(
+                                            'Please select a file to upload.',
+                                          );
+                                          return;
+                                        }
+                                        ok = await controller.uploadNewResource(
+                                          title: titleCtrl.text.trim(),
+                                          subject: controller.batch.subject,
+                                          description: descCtrl.text.trim(),
+                                          filePath: pickedFilePath.value!,
+                                        );
                                       }
-                                      final ok = await controller.uploadNewResource(
-                                        title: titleCtrl.text.trim(),
-                                        subject: controller.batch.subject,
-                                        description: descCtrl.text.trim(),
-                                        filePath: pickedFilePath.value!,
-                                      );
                                       if (ok) Get.back();
                                     },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFFF6B00),
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 26,
+                                  vertical: 12,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -506,10 +678,7 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
         Container(
           width: 6,
           height: 6,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 5),
         Text(
@@ -530,16 +699,25 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Delete Resource?',
-          style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
+          style: AppTextStyles.outfit(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: Text(
           'Are you sure you want to delete "${resource.title}"? Students in ${controller.batch.name} will no longer be able to access this material.',
-          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
+          style: AppTextStyles.outfit(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Cancel', style: AppTextStyles.outfit(color: AppColors.textSecondary)),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.outfit(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -548,9 +726,17 @@ class TeacherBatchResourcesScreen extends GetView<TeacherBatchResourcesControlle
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            child: Text('Delete', style: AppTextStyles.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Delete',
+              style: AppTextStyles.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -577,7 +763,11 @@ class _ResourceCard extends StatelessWidget {
     Color iconColor = const Color(0xFF2563EB);
     Color iconBg = const Color(0xFFEFF6FF);
 
-    if (resource.isPdf) {
+    if (resource.isLink) {
+      icon = Icons.link_rounded;
+      iconColor = const Color(0xFFEA580C);
+      iconBg = const Color(0xFFFFF7ED);
+    } else if (resource.isPdf) {
       icon = Icons.picture_as_pdf_rounded;
       iconColor = const Color(0xFFDC2626);
       iconBg = const Color(0xFFFEF2F2);
@@ -636,10 +826,14 @@ class _ResourceCard extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    if (resource.subject != null && resource.subject!.isNotEmpty) ...[
+                    if (resource.subject != null &&
+                        resource.subject!.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(4),
@@ -654,20 +848,27 @@ class _ResourceCard extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (resource.description != null && resource.description!.isNotEmpty) ...[
+                    if (resource.description != null &&
+                        resource.description!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         resource.description!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
+                        style: AppTextStyles.outfit(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: AppColors.textSecondary,
+                ),
                 onSelected: (val) {
                   if (val == 'download') onDownload();
                   if (val == 'delete') onDelete();
@@ -677,9 +878,16 @@ class _ResourceCard extends StatelessWidget {
                     value: 'download',
                     child: Row(
                       children: [
-                        const Icon(Icons.download_rounded, size: 18, color: AppColors.primaryBrand),
+                        const Icon(
+                          Icons.download_rounded,
+                          size: 18,
+                          color: AppColors.primaryBrand,
+                        ),
                         const SizedBox(width: 8),
-                        Text('Download / Open', style: AppTextStyles.outfit(fontSize: 13)),
+                        Text(
+                          resource.isLink ? 'Open link' : 'Download / Open',
+                          style: AppTextStyles.outfit(fontSize: 13),
+                        ),
                       ],
                     ),
                   ),
@@ -687,9 +895,19 @@ class _ResourceCard extends StatelessWidget {
                     value: 'delete',
                     child: Row(
                       children: [
-                        const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                        const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                          color: Colors.redAccent,
+                        ),
                         const SizedBox(width: 8),
-                        Text('Delete Resource', style: AppTextStyles.outfit(fontSize: 13, color: Colors.redAccent)),
+                        Text(
+                          'Delete Resource',
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            color: Colors.redAccent,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -706,23 +924,39 @@ class _ResourceCard extends StatelessWidget {
               Row(
                 children: [
                   if (formattedDate.isNotEmpty) ...[
-                    Icon(Icons.access_time_rounded, size: 13, color: AppColors.textTertiary),
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 13,
+                      color: AppColors.textTertiary,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       formattedDate,
-                      style: AppTextStyles.outfit(fontSize: 11, color: AppColors.textTertiary),
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ],
                   if (resource.fileSize != null) ...[
                     const SizedBox(width: 8),
-                    Text('· ${resource.fileSize}', style: AppTextStyles.outfit(fontSize: 11, color: AppColors.textTertiary)),
+                    Text(
+                      '· ${resource.fileSize}',
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
                   ],
                 ],
               ),
               GestureDetector(
                 onTap: isDownloading ? null : onDownload,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(6),
@@ -733,13 +967,26 @@ class _ResourceCard extends StatelessWidget {
                         const SizedBox(
                           width: 12,
                           height: 12,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBrand),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.primaryBrand,
+                          ),
                         )
                       else
-                        const Icon(Icons.download_rounded, size: 14, color: AppColors.primaryBrand),
+                        Icon(
+                          resource.isLink
+                              ? Icons.open_in_new_rounded
+                              : Icons.download_rounded,
+                          size: 14,
+                          color: AppColors.primaryBrand,
+                        ),
                       const SizedBox(width: 4),
                       Text(
-                        isDownloading ? 'Opening...' : 'View / Download',
+                        isDownloading
+                            ? 'Opening...'
+                            : (resource.isLink
+                                  ? 'Open link'
+                                  : 'View / Download'),
                         style: AppTextStyles.outfit(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,

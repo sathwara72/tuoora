@@ -4,6 +4,24 @@ class AppStrings {
 
   // Login / Splash / Signup brand tagline
   static const String tagLine = 'A bridge of knowledge for all.';
+  static const String betterEducationBrighterTomorrow =
+      'Better\nEducation\nBrighter\nTomorrow';
+  static const String chooseYourRole = 'Choose your role to continue';
+  static const String resetYourPassword = 'Reset Your Password';
+  static const String resetPasswordHint =
+      'Enter your registered email address and\nwe\u2019ll send you an OTP to reset your password.';
+  static const String hintEnterRegisteredEmail = 'Enter your registered email';
+  static const String rememberYourPassword = 'REMEMBER YOUR PASSWORD?';
+  static const String backToLogin = 'Back to Login';
+  static const String welcomeBack = 'Welcome Back!';
+  static const String hintEnterEmailAddress = 'Enter your email address';
+  static const String hintEnterPassword = 'Enter your password';
+  static const String smartInstituteErp = 'SMART INSTITUTE ERP';
+  static const String splashTagline = 'Manage Today.\nBuild Brighter Tomorrows.';
+  static const String learnManageGrow = 'Learn\nManage\nGrow';
+  static const String chooseHowToContinue = 'Choose how you want to continue';
+  static const String educationTodayBrighterTomorrow =
+      'EDUCATION  TODAY  BRIGHTER  TOMORROW';
   static const String rememberMe = 'Remember Me';
   static const String signInButton = 'Sign In';
 
@@ -663,6 +681,11 @@ class AppStrings {
   static const String loginFailed = 'Login Failed';
   static const String errEmailNotVerified =
       'Your email is not verified yet. Please complete OTP verification to continue.';
+  static const String errAccountNotFoundIOS =
+      "We couldn't find an account matching these details. Please contact "
+      'your institute administrator or Tuoora support for help.';
+  static const String contactAdministrationMessage =
+      'Please contact your administration for assistance.';
   static const String sessionExpiredTitle = 'Session expired';
   static const String errSessionExpired =
       'Your session has timed out. Please log in again.';
@@ -737,6 +760,7 @@ class AppStrings {
   static const String goToToday = 'GO TO TODAY';
   static const String nothingToShowYet = 'Nothing to show yet';
   static const String assignments = 'ASSIGNMENTS';
+  static const String upcomingExams = 'UPCOMING EXAMS';
   static const String todaySAttendance = 'TODAY\'S ATTENDANCE';
   static const String studyMaterialThisWeek = 'STUDY MATERIAL THIS WEEK';
   static const String pendingFees = 'PENDING FEES';

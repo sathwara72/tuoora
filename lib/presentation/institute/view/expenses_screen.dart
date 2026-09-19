@@ -76,16 +76,18 @@ class ExpensesScreen extends GetView<ExpenseController> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => SubscriptionGuard.runAddAction(() {
-          controller.resetForm();
-          Get.toNamed(AppRoutes.instituteAddExpense);
-        }),
-        backgroundColor: SubscriptionGuard.blocksAdd
-            ? AppColors.textMuted
-            : AppColors.primaryBrand,
-        child: const Icon(Icons.add, color: AppColors.white),
-      ),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : FloatingActionButton(
+              onPressed: () => SubscriptionGuard.runAddAction(() {
+                controller.resetForm();
+                Get.toNamed(AppRoutes.instituteAddExpense);
+              }),
+              backgroundColor: SubscriptionGuard.blocksAdd
+                  ? AppColors.textMuted
+                  : AppColors.primaryBrand,
+              child: const Icon(Icons.add, color: AppColors.white),
+            ),
     );
   }
 

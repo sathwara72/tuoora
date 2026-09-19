@@ -11,6 +11,14 @@ abstract class TeacherResourceRepositoryImpl {
     required String filePath,
   });
 
+  Future<TeacherResource> addLinkResource({
+    required int batchId,
+    required String title,
+    String? subject,
+    String? description,
+    required String linkUrl,
+  });
+
   Future<List<int>> downloadResource(int resourceId);
 
   Future<void> deleteResource(int resourceId);

@@ -94,6 +94,28 @@ class TeacherMarkAttendanceController extends GetxController {
     rows.refresh();
   }
 
+  Future<void> markByQr(String qrPayload) async {
+    if (!isEditable) {
+      AppSnackBar.error('Attendance for this date can no longer be edited');
+      return;
+    }
+    try {
+      final result = await _repository.markAttendanceByQr(
+        batchId: batch.id,
+        date: apiDate,
+        qrPayload: qrPayload,
+      );
+      final row = rows.firstWhereOrNull((r) => r.studentId == result.studentId);
+      if (row != null) {
+        row.status = 'present';
+        rows.refresh();
+      }
+      AppSnackBar.success('Marked ${result.studentName} present');
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
   Future<void> submit() async {
     if (!isEditable) return;
     final unset = rows.where((r) => r.status == null || r.status!.isEmpty);

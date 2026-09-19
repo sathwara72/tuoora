@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/widgets/app_back_button.dart';
 
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -59,13 +60,7 @@ class StudentAppBar extends StatelessWidget implements PreferredSizeWidget {
   List<Widget> _buildLeading() {
     if (leading != null) return [leading!, AppSpacing.h12];
     if (isRoot || hideLeading) return const [];
-    return [
-      StudentHeaderIconButton(
-        icon: Icons.arrow_back_ios_new_rounded,
-        onTap: onBackTap ?? () => Get.back(),
-      ),
-      AppSpacing.h12,
-    ];
+    return [AppBackButton(onTap: onBackTap), AppSpacing.h12];
   }
 
   Widget _buildTitle() {

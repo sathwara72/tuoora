@@ -10,6 +10,7 @@ class AppButton extends StatelessWidget {
   final bool isLoading;
   final bool isDisabled;
   final IconData? icon;
+  final IconData? trailingIcon;
   final Color? backgroundColor;
   final Color? foregroundColor;
   final double? width;
@@ -28,6 +29,7 @@ class AppButton extends StatelessWidget {
     this.isLoading = false,
     this.isDisabled = false,
     this.icon,
+    this.trailingIcon,
     this.backgroundColor,
     this.foregroundColor,
     this.width,
@@ -78,6 +80,10 @@ class AppButton extends StatelessWidget {
                         color: contentColor,
                       ),
                     ),
+                    if (trailingIcon != null) ...[
+                      const SizedBox(width: 8),
+                      Icon(trailingIcon, color: contentColor, size: 20),
+                    ],
                   ],
                 ),
         ),

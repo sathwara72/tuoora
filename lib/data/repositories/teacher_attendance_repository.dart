@@ -44,6 +44,27 @@ class TeacherAttendanceRepository implements TeacherAttendanceRepositoryImpl {
   }
 
   @override
+  Future<QrAttendanceResult> markAttendanceByQr({
+    required int batchId,
+    required String date,
+    required String qrPayload,
+  }) async {
+    final response = await _apiClient.post(ApiConstants.teacherAttendanceQrScan, {
+      'batch_id': batchId,
+      'date': date,
+      'qr_payload': qrPayload,
+    });
+    if (response.status.hasError) {
+      throw Exception(
+        response.body?['message'] ?? 'Failed to mark attendance',
+      );
+    }
+    return QrAttendanceResult.fromJson(
+      Map<String, dynamic>.from(response.body['data']),
+    );
+  }
+
+  @override
   Future<TeacherStaffAttendance?> getSelfAttendanceToday() async {
     final response = await _apiClient.get(ApiConstants.teacherSelfAttendanceToday);
     if (response.status.hasError) {

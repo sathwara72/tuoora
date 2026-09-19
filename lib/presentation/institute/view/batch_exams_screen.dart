@@ -86,16 +86,18 @@ class _BatchExamsScreenState extends State<BatchExamsScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => SubscriptionGuard.runAddAction(() {
-          controller.startCreate();
-          Get.toNamed(AppRoutes.instituteAddExam, arguments: batch.id);
-        }),
-        backgroundColor: SubscriptionGuard.blocksAdd
-            ? AppColors.textMuted
-            : AppColors.primaryBrand,
-        child: const Icon(Icons.add, color: AppColors.white),
-      ),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : FloatingActionButton(
+              onPressed: () => SubscriptionGuard.runAddAction(() {
+                controller.startCreate();
+                Get.toNamed(AppRoutes.instituteAddExam, arguments: batch.id);
+              }),
+              backgroundColor: SubscriptionGuard.blocksAdd
+                  ? AppColors.textMuted
+                  : AppColors.primaryBrand,
+              child: const Icon(Icons.add, color: AppColors.white),
+            ),
     );
   }
 

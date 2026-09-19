@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:get/get.dart';
@@ -25,18 +27,39 @@ class SubscriptionGuard {
 
   /// True when add actions must be blocked — there is a subscription and it
   /// isn't active (expired, or pending renewal review). Read at build time to
-  /// grey out add affordances.
+  /// grey out add affordances (Android/Web) or hide them outright (iOS).
   static bool get blocksAdd {
     final sub = _subscription;
     return sub != null && !(sub.isActive || sub.isExpireSoon);
   }
 
+  /// iOS ships no renewal/purchase screen to send a blocked user to, so the
+  /// add affordance itself is hidden rather than shown-and-intercepted.
+  /// Screens should skip rendering their add button/FAB entirely when true.
+  static bool get hideAddOnIOS => Platform.isIOS && blocksAdd;
+
   /// Runs [onAllowed] only when adding is permitted. Otherwise shows a prompt
-  /// explaining why and (when expired) offering to open the renewal screen.
+  /// explaining why — on Android/Web, offering to open the renewal screen; on
+  /// iOS (reachable only defensively, since [hideAddOnIOS] hides the button
+  /// itself) a neutral message with no subscription/purchase wording or
+  /// navigation.
   static void runAddAction(VoidCallback onAllowed) {
     final sub = _subscription;
     if (sub == null || sub.isActive || sub.isExpireSoon) {
       onAllowed();
+      return;
+    }
+
+    if (Platform.isIOS) {
+      CommonDialog.show(
+        title: AppStrings.contactAdministrationMessage,
+        icon: Icons.info_outline_rounded,
+        iconColor: AppColors.primaryBrand,
+        iconBgColor: AppColors.primaryBrandLight,
+        showButtons: false,
+        showCloseIcon: true,
+        onConfirm: () {},
+      );
       return;
     }
 

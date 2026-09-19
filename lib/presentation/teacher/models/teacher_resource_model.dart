@@ -9,6 +9,8 @@ class TeacherResource {
   final String? fileType;
   final String? fileSize;
   final String? createdAt;
+  final String? resourceType;
+  final String? linkUrl;
 
   const TeacherResource({
     required this.id,
@@ -21,7 +23,13 @@ class TeacherResource {
     this.fileType,
     this.fileSize,
     this.createdAt,
+    this.resourceType,
+    this.linkUrl,
   });
+
+  bool get isLink =>
+      (resourceType == 'link' || resourceType == 'youtube') &&
+      (linkUrl ?? '').isNotEmpty;
 
   bool get isPdf =>
       (fileType?.toLowerCase().contains('pdf') ?? false) ||
@@ -51,15 +59,27 @@ class TeacherResource {
     return TeacherResource(
       id: parseInt(json['id']),
       batchId: parseInt(json['batch_id']),
-      title: json['title']?.toString() ?? json['subject']?.toString() ?? 'Untitled Resource',
+      title:
+          json['title']?.toString() ??
+          json['subject']?.toString() ??
+          'Untitled Resource',
       description: json['description']?.toString(),
       subject: json['subject']?.toString(),
-      fileName: json['file_name']?.toString() ??
+      fileName:
+          json['file_name']?.toString() ??
           json['file_path']?.toString().split('/').last,
-      fileUrl: json['file_url']?.toString() ?? json['file_path']?.toString() ?? json['download_url']?.toString(),
-      fileType: json['file_type']?.toString() ?? json['type']?.toString() ?? 'document',
+      fileUrl:
+          json['file_url']?.toString() ??
+          json['file_path']?.toString() ??
+          json['download_url']?.toString(),
+      fileType:
+          json['file_type']?.toString() ??
+          json['type']?.toString() ??
+          'document',
       fileSize: json['file_size']?.toString(),
       createdAt: json['created_at']?.toString(),
+      resourceType: json['resource_type']?.toString(),
+      linkUrl: (json['link_url'] ?? json['youtube_url'])?.toString(),
     );
   }
 
@@ -75,6 +95,8 @@ class TeacherResource {
       'file_type': fileType,
       'file_size': fileSize,
       'created_at': createdAt,
+      'resource_type': resourceType,
+      'link_url': linkUrl,
     };
   }
 }

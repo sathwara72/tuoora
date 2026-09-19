@@ -61,19 +61,21 @@ class SalaryManagementScreen extends GetView<StaffController> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => SubscriptionGuard.runAddAction(() {
-          // Reset the form BEFORE navigation so AddSalaryScreen builds with
-          // a clean controller state instead of inheriting the previous
-          // visit's selection / amount / deduction.
-          Get.find<StaffController>().initAddSalaryMode();
-          Get.toNamed(AppRoutes.instituteAddSalary);
-        }),
-        backgroundColor: SubscriptionGuard.blocksAdd
-            ? AppColors.textMuted
-            : AppColors.primaryBrand,
-        child: const Icon(Icons.add, color: AppColors.white, size: 32),
-      ),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : FloatingActionButton(
+              onPressed: () => SubscriptionGuard.runAddAction(() {
+                // Reset the form BEFORE navigation so AddSalaryScreen builds
+                // with a clean controller state instead of inheriting the
+                // previous visit's selection / amount / deduction.
+                Get.find<StaffController>().initAddSalaryMode();
+                Get.toNamed(AppRoutes.instituteAddSalary);
+              }),
+              backgroundColor: SubscriptionGuard.blocksAdd
+                  ? AppColors.textMuted
+                  : AppColors.primaryBrand,
+              child: const Icon(Icons.add, color: AppColors.white, size: 32),
+            ),
     );
   }
 

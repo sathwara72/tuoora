@@ -106,16 +106,18 @@ class StaffListScreen extends GetView<StaffController> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => SubscriptionGuard.runAddAction(() {
-          controller.prepareForAdd();
-          Get.toNamed(AppRoutes.instituteAddEditStaff);
-        }),
-        backgroundColor: SubscriptionGuard.blocksAdd
-            ? AppColors.textMuted
-            : AppColors.primaryBrand,
-        child: const Icon(Icons.add, color: AppColors.white, size: 32),
-      ),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : FloatingActionButton(
+              onPressed: () => SubscriptionGuard.runAddAction(() {
+                controller.prepareForAdd();
+                Get.toNamed(AppRoutes.instituteAddEditStaff);
+              }),
+              backgroundColor: SubscriptionGuard.blocksAdd
+                  ? AppColors.textMuted
+                  : AppColors.primaryBrand,
+              child: const Icon(Icons.add, color: AppColors.white, size: 32),
+            ),
     );
   }
 

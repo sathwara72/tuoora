@@ -54,16 +54,18 @@ class InstituteFeesScreen extends GetView<InstituteController> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fees_fab_unique_tag',
-        onPressed: () => SubscriptionGuard.runAddAction(
-          () => Get.toNamed(AppRoutes.instituteRecordFee),
-        ),
-        backgroundColor: SubscriptionGuard.blocksAdd
-            ? AppColors.textMuted
-            : AppColors.primaryBrand,
-        child: const Icon(Icons.add, color: AppColors.white, size: 28),
-      ),
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+          ? null
+          : FloatingActionButton(
+              heroTag: 'fees_fab_unique_tag',
+              onPressed: () => SubscriptionGuard.runAddAction(
+                () => Get.toNamed(AppRoutes.instituteRecordFee),
+              ),
+              backgroundColor: SubscriptionGuard.blocksAdd
+                  ? AppColors.textMuted
+                  : AppColors.primaryBrand,
+              child: const Icon(Icons.add, color: AppColors.white, size: 28),
+            ),
     );
   }
 

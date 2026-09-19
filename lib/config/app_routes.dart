@@ -45,6 +45,7 @@ class AppRoutes {
   static const String teacherBatchStudents = '/teacher/batches/students';
   static const String teacherAssignStudents = '/teacher/batches/students/assign';
   static const String teacherMarkAttendance = '/teacher/batches/attendance';
+  static const String teacherAttendanceQrScan = '/teacher/batches/attendance/qr-scan';
   static const String teacherSelfAttendance = '/teacher/self-attendance';
   static const String teacherBatchHomework = '/teacher/batches/homework';
   static const String teacherAddHomework = '/teacher/batches/homework/add';
@@ -92,8 +93,6 @@ class AppRoutes {
   static const String instituteCreateUpdate = '/institute/updates/create';
   static const String instituteNotifications = '/institute/notifications';
   static const String instituteMain = '/institute/main';
-  static const String instituteBillingHistory =
-      '/institute/profile/billing-history';
   static const String instituteAddBatch = '/institute/batches/add';
   static const String instituteEditBatch = '/institute/batches/edit';
   static const String instituteFeeTransactionHistory =

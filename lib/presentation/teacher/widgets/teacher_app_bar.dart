@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:tuoora/core/widgets/app_back_button.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -73,27 +73,7 @@ class TeacherAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _buildLeadingButton() {
-    return GestureDetector(
-      onTap: onBackTap ?? () => Get.back(),
-      child: Container(
-        width: AppSpacing.s40,
-        height: AppSpacing.s40,
-        decoration: BoxDecoration(
-          color: AppColors.fieldBg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.fieldBorder),
-        ),
-        child: const Center(
-          child: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: AppColors.textPrimary,
-            size: AppSpacing.s18,
-          ),
-        ),
-      ),
-    );
-  }
+  Widget _buildLeadingButton() => AppBackButton(onTap: onBackTap);
 
   @override
   Size get preferredSize => const Size.fromHeight(80);

@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'package:tuoora/core/widgets/resource_mode_toggle.dart';
 
 class ResourcesController extends GetxController {
   final BatchModel batch;
@@ -45,13 +46,20 @@ class ResourcesController extends GetxController {
   // Dialog Controllers
   final subjectController = TextEditingController();
   final descriptionController = TextEditingController();
+  final linkUrlController = TextEditingController();
   final selectedFileName = ''.obs;
   final selectedFilePath = ''.obs;
   final selectedType = ResourceType.document.obs;
+  final isLinkMode = false.obs;
 
   final triedToSave = false.obs;
   final subjectError = RxnString();
   final fileError = RxnString();
+
+  void setUploadMode(bool link) {
+    isLinkMode.value = link;
+    fileError.value = null;
+  }
 
   bool validateForm() {
     bool isValid = true;
@@ -63,7 +71,14 @@ class ResourcesController extends GetxController {
       subjectError.value = null;
     }
 
-    if (selectedFilePath.isEmpty) {
+    if (isLinkMode.value) {
+      if (!isValidHttpUrl(linkUrlController.text)) {
+        fileError.value = 'Please enter a valid link (https://...)';
+        isValid = false;
+      } else {
+        fileError.value = null;
+      }
+    } else if (selectedFilePath.isEmpty) {
       fileError.value = 'Please select a file';
       isValid = false;
     } else {
@@ -176,6 +191,7 @@ class ResourcesController extends GetxController {
       case ResourceType.video:
         return _videoMaxMb;
       case ResourceType.document:
+      case ResourceType.youtube:
         return _documentMaxMb;
     }
   }
@@ -188,6 +204,8 @@ class ResourcesController extends GetxController {
         return 'Video';
       case ResourceType.document:
         return 'Document';
+      case ResourceType.youtube:
+        return 'Link';
     }
   }
 
@@ -201,17 +219,28 @@ class ResourcesController extends GetxController {
         barrierDismissible: false,
       );
 
-      final String typeStr = selectedType.value == ResourceType.image
-          ? 'image'
-          : (selectedType.value == ResourceType.video ? 'video' : 'document');
-
-      final Map<String, dynamic> data = {
-        'batch_id': batch.id,
-        'title': subjectController.text,
-        'description': descriptionController.text,
-        'file_type': typeStr,
-        'file': selectedFilePath.value,
-      };
+      final Map<String, dynamic> data;
+      if (isLinkMode.value) {
+        data = {
+          'batch_id': batch.id,
+          'title': subjectController.text,
+          'description': descriptionController.text,
+          'resource_type': 'link',
+          'link_url': linkUrlController.text.trim(),
+        };
+      } else {
+        final String typeStr = selectedType.value == ResourceType.image
+            ? 'image'
+            : (selectedType.value == ResourceType.video ? 'video' : 'document');
+        data = {
+          'batch_id': batch.id,
+          'title': subjectController.text,
+          'description': descriptionController.text,
+          'resource_type': 'file',
+          'file_type': typeStr,
+          'file': selectedFilePath.value,
+        };
+      }
 
       final responseData = await _repository.uploadResource(data);
 
@@ -236,8 +265,10 @@ class ResourcesController extends GetxController {
   void clearForm() {
     subjectController.clear();
     descriptionController.clear();
+    linkUrlController.clear();
     selectedFileName.value = '';
     selectedFilePath.value = '';
+    isLinkMode.value = false;
     triedToSave.value = false;
     subjectError.value = null;
     fileError.value = null;
@@ -247,6 +278,7 @@ class ResourcesController extends GetxController {
   void onClose() {
     subjectController.dispose();
     descriptionController.dispose();
+    linkUrlController.dispose();
     super.onClose();
   }
 }

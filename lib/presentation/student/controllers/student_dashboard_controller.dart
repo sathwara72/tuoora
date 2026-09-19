@@ -8,6 +8,7 @@ import 'package:tuoora/data/repositories/student_dashboard_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:tuoora/presentation/student/models/assignment_model.dart';
+import 'package:tuoora/presentation/student/models/student_exam_model.dart';
 import 'package:tuoora/presentation/student/widgets/birthday_wish_dialog.dart';
 
 class TodayClassDisplay {
@@ -88,7 +89,7 @@ class StudentDashboardController extends GetxController {
       isLoading.value = true;
       final data = await _repository.getDashboardData();
       dashboardData.value = data;
-      
+
       _checkAndShowBirthdayWish(data);
     } catch (e) {
       AppSnackBar.error(AppStrings.failedToLoadDashboardData);
@@ -172,5 +173,10 @@ class StudentDashboardController extends GetxController {
           ),
         )
         .toList();
+  }
+
+  List<StudentExamListItem> get dashboardUpcomingExams {
+    final items = dashboardData.value?.upcomingExams ?? const [];
+    return items.take(2).toList();
   }
 }

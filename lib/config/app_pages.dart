@@ -33,7 +33,6 @@ import 'package:tuoora/presentation/institute/view/institute_updates_screen.dart
 import 'package:tuoora/presentation/institute/view/create_update_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_report_detail_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_notifications_screen.dart';
-import 'package:tuoora/presentation/institute/view/billing_history_screen.dart';
 import 'package:tuoora/presentation/institute/view/add_edit_batch_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_students_screen.dart';
 import 'package:tuoora/presentation/institute/view/assign_to_batch_screen.dart';
@@ -61,6 +60,7 @@ import 'package:tuoora/presentation/teacher/view/teacher_batch_students_screen.d
 import 'package:tuoora/presentation/teacher/view/teacher_assign_students_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_profile_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_mark_attendance_screen.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_qr_scan_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_self_attendance_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_batch_homework_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_add_homework_screen.dart';
@@ -362,6 +362,10 @@ class AppPages {
       binding: TeacherBinding(),
     ),
     GetPage(
+      name: AppRoutes.teacherAttendanceQrScan,
+      page: () => const TeacherQrScanScreen(),
+    ),
+    GetPage(
       name: AppRoutes.teacherSelfAttendance,
       page: () => const TeacherSelfAttendanceScreen(),
       binding: TeacherBinding(),
@@ -576,10 +580,6 @@ class AppPages {
       name: AppRoutes.instituteNotifications,
       page: () => const InstituteNotificationsScreen(),
       binding: InstituteBinding(),
-    ),
-    GetPage(
-      name: AppRoutes.instituteBillingHistory,
-      page: () => const BillingHistoryScreen(),
     ),
     GetPage(
       name: AppRoutes.instituteAddBatch,

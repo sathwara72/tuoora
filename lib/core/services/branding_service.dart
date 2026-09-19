@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:tuoora/core/api/api_client.dart';
@@ -32,7 +34,10 @@ class BrandingService extends GetxService {
   static const _cacheKey = 'app_branding_cache';
 
   final GetStorage _storage = GetStorage();
-  AppBranding _branding = AppBranding.none;
+  final Rx<AppBranding> _brandingRx = AppBranding.none.obs;
+
+  AppBranding get _branding => _brandingRx.value;
+  set _branding(AppBranding value) => _brandingRx.value = value;
 
   AppBranding get branding => _branding;
   bool get isWhiteLabeled => _branding.whiteLabeled;
@@ -49,6 +54,19 @@ class BrandingService extends GetxService {
 
     if (instituteId <= 0) return this;
 
+    // Cached branding is good enough to render immediately; refresh in the
+    // background so startup never waits on the network. Only the very first
+    // launch (no cache yet) waits, and only briefly.
+    final refresh = _refresh(const Duration(seconds: 6));
+    if (_branding.whiteLabeled) {
+      unawaited(refresh);
+    } else {
+      await refresh.timeout(const Duration(seconds: 2), onTimeout: () {});
+    }
+    return this;
+  }
+
+  Future<void> _refresh(Duration timeout) async {
     try {
       final client = Get.isRegistered<ApiClient>() ? Get.find<ApiClient>() : ApiClient();
       final response = await client
@@ -56,12 +74,12 @@ class BrandingService extends GetxService {
             ApiConstants.appBranding,
             query: {'institute_id': instituteId.toString()},
           )
-          .timeout(const Duration(seconds: 6));
+          .timeout(timeout);
 
-      if (response.status.hasError || response.body == null) return this;
+      if (response.status.hasError || response.body == null) return;
 
       final data = response.body['data'];
-      if (data == null) return this;
+      if (data == null) return;
 
       final fetched = AppBranding.fromJson(Map<String, dynamic>.from(data));
       _branding = fetched;
@@ -69,8 +87,6 @@ class BrandingService extends GetxService {
     } catch (_) {
       // Offline, timeout, or a bad response — keep the cached/default value.
     }
-
-    return this;
   }
 
   void _loadFromCache() {

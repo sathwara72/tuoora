@@ -56,7 +56,7 @@ enum UpdateCategory {
   String toJson() => name;
 }
 
-enum ResourceType { image, video, document }
+enum ResourceType { image, video, document, youtube }
 
 enum ChatMenuAction { delete }
 
