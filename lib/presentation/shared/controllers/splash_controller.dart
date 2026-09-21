@@ -3,7 +3,6 @@ import 'dart:io' show Platform;
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 
 class SplashController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
@@ -58,14 +57,8 @@ class SplashController extends GetxController {
       await _authService.clearSession();
     }
 
-    // Not authenticated. If the user previously selected a role,
-    // take them back to that role's login screen. Otherwise, show Role Selection.
-    final lastRole = GetStorage().read('last_selected_role');
-    if (lastRole != null) {
-      Get.offAllNamed(AppRoutes.login, arguments: lastRole);
-    } else {
-      Get.offAllNamed(AppRoutes.roleSelection);
-    }
+    // Not authenticated: always start at Role Selection.
+    Get.offAllNamed(AppRoutes.roleSelection);
   }
 
   void _navigateToDashboard(String? role) {

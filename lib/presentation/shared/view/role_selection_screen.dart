@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_images.dart';
@@ -17,7 +16,6 @@ class RoleSelectionScreen extends StatelessWidget {
   static const _teacherGreen = Color(0xFF16A860);
 
   void _select(String role) {
-    GetStorage().write('last_selected_role', role);
     Get.toNamed(AppRoutes.login, arguments: role);
   }
 

@@ -10,7 +10,6 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:tuoora/core/widgets/app_back_button.dart';
 import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/widgets/brand_backdrop.dart';
@@ -94,7 +93,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
                     child: AppBackButton(
                       onTap: () {
-                        GetStorage().remove('last_selected_role');
                         Get.offAllNamed(AppRoutes.roleSelection);
                       },
                     ),
