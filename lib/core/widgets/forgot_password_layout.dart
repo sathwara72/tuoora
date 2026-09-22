@@ -8,6 +8,7 @@ import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_back_button.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/widgets/app_logo.dart';
+import 'package:tuoora/core/widgets/fit_screen.dart';
 import 'package:tuoora/core/widgets/brand_backdrop.dart' show paintBookSketch;
 import 'package:tuoora/core/widgets/reset_password_illustration.dart';
 
@@ -33,104 +34,91 @@ class ForgotPasswordLayout extends StatelessWidget {
       backgroundColor: Colors.white,
       body: ForgotBackdrop(
         child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Column(
-                  children: [
-                    _header(),
-                    const SizedBox(height: 34),
-                    const AppLogo(height: 48),
-                    const SizedBox(height: 6),
-                    Text(
-                      AppStrings.smartInstituteErp,
-                      style: AppTextStyles.outfit(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textTertiary,
-                        letterSpacing: 4,
+          child: FitScreen(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _header(),
+                const SizedBox(height: 34),
+                const AppLogo(height: 48),
+                const SizedBox(height: 6),
+                Text(
+                  AppStrings.smartInstituteErp,
+                  style: AppTextStyles.outfit(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
+                    letterSpacing: 4,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const ResetPasswordIllustration(width: 250),
+                const SizedBox(height: 14),
+                Text(
+                  AppStrings.resetYourPassword,
+                  style: AppTextStyles.outfit(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  AppStrings.resetPasswordHint,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    color: AppColors.textTertiary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                _card(),
+                const SizedBox(height: 18),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 44),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Divider(color: AppColors.borderGrey),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      AppStrings.tagLine,
-                      style: AppTextStyles.outfit(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primaryBrand,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    const ResetPasswordIllustration(width: 250),
-                    const SizedBox(height: 14),
-                    Text(
-                      AppStrings.resetYourPassword,
-                      style: AppTextStyles.outfit(
-                        fontSize: 27,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      AppStrings.resetPasswordHint,
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.outfit(
-                        fontSize: 14,
-                        color: AppColors.textTertiary,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    _card(),
-                    const SizedBox(height: 18),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 44),
-                      child: Row(
-                        children: [
-                          const Expanded(
-                            child: Divider(color: AppColors.borderGrey),
+                      Padding(
+                        padding: AppSpacing.x16,
+                        child: Text(
+                          AppStrings.rememberYourPassword,
+                          style: AppTextStyles.outfit(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textTertiary,
+                            letterSpacing: 2,
                           ),
-                          Padding(
-                            padding: AppSpacing.x16,
-                            child: Text(
-                              AppStrings.rememberYourPassword,
-                              style: AppTextStyles.outfit(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textTertiary,
-                                letterSpacing: 2,
-                              ),
-                            ),
-                          ),
-                          const Expanded(
-                            child: Divider(color: AppColors.borderGrey),
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () => Get.back(),
-                      iconAlignment: IconAlignment.end,
-                      icon: const Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 20,
-                        color: AppColors.primaryBrand,
-                      ),
-                      label: Text(
-                        AppStrings.backToLogin,
-                        style: AppTextStyles.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryBrand,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 110),
-                  ],
+                      const Expanded(
+                        child: Divider(color: AppColors.borderGrey),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+                TextButton.icon(
+                  onPressed: () => Get.back(),
+                  iconAlignment: IconAlignment.end,
+                  icon: const Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 20,
+                    color: AppColors.primaryBrand,
+                  ),
+                  label: Text(
+                    AppStrings.backToLogin,
+                    style: AppTextStyles.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryBrand,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 90),
+              ],
             ),
           ),
         ),
