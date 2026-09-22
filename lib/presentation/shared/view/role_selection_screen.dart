@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_images.dart';
@@ -9,6 +8,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/services/branding_service.dart';
 import 'package:tuoora/core/widgets/app_logo.dart';
 import 'package:tuoora/core/widgets/brand_backdrop.dart';
+import 'package:tuoora/core/widgets/fit_screen.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -17,7 +17,6 @@ class RoleSelectionScreen extends StatelessWidget {
   static const _teacherGreen = Color(0xFF16A860);
 
   void _select(String role) {
-    GetStorage().write('last_selected_role', role);
     Get.toNamed(AppRoutes.login, arguments: role);
   }
 
@@ -31,78 +30,69 @@ class RoleSelectionScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: BrandBackdrop(
         child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 100),
-                      const AppLogo(height: 56),
-                      const SizedBox(height: 10),
-                      Text(
-                        AppStrings.smartInstituteErp,
-                        style: AppTextStyles.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.textTertiary,
-                          letterSpacing: 4,
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Text(
-                        'Welcome to ${appName.toUpperCase()}',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.outfit(
-                          fontSize: 27,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        AppStrings.chooseYourRole,
-                        style: AppTextStyles.outfit(
-                          fontSize: 16,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      const DotsDivider(),
-                      const SizedBox(height: 22),
-                      RoleCard(
-                        title: 'Institute',
-                        subtitle:
-                            'Manage students, batches, and academic operations.',
-                        image: AppImages.roleInstitute,
-                        color: AppColors.primaryBrand,
-                        onTap: () => _select('INSTITUTE'),
-                      ),
-                      const SizedBox(height: 16),
-                      RoleCard(
-                        title: 'Student',
-                        subtitle: 'View your classes, fees, homework and more.',
-                        image: AppImages.roleStudent,
-                        color: _studentBlue,
-                        onTap: () => _select('STUDENT'),
-                      ),
-                      const SizedBox(height: 16),
-                      RoleCard(
-                        title: 'Teacher',
-                        subtitle:
-                            'Manage your batches, attendance, and grades.',
-                        image: AppImages.roleTeacher,
-                        color: _teacherGreen,
-                        onTap: () => _select('TEACHER'),
-                      ),
-                      const SizedBox(height: 28),
-                      const TaglineFooter(),
-                      const SizedBox(height: 110),
-                    ],
+          child: FitScreen(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 48),
+                  const AppLogo(height: 56),
+                  const SizedBox(height: 10),
+                  Text(
+                    AppStrings.smartInstituteErp,
+                    style: AppTextStyles.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textTertiary,
+                      letterSpacing: 4,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 28),
+                  Text(
+                    'Welcome to ${appName.toUpperCase()}',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.outfit(
+                      fontSize: 27,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    AppStrings.chooseYourRole,
+                    style: AppTextStyles.outfit(
+                      fontSize: 16,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const DotsDivider(),
+                  const SizedBox(height: 22),
+                  RoleCard(
+                    title: 'Institute',
+                    image: AppImages.roleInstitute,
+                    color: AppColors.primaryBrand,
+                    onTap: () => _select('INSTITUTE'),
+                  ),
+                  const SizedBox(height: 16),
+                  RoleCard(
+                    title: 'Student',
+                    image: AppImages.roleStudent,
+                    color: _studentBlue,
+                    onTap: () => _select('STUDENT'),
+                  ),
+                  const SizedBox(height: 16),
+                  RoleCard(
+                    title: 'Teacher',
+                    image: AppImages.roleTeacher,
+                    color: _teacherGreen,
+                    onTap: () => _select('TEACHER'),
+                  ),
+                  const SizedBox(height: 28),
+                  const TaglineFooter(),
+                  const SizedBox(height: 90),
+                ],
               ),
             ),
           ),
@@ -171,7 +161,6 @@ class TaglineFooter extends StatelessWidget {
 
 class RoleCard extends StatelessWidget {
   final String title;
-  final String subtitle;
   final String image;
   final Color color;
   final VoidCallback onTap;
@@ -179,7 +168,6 @@ class RoleCard extends StatelessWidget {
   const RoleCard({
     super.key,
     required this.title,
-    required this.subtitle,
     required this.image,
     required this.color,
     required this.onTap,
@@ -238,15 +226,6 @@ class RoleCard extends StatelessWidget {
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: AppTextStyles.outfit(
-                        fontSize: 14,
-                        color: AppColors.textTertiary,
-                        height: 1.35,
                       ),
                     ),
                   ],

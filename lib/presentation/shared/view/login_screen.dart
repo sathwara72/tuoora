@@ -10,10 +10,10 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:tuoora/core/widgets/app_back_button.dart';
 import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/widgets/brand_backdrop.dart';
+import 'package:tuoora/core/widgets/fit_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -82,36 +82,28 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = _theme;
     final hasHero = _selectedRole != 'INSTITUTE';
     final content = SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
-                    child: AppBackButton(
-                      onTap: () {
-                        GetStorage().remove('last_selected_role');
-                        Get.offAllNamed(AppRoutes.roleSelection);
-                      },
-                    ),
-                  ),
+      child: FitScreen(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
+                child: AppBackButton(
+                  onTap: () {
+                    Get.offAllNamed(AppRoutes.roleSelection);
+                  },
                 ),
-                const AppLogo(height: 48),
-                if (hasHero)
-                  ..._heroHeader(theme)
-                else
-                  ..._instituteHeader(theme),
-                _buildFormCard(theme, showBanner: !hasHero),
-                if (_selectedRole == 'INSTITUTE' && !Platform.isIOS)
-                  ..._institutionRegistration(),
-                const SizedBox(height: 130),
-              ],
+              ),
             ),
-          ),
+            const AppLogo(height: 48),
+            if (hasHero) ..._heroHeader(theme) else ..._instituteHeader(theme),
+            _buildFormCard(theme, showBanner: !hasHero),
+            if (_selectedRole == 'INSTITUTE' && !Platform.isIOS)
+              ..._institutionRegistration(),
+            const SizedBox(height: 90),
+          ],
         ),
       ),
     );
@@ -150,21 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
     const SizedBox(height: 4),
     _orangeTagline(),
-    const SizedBox(height: 40),
-    Text(
-      AppStrings.welcomeBack,
-      style: AppTextStyles.outfit(
-        fontSize: 30,
-        fontWeight: FontWeight.w700,
-        color: AppColors.textPrimary,
-      ),
-    ),
-    const SizedBox(height: 2),
-    Text(
-      'Login to your ${theme.account} Account',
-      style: AppTextStyles.outfit(fontSize: 15, color: AppColors.textTertiary),
-    ),
-    const SizedBox(height: 20),
+    const SizedBox(height: 28),
   ];
 
   List<Widget> _heroHeader(_RoleTheme theme) => [
@@ -198,15 +176,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  theme.heroSubtitle,
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    color: AppColors.textTertiary,
-                    height: 1.35,
                   ),
                 ),
               ],

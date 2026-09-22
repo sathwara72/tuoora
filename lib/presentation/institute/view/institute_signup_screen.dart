@@ -7,6 +7,10 @@ import 'package:tuoora/presentation/institute/controllers/signup_controller.dart
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/constants/app_images.dart';
+import 'package:tuoora/core/widgets/app_back_button.dart';
+import 'package:tuoora/core/widgets/brand_backdrop.dart';
+import 'package:tuoora/core/widgets/fit_screen.dart';
 
 class InstituteSignupScreen extends GetView<SignupController> {
   const InstituteSignupScreen({super.key});
@@ -14,159 +18,71 @@ class InstituteSignupScreen extends GetView<SignupController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
+      backgroundColor: Colors.white,
+      body: LoginBackdrop(
+        image: AppImages.roleInstitute,
+        tagline: 'Manage\nGrow\nSucceed',
+        quote: '\u201cEmpowering Institutes\nfor a Brighter Tomorrow\u201d',
+        child: SafeArea(
+          child: FitScreen(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 0, 0),
+                    child: const AppBackButton(),
+                  ),
+                ),
+                const AppLogo(height: 48),
+                const SizedBox(height: 6),
+                Text(
+                  AppStrings.smartInstituteErp,
+                  style: AppTextStyles.outfit(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
+                    letterSpacing: 4,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  AppStrings.tagLine,
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.primaryBrand,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildFormCard(),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    AppSpacing.v32,
-                    _buildHeader(),
-                    AppSpacing.v32,
-                    Container(
-                      margin: AppSpacing.x16,
-                      padding: AppSpacing.cardPadding,
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.cardRadius,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
-                            blurRadius: AppSpacing.s24,
-                            offset: const Offset(0, AppSpacing.s12),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildLabel('Institute Name'),
-                          AppSpacing.v8,
-                          Obx(
-                            () => _buildTextField(
-                              controller: controller.instituteNameController,
-                              hint: AppStrings.enterInstituteName,
-                              prefixIcon: Icons.business_outlined,
-                              errorText: controller.instituteNameError.value,
-                              onChanged: (_) {
-                                if (controller.instituteNameError.value !=
-                                    null) {
-                                  controller.instituteNameError.value = null;
-                                }
-                              },
-                            ),
-                          ),
-                          AppSpacing.v24,
-                          _buildLabel('Owner Name'),
-                          AppSpacing.v8,
-                          Obx(
-                            () => _buildTextField(
-                              controller:
-                                  controller.instituteOwnerNameController,
-                              hint: AppStrings.enterOwnerName,
-                              prefixIcon: Icons.person,
-                              errorText: controller.ownerNameError.value,
-                              onChanged: (_) {
-                                if (controller.ownerNameError.value != null) {
-                                  controller.ownerNameError.value = null;
-                                }
-                              },
-                            ),
-                          ),
-                          AppSpacing.v24,
-                          _buildLabel('Email Address'),
-                          AppSpacing.v8,
-                          Obx(
-                            () => _buildTextField(
-                              controller: controller.emailController,
-                              hint: AppStrings.hintEnterEmail,
-                              prefixIcon: Icons.mail,
-                              keyboardType: TextInputType.emailAddress,
-                              errorText: controller.emailError.value,
-                              onChanged: (_) {
-                                if (controller.emailError.value != null) {
-                                  controller.emailError.value = null;
-                                }
-                              },
-                            ),
-                          ),
-                          AppSpacing.v24,
-                          _buildLabel('Password'),
-                          AppSpacing.v8,
-                          Obx(
-                            () => _buildTextField(
-                              controller: controller.passwordController,
-                              hint: AppStrings.hintPasswordDots,
-                              prefixIcon: Icons.lock_outline,
-                              obscureText: controller.obscurePassword.value,
-                              errorText: controller.passwordError.value,
-                              onChanged: (_) {
-                                if (controller.passwordError.value != null) {
-                                  controller.passwordError.value = null;
-                                }
-                              },
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  controller.obscurePassword.value
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                  color: AppColors.textMuted,
-                                  size: AppSpacing.s20,
-                                ),
-                                onPressed: controller.togglePasswordVisibility,
-                              ),
-                            ),
-                          ),
-                          AppSpacing.v32,
-                          Obx(
-                            () => AppButton(
-                              label: AppStrings.createAccount,
-                              onPressed: controller.register,
-                              isLoading: controller.isLoading.value,
-                              backgroundColor: AppColors.primaryBrand,
-                              foregroundColor: AppColors.white,
-                              borderRadius: AppSpacing.cardRadius,
-                              fontSize: 16,
-                              fullWidth: true,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      AppStrings.alreadyHaveAnAccount,
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        color: AppColors.fieldLabel,
                       ),
                     ),
-                    AppSpacing.v32,
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          AppStrings.alreadyHaveAnAccount,
-                          style: AppTextStyles.outfit(
-                            fontSize: 14,
-                            color: AppColors.fieldLabel,
-                          ),
+                    GestureDetector(
+                      onTap: () => Get.back(),
+                      child: Text(
+                        AppStrings.signInButton,
+                        style: AppTextStyles.outfit(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryBrand,
                         ),
-                        GestureDetector(
-                          onTap: () => Get.back(),
-                          child: Text(
-                            AppStrings.signInButton,
-                            style: AppTextStyles.outfit(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primaryBrand,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    AppSpacing.v32,
                   ],
                 ),
-              ),
+                const SizedBox(height: 90),
+              ],
             ),
           ),
         ),
@@ -174,22 +90,115 @@ class InstituteSignupScreen extends GetView<SignupController> {
     );
   }
 
-  Widget _buildHeader() {
-    return Column(
-      children: [
-        AppLogo(height: AppSpacing.s48),
-        AppSpacing.v12,
-        Text(
-          AppStrings.tagLine,
-          textAlign: TextAlign.center,
-          style: AppTextStyles.outfit(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.primaryBrand,
-            height: 1.5,
+  Widget _buildFormCard() {
+    return Container(
+      margin: AppSpacing.x16,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
           ),
-        ),
-      ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildLabel('Institute Name'),
+          AppSpacing.v8,
+          Obx(
+            () => _buildTextField(
+              controller: controller.instituteNameController,
+              hint: AppStrings.enterInstituteName,
+              prefixIcon: Icons.business_outlined,
+              errorText: controller.instituteNameError.value,
+              onChanged: (_) {
+                if (controller.instituteNameError.value != null) {
+                  controller.instituteNameError.value = null;
+                }
+              },
+            ),
+          ),
+          AppSpacing.v16,
+          _buildLabel('Owner Name'),
+          AppSpacing.v8,
+          Obx(
+            () => _buildTextField(
+              controller: controller.instituteOwnerNameController,
+              hint: AppStrings.enterOwnerName,
+              prefixIcon: Icons.person,
+              errorText: controller.ownerNameError.value,
+              onChanged: (_) {
+                if (controller.ownerNameError.value != null) {
+                  controller.ownerNameError.value = null;
+                }
+              },
+            ),
+          ),
+          AppSpacing.v16,
+          _buildLabel('Email Address'),
+          AppSpacing.v8,
+          Obx(
+            () => _buildTextField(
+              controller: controller.emailController,
+              hint: AppStrings.hintEnterEmail,
+              prefixIcon: Icons.mail,
+              keyboardType: TextInputType.emailAddress,
+              errorText: controller.emailError.value,
+              onChanged: (_) {
+                if (controller.emailError.value != null) {
+                  controller.emailError.value = null;
+                }
+              },
+            ),
+          ),
+          AppSpacing.v16,
+          _buildLabel('Password'),
+          AppSpacing.v8,
+          Obx(
+            () => _buildTextField(
+              controller: controller.passwordController,
+              hint: AppStrings.hintPasswordDots,
+              prefixIcon: Icons.lock_outline,
+              obscureText: controller.obscurePassword.value,
+              errorText: controller.passwordError.value,
+              onChanged: (_) {
+                if (controller.passwordError.value != null) {
+                  controller.passwordError.value = null;
+                }
+              },
+              suffixIcon: IconButton(
+                icon: Icon(
+                  controller.obscurePassword.value
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: AppColors.textMuted,
+                  size: AppSpacing.s20,
+                ),
+                onPressed: controller.togglePasswordVisibility,
+              ),
+            ),
+          ),
+          AppSpacing.v20,
+          Obx(
+            () => AppButton(
+              label: AppStrings.createAccount,
+              onPressed: controller.register,
+              isLoading: controller.isLoading.value,
+              backgroundColor: AppColors.primaryBrand,
+              foregroundColor: AppColors.white,
+              trailingIcon: Icons.arrow_forward_rounded,
+              borderRadius: 14,
+              fontSize: 17,
+              fullWidth: true,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -197,10 +206,9 @@ class InstituteSignupScreen extends GetView<SignupController> {
     return Text(
       text,
       style: AppTextStyles.outfit(
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         color: AppColors.fieldLabel,
-        letterSpacing: 1.0,
       ),
     );
   }
