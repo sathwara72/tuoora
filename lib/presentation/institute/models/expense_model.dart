@@ -170,3 +170,58 @@ class ExpenseAnalysis {
   }
 }
 
+
+
+class ExpenseCategoryGroup {
+  final int categoryId;
+  final String categoryName;
+  final double totalAmount;
+  final List<ExpenseModel> transactions;
+  final ExpenseCategory? category;
+
+  ExpenseCategoryGroup({
+    required this.categoryId,
+    required this.categoryName,
+    required this.totalAmount,
+    required this.transactions,
+    this.category,
+  });
+
+  int get count => transactions.length;
+
+  IconData get icon {
+    switch (categoryName) {
+      case 'Bills':
+        return Icons.bolt_rounded;
+      case 'Shopping':
+        return Icons.shopping_bag_rounded;
+      case 'Entertainment':
+        return Icons.movie_rounded;
+      case 'Food & Drink':
+        return Icons.local_cafe_rounded;
+      case 'Transport':
+        return Icons.directions_car_rounded;
+      default:
+        return Icons.category_rounded;
+    }
+  }
+
+  Color get color {
+    switch (categoryName) {
+      case 'Bills':
+        return AppColors.studentProgressBlue;
+      case 'Shopping':
+        return AppColors.warningAmber;
+      case 'Entertainment':
+        return AppColors.warningAmber;
+      case 'Food & Drink':
+        return AppColors.successGreen;
+      case 'Transport':
+        return AppColors.subjectPhysics;
+      default:
+        return AppColors.primaryBrand;
+    }
+  }
+
+  Color get iconBgColor => color.withValues(alpha: 0.1);
+}

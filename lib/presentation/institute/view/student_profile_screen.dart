@@ -14,6 +14,7 @@ import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/branding_service.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 
@@ -39,6 +40,25 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                   InstituteAppBar(
                     title: AppStrings.instStudentProfileTitle,
                     actions: [
+                      IconButton(
+                        tooltip: 'Academic Report',
+                        onPressed: () {
+                          if (student != null) {
+                            Get.toNamed(
+                              AppRoutes.instituteStudentWiseReport,
+                              arguments: {
+                                'studentId': student.id,
+                                'studentName': student.name,
+                                'batchId': student.batchId,
+                              },
+                            );
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.insights_rounded,
+                          color: AppColors.white,
+                        ),
+                      ),
                       IconButton(
                         onPressed: () => Get.toNamed(
                           AppRoutes.instituteAddEditStudent,
@@ -117,6 +137,8 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: AppSpacing.s16),
+                          _buildAcademicReportCard(student),
                           if (student != null && student.fees.isNotEmpty) ...[
                             const SizedBox(height: AppSpacing.s24),
                             _buildFeesSection(student.fees),
@@ -342,7 +364,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
   }
 
   Widget _buildIdHeader() {
-    String resolvedName = 'Tuoora Institute';
+    String resolvedName = (Get.isRegistered<BrandingService>() ? Get.find<BrandingService>().appName : 'Tuoora') + ' Institute';
     if (Get.isRegistered<InstituteProfileController>()) {
       final v = Get.find<InstituteProfileController>().instituteName.value
           .trim();
@@ -788,4 +810,89 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
       onConfirm: () => controller.deleteStudent(),
     );
   }
+
+  Widget _buildAcademicReportCard(Student? student) {
+    if (student == null) return const SizedBox.shrink();
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(color: AppColors.fieldBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          onTap: () {
+            Get.toNamed(
+              AppRoutes.instituteStudentWiseReport,
+              arguments: {
+                'studentId': student.id,
+                'studentName': student.name,
+                'batchId': student.batchId,
+              },
+            );
+          },
+          child: Padding(
+            padding: AppSpacing.cardPadding,
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBrandLight,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.assignment_turned_in_outlined,
+                    color: AppColors.primaryBrand,
+                    size: 24,
+                  ),
+                ),
+                AppSpacing.h16,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Student Academic Report',
+                        style: AppTextStyles.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Attendance, exams, homework & batch history',
+                        style: AppTextStyles.outfit(
+                          fontSize: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: AppColors.textTertiary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 }

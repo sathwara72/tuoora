@@ -1,3 +1,5 @@
+import 'package:tuoora/config/app_routes.dart';
+import 'package:tuoora/presentation/institute/controllers/student_controller.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -225,34 +227,118 @@ class MarkAttendanceScreen extends GetView<AttendanceController> {
       ),
       child: Row(
         children: [
-          _buildStudentAvatar(student.profileImageUrl, student.name),
-          AppSpacing.h16,
+          // Tapping avatar or student details opens Student Profile
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  student.name,
-                  style: AppTextStyles.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                Get.delete<InstituteStudentController>();
+                Get.toNamed(
+                  AppRoutes.instituteStudentProfile,
+                  arguments: {'studentId': student.id},
+                );
+              },
+              child: Row(
+                children: [
+                  _buildStudentAvatar(student.profileImageUrl, student.name),
+                  AppSpacing.h12,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                student.name,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            AppSpacing.h4,
+                            const Icon(
+                              Icons.open_in_new_rounded,
+                              size: 13,
+                              color: AppColors.textTertiary,
+                            ),
+                          ],
+                        ),
+                        AppSpacing.v2,
+                        // Mobile number instead of enrollment id
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.phone_outlined,
+                              size: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                            AppSpacing.h4,
+                            Text(
+                              student.phone != null && student.phone!.trim().isNotEmpty
+                                  ? student.phone!.trim()
+                                  : 'No mobile',
+                              style: AppTextStyles.outfit(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        AppSpacing.v4,
+                        // Past Absent Dates Chips for this month
+                        if (student.monthlyAbsentDates.isNotEmpty)
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
+                            children: student.monthlyAbsentDates.map((dateStr) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: AppColors.bohoRed.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: AppColors.bohoRed.withValues(alpha: 0.25),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                dateStr,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.bohoRed,
+                                ),
+                              ),
+                            )).toList(),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: AppColors.fieldBg,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '0 Absent',
+                              style: AppTextStyles.outfit(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textTertiary,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                Text(
-                  student.enrollmentId != null &&
-                          student.enrollmentId!.trim().isNotEmpty
-                      ? 'Enrollment ID: ${student.enrollmentId!.trim()}'
-                      : 'ID: ${student.id}',
-                  style: AppTextStyles.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
+          AppSpacing.h8,
           _buildStatusToggle(controller, student),
         ],
       ),
@@ -270,12 +356,14 @@ class MarkAttendanceScreen extends GetView<AttendanceController> {
       height: 36,
       decoration: BoxDecoration(
         color: AppColors.fieldBg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
       ),
+      padding: const EdgeInsets.all(2),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildToggleOption(
-            label: AppStrings.present,
+            label: 'P',
             isSelected: isPresent,
             color: AppColors.successGreen,
             onTap: isEditable
@@ -283,7 +371,7 @@ class MarkAttendanceScreen extends GetView<AttendanceController> {
                 : null,
           ),
           _buildToggleOption(
-            label: AppStrings.absent,
+            label: 'A',
             isSelected: !isPresent,
             color: AppColors.bohoRed,
             onTap: isEditable
@@ -304,7 +392,8 @@ class MarkAttendanceScreen extends GetView<AttendanceController> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
@@ -313,10 +402,9 @@ class MarkAttendanceScreen extends GetView<AttendanceController> {
         child: Text(
           label,
           style: AppTextStyles.outfit(
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: FontWeight.w900,
             color: isSelected ? AppColors.white : AppColors.textSecondary,
-            letterSpacing: 0.5,
           ),
         ),
       ),

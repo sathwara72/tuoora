@@ -10,6 +10,7 @@ import 'package:tuoora/presentation/institute/widgets/subscription_banner.dart';
 import 'package:tuoora/presentation/institute/widgets/todays_birthday_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/branding_service.dart';
 import 'package:flutter/material.dart';
 
 class InstituteDashboard extends GetView<InstituteProfileController> {
@@ -56,7 +57,7 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
               child: Text(
                 profileController.instituteName.value.isNotEmpty
                     ? profileController.instituteName.value
-                    : 'Tuoora',
+                    : (Get.isRegistered<BrandingService>() ? Get.find<BrandingService>().appName : 'Tuoora'),
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.visible,

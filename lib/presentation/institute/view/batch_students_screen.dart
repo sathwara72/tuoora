@@ -262,25 +262,37 @@ class BatchStudentsScreen extends StatelessWidget {
                 ),
                 AppSpacing.h16,
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        bs.student.name,
-                        style: AppTextStyles.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Get.toNamed(
+                        AppRoutes.instituteStudentProfile,
+                        arguments: {
+                          'studentId': bs.student.id,
+                          'student': bs.student,
+                        },
+                      );
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bs.student.name,
+                          style: AppTextStyles.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _getEnrollmentText(bs.student),
-                        style: AppTextStyles.outfit(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
+                        Text(
+                          _getEnrollmentText(bs.student),
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 IconButton(

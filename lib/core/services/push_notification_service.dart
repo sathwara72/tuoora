@@ -10,6 +10,7 @@ import 'package:tuoora/core/api/api_client.dart';
 import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/services/notifications/notification_router.dart';
+import 'package:tuoora/core/services/branding_service.dart';
 
 /// Top-level background message handler.
 /// Required by FCM — must be a top-level (or static) function so the OS can
@@ -110,9 +111,32 @@ class PushNotificationService extends GetxService {
   static const String _consumedInitialFingerprintKey =
       'fcm_consumed_initial_fingerprint';
   static const String _androidChannelId = 'tuoora_default_channel';
-  static const String _androidChannelName = 'Tuoora Notifications';
-  static const String _androidChannelDesc =
-      'Default channel for Tuoora push notifications';
+
+  /// Returns a user-visible notification channel name, using the white-label
+  /// app name when the institute is white-labeled, otherwise 'Tuoora Notifications'.
+  static String get _androidChannelName {
+    if (BrandingService.instituteId > 0) {
+      try {
+        final svc = Get.find<BrandingService>();
+        if (svc.isWhiteLabeled) {
+          return '${svc.appName} Notifications';
+        }
+      } catch (_) {}
+    }
+    return 'Tuoora Notifications';
+  }
+
+  static String get _androidChannelDesc {
+    if (BrandingService.instituteId > 0) {
+      try {
+        final svc = Get.find<BrandingService>();
+        if (svc.isWhiteLabeled) {
+          return 'Default channel for ${svc.appName} push notifications';
+        }
+      } catch (_) {}
+    }
+    return 'Default channel for Tuoora push notifications';
+  }
 
   final RxnString _fcmToken = RxnString();
   String? get fcmToken => _fcmToken.value;
@@ -360,7 +384,13 @@ class PushNotificationService extends GetxService {
       if (Platform.isAndroid || Platform.isIOS) {
         _local.show(
           notification?.hashCode ?? message.hashCode,
-          title ?? 'Tuoora',
+          title ?? (() {
+            try {
+              return Get.find<BrandingService>().appName;
+            } catch (_) {
+              return 'Tuoora';
+            }
+          }()),
           body ?? '',
           NotificationDetails(
             android: AndroidNotificationDetails(

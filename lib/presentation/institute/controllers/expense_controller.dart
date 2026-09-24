@@ -19,6 +19,33 @@ class ExpenseController extends GetxController {
   final isCategoriesLoading = false.obs;
   final categories = <ExpenseCategory>[].obs;
 
+  // Filter States
+  final selectedCategoryFilter = Rxn<int>();
+  final selectedPaymentFilter = 'all'.obs;
+  final searchQuery = ''.obs;
+
+  void setCategoryFilter(int? categoryId) {
+    selectedCategoryFilter.value = categoryId;
+  }
+
+  void setPaymentFilter(String payment) {
+    selectedPaymentFilter.value = payment;
+  }
+
+  void setSearchQuery(String query) {
+    searchQuery.value = query;
+  }
+
+  void clearFilters() {
+    selectedCategoryFilter.value = null;
+    selectedPaymentFilter.value = 'all';
+    searchQuery.value = '';
+  }
+
+  // Expenses Month Filter State & Expanded Categories
+  final selectedExpensesMonth = DateTime.now().obs;
+  final expandedCategoryIds = <int>{}.obs;
+
   // Analysis State
   final expenseAnalysis = Rxn<ExpenseAnalysis>();
   final isAnalysisLoading = false.obs;
@@ -63,6 +90,9 @@ class ExpenseController extends GetxController {
 
     // Auto-refresh analysis when month changes
     ever(selectedAnalysisMonth, (_) => loadExpenseAnalysis());
+
+    // Auto-refresh expenses when month changes
+    ever(selectedExpensesMonth, (_) => loadExpenses());
   }
 
   bool validateForm() {
@@ -99,7 +129,12 @@ class ExpenseController extends GetxController {
 
     try {
       if (page == 1) isLoading.value = true;
-      final response = await _repository.listExpenses(page: page);
+      final response = await _repository.listExpenses(
+        page: page,
+        month: selectedExpensesMonth.value.month,
+        year: selectedExpensesMonth.value.year,
+        perPage: 100,
+      );
 
       if (page == 1) {
         expenses.assignAll(response.items);
@@ -144,6 +179,22 @@ class ExpenseController extends GetxController {
     } catch (e) {
       debugPrint('Error creating category: $e');
       AppSnackBar.error('Failed to create category.');
+    }
+  }
+
+  Future<void> deleteCategory(int categoryId, String categoryName) async {
+    try {
+      await _repository.deleteExpenseCategory(categoryId);
+      categories.removeWhere((c) => c.id == categoryId);
+      if (selectedCategoryFilter.value == categoryId) {
+        selectedCategoryFilter.value = null;
+      }
+      AppSnackBar.success('Category "$categoryName" deleted successfully.');
+      await loadExpenses(page: 1);
+      await loadCategories();
+    } catch (e) {
+      debugPrint('Error deleting category: $e');
+      AppSnackBar.error('Failed to delete category.');
     }
   }
 
@@ -196,6 +247,108 @@ class ExpenseController extends GetxController {
 
   void setAnalysisMonth(DateTime date) {
     selectedAnalysisMonth.value = DateTime(date.year, date.month);
+  }
+
+
+  bool get canGoToNextExpensesMonth {
+    final now = DateTime.now();
+    final currentView = selectedExpensesMonth.value;
+    if (currentView.year < now.year) return true;
+    if (currentView.year == now.year && currentView.month < now.month) {
+      return true;
+    }
+    return false;
+  }
+
+  void nextExpensesMonth() {
+    if (!canGoToNextExpensesMonth) return;
+    selectedExpensesMonth.value = DateTime(
+      selectedExpensesMonth.value.year,
+      selectedExpensesMonth.value.month + 1,
+    );
+  }
+
+  void prevExpensesMonth() {
+    selectedExpensesMonth.value = DateTime(
+      selectedExpensesMonth.value.year,
+      selectedExpensesMonth.value.month - 1,
+    );
+  }
+
+  void setExpensesMonth(DateTime date) {
+    selectedExpensesMonth.value = DateTime(date.year, date.month);
+  }
+
+  void toggleCategoryExpanded(int categoryId) {
+    if (expandedCategoryIds.contains(categoryId)) {
+      expandedCategoryIds.remove(categoryId);
+    } else {
+      expandedCategoryIds.add(categoryId);
+    }
+  }
+
+  bool isCategoryExpanded(int categoryId) => expandedCategoryIds.contains(categoryId);
+
+  List<ExpenseCategoryGroup> get categoryGroups {
+    final Map<int, List<ExpenseModel>> grouped = {};
+    final Map<int, ExpenseCategory?> categoryMap = {};
+
+    for (final cat in categories) {
+      grouped[cat.id] = [];
+      categoryMap[cat.id] = cat;
+    }
+
+    for (final exp in expenses) {
+      final catId = exp.expenseCategoryId;
+      if (!grouped.containsKey(catId)) {
+        grouped[catId] = [];
+        categoryMap[catId] = exp.category;
+      }
+      grouped[catId]!.add(exp);
+    }
+
+    final List<ExpenseCategoryGroup> groups = [];
+    grouped.forEach((catId, items) {
+      if (selectedCategoryFilter.value != null && selectedCategoryFilter.value != catId) {
+        return;
+      }
+
+      final filteredItems = items.where((exp) {
+        final matchPay = selectedPaymentFilter.value == 'all' ||
+            (exp.paymentMethod ?? 'Cash').toLowerCase() == selectedPaymentFilter.value.toLowerCase();
+        final search = searchQuery.value.trim().toLowerCase();
+        final matchSearch = search.isEmpty ||
+            (exp.description != null && exp.description!.toLowerCase().contains(search)) ||
+            exp.amount.toString().contains(search);
+        return matchPay && matchSearch;
+      }).toList();
+
+      if ((selectedPaymentFilter.value != 'all' || searchQuery.value.trim().isNotEmpty) && filteredItems.isEmpty) {
+        return;
+      }
+
+      final catName = categoryMap[catId]?.name ??
+          (items.isNotEmpty && items.first.category?.name != null
+              ? items.first.category!.name
+              : 'Uncategorized');
+      final double total = filteredItems.fold(0.0, (sum, item) => sum + item.amount);
+      groups.add(
+        ExpenseCategoryGroup(
+          categoryId: catId,
+          categoryName: catName,
+          totalAmount: total,
+          transactions: filteredItems,
+          category: categoryMap[catId],
+        ),
+      );
+    });
+
+    groups.sort((a, b) => b.totalAmount.compareTo(a.totalAmount));
+    return groups;
+  }
+
+  double get totalMonthlySpending {
+    return expenses.fold(0.0, (sum, item) => sum + item.amount);
   }
 
   void resetForm() {

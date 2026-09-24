@@ -87,6 +87,14 @@ abstract class InstituteRepositoryImpl {
 
   // Downloads the PDF receipt for a single fee record.
   Future<List<int>> downloadFeeReceipt(int feeId);
+  Future<PendingFeesResponse> getPendingFees({String? search, int? batchId});
+  Future<Map<String, dynamic>> sendFeeReminders({int? studentId, int? batchId});
+  Future<Map<String, dynamic>> saveFeePromise({
+    required int studentId,
+    required String promiseDate,
+    double? amount,
+    String? notes,
+  });
 
   // Reports
   Future<FeeReportResponse> getFeeReport();
@@ -105,8 +113,8 @@ abstract class InstituteRepositoryImpl {
 
   // Student Wise Report
   Future<List<StudentBatchItem>> getStudentsForBatchReport(int batchId);
-  Future<StudentWiseReportData> getStudentWiseReport(int studentId);
-  Future<List<int>> exportStudentWiseReport(int studentId);
+  Future<StudentWiseReportData> getStudentWiseReport(int studentId, {int? batchId});
+  Future<List<int>> exportStudentWiseReport(int studentId, {int? batchId});
 
   // Business Analytics
   Future<AnalyticsResponse> getAnalytics({int months = 6});
@@ -170,9 +178,16 @@ abstract class InstituteRepositoryImpl {
   Future<List<NotificationModel>> getNotifications();
 
   // Expenses
-  Future<ExpenseListResponse> listExpenses({int page = 1});
+  Future<ExpenseListResponse> listExpenses({
+    int page = 1,
+    int? month,
+    int? year,
+    int? categoryId,
+    int? perPage,
+  });
   Future<List<ExpenseCategory>> getExpenseCategories();
   Future<ExpenseCategory> createExpenseCategory(Map<String, dynamic> data);
+  Future<void> deleteExpenseCategory(int categoryId);
   Future<ExpenseModel> createExpense(Map<String, dynamic> data);
   Future<ExpenseAnalysis> getExpenseAnalysis(String month, String year);
 
