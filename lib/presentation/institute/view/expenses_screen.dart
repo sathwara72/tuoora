@@ -452,13 +452,23 @@ class ExpensesScreen extends GetView<ExpenseController> {
                         ],
                       ),
                     ),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () => _confirmDeleteCategory(context, group),
-                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 19),
-                      tooltip: 'Delete Category',
-                    ),
+                    if (!group.isSalary) ...[
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _editCategoryDialog(context, group),
+                        icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 19),
+                        tooltip: 'Edit Category',
+                      ),
+                      AppSpacing.h8,
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => _confirmDeleteCategory(context, group),
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 19),
+                        tooltip: 'Delete Category',
+                      ),
+                    ],
                     AppSpacing.h8,
                     IconButton(
                       padding: EdgeInsets.zero,
@@ -497,6 +507,108 @@ class ExpensesScreen extends GetView<ExpenseController> {
           ),
         );
       },
+    );
+  }
+
+  void _editCategoryDialog(BuildContext context, ExpenseCategoryGroup group) {
+    final textController = TextEditingController(text: group.categoryName);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.edit_outlined, color: AppColors.primary, size: 22),
+            AppSpacing.h8,
+            Text(
+              'Edit Category',
+              style: AppTextStyles.outfit(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Category Name',
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            AppSpacing.v8,
+            TextField(
+              controller: textController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'e.g. Maintenance, Utilities',
+                hintStyle: AppTextStyles.outfit(
+                  fontSize: 13,
+                  color: AppColors.textHint,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.borderGrey),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.borderGrey),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                ),
+              ),
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              final newName = textController.text.trim();
+              if (newName.isEmpty) return;
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pop();
+              controller.updateCategory(group.categoryId, newName);
+            },
+            child: Text(
+              'Save',
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

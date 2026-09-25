@@ -5,11 +5,13 @@ class ExpenseCategory {
   final int id;
   final int instituteId;
   final String name;
+  final bool isSalary;
 
   ExpenseCategory({
     required this.id,
     required this.instituteId,
     required this.name,
+    this.isSalary = false,
   });
 
   factory ExpenseCategory.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class ExpenseCategory {
       id: json['id'],
       instituteId: json['institute_id'],
       name: json['name'],
+      isSalary: json['is_salary'] == true || json['is_salary'] == 1,
     );
   }
 }
@@ -178,6 +181,7 @@ class ExpenseCategoryGroup {
   final double totalAmount;
   final List<ExpenseModel> transactions;
   final ExpenseCategory? category;
+  final bool isSalary;
 
   ExpenseCategoryGroup({
     required this.categoryId,
@@ -185,6 +189,7 @@ class ExpenseCategoryGroup {
     required this.totalAmount,
     required this.transactions,
     this.category,
+    this.isSalary = false,
   });
 
   int get count => transactions.length;
@@ -225,3 +230,4 @@ class ExpenseCategoryGroup {
 
   Color get iconBgColor => color.withValues(alpha: 0.1);
 }
+

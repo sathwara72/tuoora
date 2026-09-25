@@ -1261,15 +1261,26 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<void> deleteExpenseCategory(int categoryId) async {
-    final response = await _apiClient.delete(
-      '\/',
+  Future<ExpenseCategory> updateExpenseCategory(int categoryId, Map<String, dynamic> data) async {
+    final response = await _apiClient.put(
+      '${ApiConstants.instituteExpenseCategories}/$categoryId',
+      data,
     );
     if (response.status.hasError) {
-      throw Exception('Failed to delete category: ');
+      throw Exception('Failed to update category: ${response.statusText}');
     }
+    return ExpenseCategory.fromJson(response.body['data']);
   }
 
+  @override
+  Future<void> deleteExpenseCategory(int categoryId) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteExpenseCategories}/$categoryId',
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to delete category: ${response.statusText}');
+    }
+  }
   @override
   Future<ExpenseModel> createExpense(Map<String, dynamic> data) async {
     final Map<String, dynamic> fields = Map.from(data);

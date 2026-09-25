@@ -25,6 +25,8 @@ class FeesController extends GetxController {
   ).obs;
 
   final RxList<FeeStatement> statements = <FeeStatement>[].obs;
+  final Rxn<dynamic> selectedBatchId = Rxn<dynamic>();
+  final RxList<dynamic> allBatches = <dynamic>[].obs;
   final Rxn<FeeStatement> selectedStatement = Rxn<FeeStatement>();
   final Rxn<StudentReceipt> currentReceipt = Rxn<StudentReceipt>();
 
@@ -47,17 +49,29 @@ class FeesController extends GetxController {
     _loadBillingProfile();
   }
 
-  Future<void> loadFees() async {
+  Future<void> loadFees({dynamic batchId}) async {
     try {
       isLoading.value = true;
-      final data = await _repository.getFees();
+      if (batchId != null) {
+        selectedBatchId.value = batchId;
+      }
+      final data = await _repository.getFees(batchId: selectedBatchId.value);
       statements.assignAll(data.fees);
       summary.value = data.summary;
+      allBatches.assignAll(data.allBatches);
+      if (selectedBatchId.value == null && data.selectedBatchId != null) {
+        selectedBatchId.value = data.selectedBatchId;
+      }
     } catch (_) {
       AppSnackBar.error(AppStrings.errFailedLoadFees);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> switchBatch(dynamic batchId) async {
+    selectedBatchId.value = batchId;
+    await loadFees(batchId: batchId);
   }
 
   Future<void> _loadBillingProfile() async {

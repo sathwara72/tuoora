@@ -95,19 +95,8 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     }),
                     AppSpacing.v20,
 
-                    // 2. Class / Subject Dropdown (if batch has classes)
-                    _buildClassDropdown(),
-
-                    // 3. Subject Name Input
-                    Obx(
-                      () => AppInputField(
-                        label: 'SUBJECT NAME *',
-                        controller: controller.subjectController,
-                        hint: 'e.g. Mathematics, Physics, Accounts',
-                        errorText: controller.subjectError.value,
-                      ),
-                    ),
-                    AppSpacing.v20,
+                    // 2. Class / Subject Section (Direct class selection or custom fallback)
+                    _buildClassOrSubjectSection(context),
 
                     // 4. Day Dropdown
                     const InstituteLabel('DAY *'),
@@ -153,11 +142,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     }),
                     AppSpacing.v20,
 
-                    // 6. Assign Faculty / Staff
-                    const InstituteLabel('ASSIGN FACULTY / TEACHER'),
-                    AppSpacing.v8,
-                    _buildStaffDropdown(),
-                    AppSpacing.v20,
+
 
                     // 7. Room / Classroom
                     AppInputField(
@@ -301,20 +286,120 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
     });
   }
 
-  bool get _isFromBatchTimetable {
-    final args = Get.arguments;
-    if (args is BatchModel) return true;
-    if (args is Map && args['batch'] != null) return true;
-    if (controller.isBatchLocked.value) return true;
-    if (controller.currentBatch.value != null) return true;
-    return false;
+  Widget _buildClassOrSubjectSection(BuildContext context) {
+    return Obx(() {
+      final hasClasses = controller.batchClasses.isNotEmpty;
+      final isCustom = controller.isCustomSubject.value ||
+          (!hasClasses && !controller.isLoadingClasses.value);
+
+      if (!isCustom && (hasClasses || controller.isLoadingClasses.value)) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const InstituteLabel('SELECT CLASS *'),
+                    if (controller.isLoadingClasses.value) ...[
+                      AppSpacing.h8,
+                      const SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primaryBrand,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (hasClasses)
+                  GestureDetector(
+                    onTap: () {
+                      controller.isCustomSubject.value = true;
+                      controller.selectedClassId.value = '__custom__';
+                      controller.subjectController.clear();
+                    },
+                    child: Text(
+                      '+ Custom Subject',
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryBrand,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            AppSpacing.v8,
+            _buildClassDropdown(),
+            if (controller.subjectError.value != null) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: 6.0, left: 4.0),
+                child: Text(
+                  controller.subjectError.value!,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+            AppSpacing.v12,
+            _buildAssignedFacultyCard(),
+            AppSpacing.v20,
+          ],
+        );
+      } else {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (hasClasses) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const InstituteLabel('SUBJECT NAME *'),
+                  GestureDetector(
+                    onTap: () {
+                      controller.isCustomSubject.value = false;
+                      if (controller.batchClasses.isNotEmpty) {
+                        controller.selectClass(controller.batchClasses.first.id.toString());
+                      }
+                    },
+                    child: Text(
+                      '← Select from Classes',
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryBrand,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              AppSpacing.v8,
+            ],
+            AppInputField(
+              label: hasClasses ? null : 'SUBJECT NAME *',
+              controller: controller.subjectController,
+              hint: 'e.g. Mathematics, Physics, Accounts',
+              errorText: controller.subjectError.value,
+            ),
+            AppSpacing.v20,
+            const InstituteLabel('ASSIGN FACULTY / TEACHER'),
+            AppSpacing.v8,
+            _buildStaffDropdown(),
+            AppSpacing.v20,
+          ],
+        );
+      }
+    });
   }
 
   Widget _buildClassDropdown() {
-    if (!_isFromBatchTimetable) {
-      return const SizedBox.shrink();
-    }
-
     return Obx(() {
       final batch = controller.batchesList.firstWhereOrNull(
             (b) => b.id == controller.selectedFormBatchId.value,
@@ -328,7 +413,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         DropdownMenuItem<String?>(
           value: null,
           child: Text(
-            'Select Class / Subject',
+            '-- Select Class --',
             style: AppTextStyles.outfit(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -338,16 +423,16 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         ),
       );
 
-      // 2. Batch Subject (if available)
-      if (batch != null && batch.subject.trim().isNotEmpty) {
-        final teacherName = batch.staffName != null && batch.staffName!.trim().isNotEmpty
-            ? ' (${batch.staffName})'
+      // 2. Batch Classes
+      for (final cls in controller.batchClasses) {
+        final teacherInfo = cls.teachers.isNotEmpty
+            ? ' (' + cls.teachers.map((t) => t.fullName).join(', ') + ')'
             : '';
         items.add(
           DropdownMenuItem<String?>(
-            value: '__batch_subject__',
+            value: cls.id.toString(),
             child: Text(
-              '${batch.subject.trim()}$teacherName',
+              cls.name.trim() + teacherInfo,
               style: AppTextStyles.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -360,30 +445,31 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         );
       }
 
-      // 3. Batch Classes (from controller.batchClasses)
-      for (final cls in controller.batchClasses) {
-        if (batch != null &&
-            batch.subject.trim().toLowerCase() == cls.name.trim().toLowerCase()) {
-          continue;
-        }
-        final teacherInfo = cls.teachers.isNotEmpty
-            ? ' (${cls.teachers.first.fullName})'
-            : '';
-        items.add(
-          DropdownMenuItem<String?>(
-            value: cls.id.toString(),
-            child: Text(
-              '${cls.name.trim()}$teacherInfo',
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+      // 3. Batch Subject (if available and not duplicated)
+      if (batch != null && batch.subject.trim().isNotEmpty) {
+        final alreadyIn = controller.batchClasses.any(
+          (c) => c.name.trim().toLowerCase() == batch.subject.trim().toLowerCase(),
         );
+        if (!alreadyIn) {
+          final teacherName = batch.staffName != null && batch.staffName!.trim().isNotEmpty
+              ? ' (' + batch.staffName!.trim() + ')'
+              : '';
+          items.add(
+            DropdownMenuItem<String?>(
+              value: '__batch_subject__',
+              child: Text(
+                batch.subject.trim() + teacherName,
+                style: AppTextStyles.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          );
+        }
       }
 
       // 4. Custom option
@@ -391,142 +477,228 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         DropdownMenuItem<String?>(
           value: '__custom__',
           child: Text(
-            'Custom Subject (Type below)',
+            '+ Custom / Other Subject',
             style: AppTextStyles.outfit(
               fontSize: 14,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
               color: AppColors.primaryBrand,
             ),
           ),
         ),
       );
 
-      final currentSubject = controller.subjectController.text.trim();
-
-      // If slot has a subject and it's not in the dropdown items yet, add it
-      final bool alreadyHasCurrent = items.any((it) {
-        if (it.value == null || it.value == '__custom__') return false;
-        if (it.value == '__batch_subject__' &&
-            batch != null &&
-            batch.subject.trim().toLowerCase() == currentSubject.toLowerCase()) {
-          return true;
-        }
-        final cls = controller.batchClasses.firstWhereOrNull(
-          (c) => c.id.toString() == it.value,
-        );
-        if (cls != null &&
-            cls.name.trim().toLowerCase() == currentSubject.toLowerCase()) {
-          return true;
-        }
-        if (it.value?.toLowerCase() == currentSubject.toLowerCase()) {
-          return true;
-        }
-        return false;
-      });
-
-      if (currentSubject.isNotEmpty && !alreadyHasCurrent) {
-        items.insert(
-          items.length - 1,
-          DropdownMenuItem<String?>(
-            value: currentSubject,
-            child: Text(
-              currentSubject,
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        );
-      }
-
-      String? selectedVal = controller.selectedClassId.value;
-
-      // In edit mode or when a subject exists, find its matching option
-      if ((selectedVal == null || selectedVal == '__custom__') && currentSubject.isNotEmpty) {
-        final matchingItem = items.firstWhereOrNull((it) {
-          if (it.value == null || it.value == '__custom__') return false;
-          if (it.value == '__batch_subject__' &&
-              batch != null &&
-              batch.subject.trim().toLowerCase() == currentSubject.toLowerCase()) {
-            return true;
-          }
-          final cls = controller.batchClasses.firstWhereOrNull(
-            (c) => c.id.toString() == it.value,
-          );
-          if (cls != null &&
-              cls.name.trim().toLowerCase() == currentSubject.toLowerCase()) {
-            return true;
-          }
-          if (it.value == currentSubject) return true;
-          return false;
-        });
-        if (matchingItem != null) {
-          selectedVal = matchingItem.value;
-        }
-      }
-
+      final selectedVal = controller.selectedClassId.value;
       final isValidValue = items.any((it) => it.value == selectedVal);
       final finalValue = isValidValue ? selectedVal : null;
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const InstituteLabel('SELECT CLASS / SUBJECT'),
-              if (controller.isLoadingClasses.value) ...[
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.fieldBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: controller.subjectError.value != null
+                ? Colors.redAccent
+                : AppColors.fieldBorder,
+            width: 1.0,
+          ),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String?>(
+            isExpanded: true,
+            value: finalValue,
+            hint: Text(
+              '-- Select Class --',
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                color: AppColors.textMuted,
+              ),
+            ),
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.textMuted,
+            ),
+            items: items,
+            onChanged: (newVal) {
+              controller.selectClass(newVal);
+            },
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildAssignedFacultyCard() {
+    return Obx(() {
+      final selectedId = controller.selectedClassId.value;
+      if (selectedId == null || selectedId.isEmpty || selectedId == '__custom__') {
+        return const SizedBox.shrink();
+      }
+
+      final cls = controller.batchClasses.firstWhereOrNull(
+        (c) => c.id.toString() == selectedId,
+      );
+
+      final batch = controller.batchesList.firstWhereOrNull(
+            (b) => b.id == controller.selectedFormBatchId.value,
+          ) ??
+          controller.currentBatch.value;
+
+      if (cls != null) {
+        final teachers = cls.teachers;
+        if (teachers.length == 1) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF16A34A),
+                  size: 18,
+                ),
                 AppSpacing.h8,
-                const SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.primaryBrand,
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Assigned Faculty: ',
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            color: const Color(0xFF166534),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        TextSpan(
+                          text: teachers.first.fullName,
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            color: const Color(0xFF14532D),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
-            ],
-          ),
-          AppSpacing.v8,
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+          );
+        } else if (teachers.length > 1) {
+          final isTeacherInList = teachers.any((t) => t.id == controller.selectedStaffId.value);
+          final currentTeacherId = isTeacherInList ? controller.selectedStaffId.value : teachers.first.id;
+
+          return Container(
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.fieldBg,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.fieldBorder,
-                width: 1.0,
-              ),
+              border: Border.all(color: AppColors.fieldBorder),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String?>(
-                isExpanded: true,
-                value: finalValue,
-                hint: Text(
-                  'Select Class / Subject',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select Lecture Faculty:',
                   style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    color: AppColors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                icon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textMuted,
+                AppSpacing.v6,
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: currentTeacherId,
+                    items: teachers.map((t) {
+                      return DropdownMenuItem<int>(
+                        value: t.id,
+                        child: Text(
+                          t.fullName,
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (id) {
+                      if (id != null) controller.selectedStaffId.value = id;
+                    },
+                  ),
                 ),
-                items: items,
-                onChanged: (newVal) {
-                  controller.selectClass(newVal);
-                },
-              ),
+              ],
             ),
-          ),
-          AppSpacing.v20,
-        ],
-      );
+          );
+        } else {
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.fieldBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.fieldBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No faculty assigned to this class. Assign faculty (Optional):',
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.amber[800],
+                  ),
+                ),
+                AppSpacing.v6,
+                _buildStaffDropdown(),
+              ],
+            ),
+          );
+        }
+      }
+
+      if (selectedId == '__batch_subject__' && batch != null) {
+        final teacherName = batch.staffName?.trim();
+        if (teacherName != null && teacherName.isNotEmpty) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF16A34A),
+                  size: 18,
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  child: Text(
+                    'Assigned Faculty: ' + teacherName,
+                    style: AppTextStyles.outfit(
+                      fontSize: 13,
+                      color: const Color(0xFF14532D),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+
+      return const SizedBox.shrink();
     });
   }
 

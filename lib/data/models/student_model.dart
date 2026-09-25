@@ -21,6 +21,10 @@ class Student {
   final num totalDue;
   final num totalPaid;
   final List<StudentFee> fees;
+  final num? totalFee;
+  final dynamic selectedBatchId;
+  final dynamic selectedBatch;
+  final List<dynamic> allBatches;
 
   const Student({
     required this.id,
@@ -45,6 +49,10 @@ class Student {
     this.totalDue = 0,
     this.totalPaid = 0,
     this.fees = const [],
+    this.totalFee,
+    this.selectedBatchId,
+    this.selectedBatch,
+    this.allBatches = const [],
   });
 
   factory Student.fromJson(Map<String, dynamic> json) {
@@ -91,6 +99,10 @@ class Student {
               .map((e) => StudentFee.fromJson(e.cast<String, dynamic>()))
               .toList() ??
           const [],
+      totalFee: num.tryParse(json['total_fee']?.toString() ?? '') ?? (num.tryParse(json['monthly_fee']?.toString() ?? '0') ?? 0),
+      selectedBatchId: json['selected_batch_id'],
+      selectedBatch: json['selected_batch'],
+      allBatches: (json['all_batches'] as List?) ?? const [],
     );
   }
 
@@ -118,6 +130,10 @@ class Student {
       'total_due': totalDue,
       'total_paid': totalPaid,
       'fees': fees.map((f) => f.toJson()).toList(),
+      'total_fee': totalFee,
+      'selected_batch_id': selectedBatchId,
+      'selected_batch': selectedBatch,
+      'all_batches': allBatches,
     };
   }
 
@@ -143,6 +159,10 @@ class Student {
     num? totalDue,
     num? totalPaid,
     List<StudentFee>? fees,
+    num? totalFee,
+    dynamic selectedBatchId,
+    dynamic selectedBatch,
+    List<dynamic>? allBatches,
   }) {
     return Student(
       id: id ?? this.id,
@@ -166,6 +186,10 @@ class Student {
       totalDue: totalDue ?? this.totalDue,
       totalPaid: totalPaid ?? this.totalPaid,
       fees: fees ?? this.fees,
+      totalFee: totalFee ?? this.totalFee,
+      selectedBatchId: selectedBatchId ?? this.selectedBatchId,
+      selectedBatch: selectedBatch ?? this.selectedBatch,
+      allBatches: allBatches ?? this.allBatches,
     );
   }
 
@@ -256,6 +280,7 @@ class FeeInstallmentModel {
 class StudentFee {
   final int id;
   final int studentId;
+  final int? batchId;
   final String totalAmount;
   final String paidAmount;
   final String status;
@@ -278,6 +303,7 @@ class StudentFee {
     return StudentFee(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       studentId: int.tryParse(json['student_id']?.toString() ?? '0') ?? 0,
+      batchId: int.tryParse(json['batch_id']?.toString() ?? ''),
       totalAmount: json['total_amount']?.toString() ?? '0.00',
       paidAmount: json['paid_amount']?.toString() ?? '0.00',
       status: json['status']?.toString() ?? '',
@@ -294,6 +320,7 @@ class StudentFee {
   Map<String, dynamic> toJson() => {
     'id': id,
     'student_id': studentId,
+    'batch_id': batchId,
     'total_amount': totalAmount,
     'paid_amount': paidAmount,
     'status': status,

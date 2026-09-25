@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/url_launcher_utils.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_homework_grading_controller.dart';
@@ -117,6 +118,51 @@ class _SubmissionRow extends StatelessWidget {
             Text(
               submission.note!,
               style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          ],
+          if (submission.attachmentUrl != null && submission.attachmentUrl!.isNotEmpty) ...[
+            AppSpacing.v8,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => UrlLauncherUtils.openExternal(submission.attachmentUrl!),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBrandLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primaryBrand.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.attach_file_rounded,
+                        size: 15,
+                        color: AppColors.primaryBrand,
+                      ),
+                      AppSpacing.h6,
+                      Text(
+                        'View Attachment',
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryBrand,
+                        ),
+                      ),
+                      AppSpacing.h4,
+                      const Icon(
+                        Icons.open_in_new_rounded,
+                        size: 13,
+                        color: AppColors.primaryBrand,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
           AppSpacing.v12,

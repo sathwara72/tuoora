@@ -28,6 +28,15 @@ class StudentProfileModel {
       info: info,
     );
   }
+
+  StudentProfileModel copyWithStats(StudentProfileStats newStats) {
+    return StudentProfileModel(
+      header: header,
+      stats: newStats,
+      studentQr: studentQr,
+      info: info,
+    );
+  }
 }
 
 class StudentProfileHeader {
@@ -84,6 +93,8 @@ class StudentProfileStats {
   final int assignmentsPct;
   final String assignmentsLabel;
   final int performanceScore;
+  final int examPct;
+  final int homeworkPct;
 
   StudentProfileStats({
     required this.attendancePct,
@@ -91,15 +102,49 @@ class StudentProfileStats {
     required this.assignmentsPct,
     required this.assignmentsLabel,
     required this.performanceScore,
+    this.examPct = 0,
+    this.homeworkPct = 0,
   });
 
   factory StudentProfileStats.fromJson(Map<String, dynamic> json) {
+    final att = (json['attendance_pct'] as num?)?.toInt() ?? 0;
+    final hw = (json['homework_pct'] as num?)?.toInt() ??
+        (json['assignments_pct'] as num?)?.toInt() ??
+        0;
+    final exam = (json['exam_pct'] as num?)?.toInt() ?? 0;
+    int perf = (json['performance_score'] as num?)?.toInt() ?? 0;
+    if (perf == 0 && (att > 0 || hw > 0 || exam > 0)) {
+      perf = ((att + hw + exam) / 3).round();
+    }
+
     return StudentProfileStats(
-      attendancePct: json['attendance_pct'] ?? 0,
+      attendancePct: att,
       attendanceLabel: json['attendance_label'] ?? '',
-      assignmentsPct: json['assignments_pct'] ?? 0,
+      assignmentsPct: (json['assignments_pct'] as num?)?.toInt() ?? hw,
       assignmentsLabel: json['assignments_label'] ?? '',
-      performanceScore: json['performance_score'] ?? 0,
+      performanceScore: perf,
+      examPct: exam,
+      homeworkPct: hw,
+    );
+  }
+
+  StudentProfileStats copyWith({
+    int? attendancePct,
+    String? attendanceLabel,
+    int? assignmentsPct,
+    String? assignmentsLabel,
+    int? performanceScore,
+    int? examPct,
+    int? homeworkPct,
+  }) {
+    return StudentProfileStats(
+      attendancePct: attendancePct ?? this.attendancePct,
+      attendanceLabel: attendanceLabel ?? this.attendanceLabel,
+      assignmentsPct: assignmentsPct ?? this.assignmentsPct,
+      assignmentsLabel: assignmentsLabel ?? this.assignmentsLabel,
+      performanceScore: performanceScore ?? this.performanceScore,
+      examPct: examPct ?? this.examPct,
+      homeworkPct: homeworkPct ?? this.homeworkPct,
     );
   }
 }

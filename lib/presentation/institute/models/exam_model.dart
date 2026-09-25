@@ -84,6 +84,8 @@ class ExamModel {
   final String id;
   final String batchId;
   final String? batchName;
+  final int? classId;
+  final String? className;
   final String title;
   final String? subject;
   final String examType;
@@ -98,6 +100,8 @@ class ExamModel {
     required this.id,
     required this.batchId,
     this.batchName,
+    this.classId,
+    this.className,
     required this.title,
     this.subject,
     required this.examType,
@@ -120,6 +124,8 @@ class ExamModel {
       id: json['id'].toString(),
       batchId: json['batch_id'].toString(),
       batchName: json['batch']?['name'],
+      classId: json['class_id'] != null ? int.tryParse(json['class_id'].toString()) : null,
+      className: json['school_class']?['name'] ?? json['class']?['name'],
       title: json['title'] ?? '',
       subject: json['subject'],
       examType: json['exam_type'] ?? ExamType.other,

@@ -182,6 +182,25 @@ class ExpenseController extends GetxController {
     }
   }
 
+  Future<void> updateCategory(int categoryId, String newName) async {
+    try {
+      final updated = await _repository.updateExpenseCategory(categoryId, {'name': newName});
+      final index = categories.indexWhere((c) => c.id == categoryId);
+      if (index != -1) {
+        categories[index] = updated;
+      }
+      if (selectedCategory.value?.id == categoryId) {
+        selectedCategory.value = updated;
+      }
+      AppSnackBar.success('Category updated successfully.');
+      await loadExpenses(page: 1);
+      await loadCategories();
+    } catch (e) {
+      debugPrint('Error updating category: $e');
+      AppSnackBar.error('Failed to update category.');
+    }
+  }
+
   Future<void> deleteCategory(int categoryId, String categoryName) async {
     try {
       await _repository.deleteExpenseCategory(categoryId);
@@ -339,6 +358,7 @@ class ExpenseController extends GetxController {
           totalAmount: total,
           transactions: filteredItems,
           category: categoryMap[catId],
+          isSalary: categoryMap[catId]?.isSalary ?? false,
         ),
       );
     });

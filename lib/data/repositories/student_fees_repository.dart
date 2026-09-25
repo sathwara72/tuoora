@@ -11,8 +11,14 @@ class StudentFeesRepository {
 
   StudentFeesRepository(this._apiClient);
 
-  Future<StudentFeesData> getFees() async {
-    final response = await _apiClient.get(ApiConstants.studentFees);
+  Future<StudentFeesData> getFees({dynamic batchId}) async {
+    final Map<String, dynamic> query = {};
+    if (batchId != null) query['batch_id'] = batchId.toString();
+
+    final response = await _apiClient.get(
+      ApiConstants.studentFees,
+      query: query.isNotEmpty ? query : null,
+    );
     if (response.status.hasError) {
       throw Exception('Failed to load fees: ${response.statusText}');
     }
@@ -36,7 +42,13 @@ class StudentFeesRepository {
       pendingMonthsLabel: pendingMonthsLabel,
     );
 
-    return StudentFeesData(summary: summary, fees: fees);
+    return StudentFeesData(
+      summary: summary,
+      fees: fees,
+      allBatches: (data['all_batches'] as List?) ?? const [],
+      selectedBatchId: data['selected_batch_id'],
+      selectedBatch: data['selected_batch'],
+    );
   }
 
   Future<StudentReceipt> getReceipt(int feeId) async {

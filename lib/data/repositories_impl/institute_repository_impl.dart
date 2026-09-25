@@ -187,6 +187,7 @@ abstract class InstituteRepositoryImpl {
   });
   Future<List<ExpenseCategory>> getExpenseCategories();
   Future<ExpenseCategory> createExpenseCategory(Map<String, dynamic> data);
+  Future<ExpenseCategory> updateExpenseCategory(int categoryId, Map<String, dynamic> data);
   Future<void> deleteExpenseCategory(int categoryId);
   Future<ExpenseModel> createExpense(Map<String, dynamic> data);
   Future<ExpenseAnalysis> getExpenseAnalysis(String month, String year);

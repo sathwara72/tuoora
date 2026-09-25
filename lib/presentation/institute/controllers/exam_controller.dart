@@ -1,5 +1,6 @@
 import 'package:tuoora/presentation/institute/models/batch_model.dart';
 import 'package:tuoora/presentation/institute/models/exam_model.dart';
+import 'package:tuoora/presentation/institute/models/school_class_model.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -19,6 +20,10 @@ class ExamController extends GetxController {
   final selectedTab = 0.obs; // 0: All Exams, 1: Scheduled, 2: Completed
   final isLoading = false.obs;
   final isSaving = false.obs;
+  final batchClasses = <SchoolClassModel>[].obs;
+  final isLoadingClasses = false.obs;
+  final selectedClassId = RxnInt();
+  final classError = RxnString();
 
   ExamController(this.batch);
 
@@ -26,6 +31,7 @@ class ExamController extends GetxController {
   void onInit() {
     super.onInit();
     fetchExams();
+    fetchBatchClasses();
 
     titleController.addListener(() {
       if (triedToSave.value && titleError.value != null) {
@@ -49,6 +55,21 @@ class ExamController extends GetxController {
       AppSnackBar.error('Failed to fetch exams: ${e.toString()}');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchBatchClasses() async {
+    try {
+      isLoadingClasses.value = true;
+      final classes = await _repository.listClasses(int.parse(batch.id));
+      batchClasses.assignAll(classes);
+      if (!isEditing && batchClasses.isNotEmpty && selectedClassId.value == null) {
+        selectedClassId.value = batchClasses.first.id;
+      }
+    } catch (_) {
+      batchClasses.clear();
+    } finally {
+      isLoadingClasses.value = false;
     }
   }
 
@@ -90,11 +111,16 @@ class ExamController extends GetxController {
 
   void startCreate() {
     clearForm();
+    if (batchClasses.isNotEmpty) {
+      selectedClassId.value = batchClasses.first.id;
+    }
   }
 
   void startEdit(ExamModel exam) {
     editingExamId = exam.id;
     titleController.text = exam.title;
+    selectedClassId.value = exam.classId;
+    classError.value = null;
     subjectController.text = exam.subject ?? '';
     descriptionController.text = exam.description ?? '';
     totalMarksController.text = _trimZeros(exam.totalMarks);
@@ -111,6 +137,13 @@ class ExamController extends GetxController {
 
   bool validateForm() {
     bool isValid = true;
+
+    if (selectedClassId.value == null) {
+      classError.value = 'Please select a class';
+      isValid = false;
+    } else {
+      classError.value = null;
+    }
 
     final tErr = ValidationUtils.validateRequired(
       titleController.text,
@@ -152,12 +185,14 @@ class ExamController extends GetxController {
     triedToSave.value = true;
     if (!validateForm()) return;
 
+    final selectedClass = batchClasses.firstWhereOrNull((c) => c.id == selectedClassId.value);
+    final subjectName = selectedClass?.name ?? batch.subject;
+
     final data = <String, dynamic>{
       'batch_id': batch.id,
+      'class_id': selectedClassId.value,
       'title': titleController.text.trim(),
-      'subject': subjectController.text.trim().isEmpty
-          ? null
-          : subjectController.text.trim(),
+      'subject': subjectName,
       'exam_type': examType.value,
       'exam_date': DateFormat('yyyy-MM-dd').format(examDate.value!),
       'total_marks': totalMarksController.text.trim(),
@@ -248,8 +283,10 @@ class ExamController extends GetxController {
     passingMarksController.text = '35';
     examDate.value = null;
     examType.value = ExamType.other;
+    selectedClassId.value = batchClasses.isNotEmpty ? batchClasses.first.id : null;
     triedToSave.value = false;
     titleError.value = null;
+    classError.value = null;
     dateError.value = null;
     totalMarksError.value = null;
     passingMarksError.value = null;

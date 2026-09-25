@@ -43,6 +43,7 @@ class InstituteStudentController extends GetxController {
   final standardError = RxnString();
 
   final editingStudentId = Rxn<dynamic>();
+  final selectedProfileBatchId = Rxn<dynamic>();
   final selectedBatchId = RxnString();
   final availableBatches = <BatchModel>[].obs;
 
@@ -116,6 +117,7 @@ class InstituteStudentController extends GetxController {
     standardController.clear();
     selectedImagePath.value = null;
     selectedBatchId.value = null;
+    selectedProfileBatchId.value = null;
 
     nameError.value = null;
     parentNameError.value = null;
@@ -175,10 +177,14 @@ class InstituteStudentController extends GetxController {
         sErr == null;
   }
 
-  Future<void> fetchStudentDetails(dynamic id) async {
+  Future<void> fetchStudentDetails(dynamic id, {dynamic batchId}) async {
     try {
       isLoading.value = true;
-      final student = await _studentRepository.getStudentById(id);
+      final effectiveBatchId = batchId ?? selectedProfileBatchId.value;
+      final student = await _studentRepository.getStudentById(
+        id,
+        batchId: effectiveBatchId,
+      );
       currentStudent.value = student;
       preFillData(student);
     } catch (e) {
@@ -186,6 +192,13 @@ class InstituteStudentController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> switchProfileBatch(dynamic batchId) async {
+    final student = currentStudent.value;
+    if (student == null) return;
+    selectedProfileBatchId.value = batchId;
+    await fetchStudentDetails(student.id, batchId: batchId);
   }
 
   void preFillData(Student student) {
@@ -409,7 +422,7 @@ class InstituteStudentController extends GetxController {
 
       final student = currentStudent.value;
       if (student != null) {
-        await fetchStudentDetails(student.id);
+        await fetchStudentDetails(student.id, batchId: selectedProfileBatchId.value);
       }
       return true;
     } catch (e) {

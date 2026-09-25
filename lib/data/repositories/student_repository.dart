@@ -63,9 +63,14 @@ class StudentRepository implements StudentRepositoryImpl {
   }
 
   @override
-  Future<Student> getStudentById(dynamic id) async {
+  Future<Student> getStudentById(dynamic id, {dynamic batchId}) async {
+    final Map<String, dynamic> query = {};
+    if (batchId != null) {
+      query['batch_id'] = batchId.toString();
+    }
     final response = await _apiClient.get(
       '${ApiConstants.instituteStudents}/$id',
+      query: query.isNotEmpty ? query : null,
     );
     if (response.status.hasError) {
       throw Exception('Failed to get student: ${response.statusText}');

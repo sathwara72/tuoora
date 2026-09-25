@@ -1,3 +1,4 @@
+import 'package:tuoora/data/repositories/student_exam_repository.dart';
 import 'dart:io';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,26 @@ class StudentProfileController extends GetxController {
   Future<void> fetchProfile() async {
     try {
       isLoading.value = true;
-      final data = await _repository.getProfile();
+      var data = await _repository.getProfile();
+
+      // If examPct is 0 or unpopulated, fetch from StudentExamRepository as fallback
+      if (data.stats.examPct == 0) {
+        try {
+          final examRepo = StudentExamRepository(Get.find<ApiClient>());
+          final examData = await examRepo.getExams();
+          final examAvg = examData.overallStats.averagePercentage.round();
+          if (examAvg > 0) {
+            final updatedPerf = ((data.stats.attendancePct + data.stats.homeworkPct + examAvg) / 3).round();
+            data = data.copyWithStats(
+              data.stats.copyWith(
+                examPct: examAvg,
+                performanceScore: updatedPerf > 0 ? updatedPerf : data.stats.performanceScore,
+              ),
+            );
+          }
+        } catch (_) {}
+      }
+
       profileData.value = data;
     } catch (e) {
       AppSnackBar.error(AppStrings.errFailedLoadProfile);
