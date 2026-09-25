@@ -37,7 +37,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const SizedBox(height: 48),
-                  const AppLogo(height: 56),
+                  const AppLogo(height: 48),
                   const SizedBox(height: 10),
                   Text(
                     AppStrings.smartInstituteErp,

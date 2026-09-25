@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -127,7 +128,8 @@ class PushNotificationService extends GetxService {
     await _requestPermissions();
     await _configureForegroundPresentation();
     await _registerListeners();
-    await _refreshToken();
+    // Not awaited: on iOS this may poll for the APNs token for several seconds.
+    unawaited(_refreshToken());
     await _checkInitialMessage();
     return this;
   }
@@ -226,10 +228,23 @@ class PushNotificationService extends GetxService {
   Future<void> _refreshToken() async {
     try {
       // On iOS we must wait for the APNs token before requesting the FCM token.
+      // The APNs token is delivered asynchronously after registration, so poll
+      // briefly. If it never arrives (simulator, missing push capability),
+      // skip getToken(): it would throw, and onTokenRefresh delivers the FCM
+      // token once APNs registration completes.
       if (Platform.isIOS) {
-        final apnsToken = await _fcm.getAPNSToken();
+        String? apnsToken;
+        for (var i = 0; i < 10 && apnsToken == null; i++) {
+          apnsToken = await _fcm.getAPNSToken();
+          if (apnsToken == null) {
+            await Future<void>.delayed(const Duration(seconds: 1));
+          }
+        }
         if (apnsToken == null) {
-          if (kDebugMode) print('[FCM] APNs token not available yet');
+          if (kDebugMode) {
+            print('[FCM] APNs token not available; waiting for onTokenRefresh');
+          }
+          return;
         }
       }
       final token = await _fcm.getToken();

@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = _theme;
-    final hasHero = _selectedRole != 'INSTITUTE';
+    final hasRoleBackdrop = _selectedRole != 'INSTITUTE';
     final content = SafeArea(
       child: FitScreen(
         child: Column(
@@ -98,8 +98,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const AppLogo(height: 48),
-            if (hasHero) ..._heroHeader(theme) else ..._instituteHeader(theme),
-            _buildFormCard(theme, showBanner: !hasHero),
+            ..._heroHeader(theme),
+            _buildFormCard(theme),
             if (_selectedRole == 'INSTITUTE' && !Platform.isIOS)
               ..._institutionRegistration(),
             const SizedBox(height: 90),
@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: hasHero
+      body: hasRoleBackdrop
           ? RoleLoginBackdrop(
               style: _selectedRole == 'TEACHER'
                   ? RoleBackdropStyle.teacher
@@ -122,28 +122,13 @@ class _LoginScreenState extends State<LoginScreen> {
             )
           : LoginBackdrop(
               image: theme.image,
+              showLeftBadge: false,
               tagline: theme.tagline,
               quote: theme.quote,
               child: content,
             ),
     );
   }
-
-  List<Widget> _instituteHeader(_RoleTheme theme) => [
-    const SizedBox(height: 6),
-    Text(
-      AppStrings.smartInstituteErp,
-      style: AppTextStyles.outfit(
-        fontSize: 10,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textTertiary,
-        letterSpacing: 4,
-      ),
-    ),
-    const SizedBox(height: 4),
-    _orangeTagline(),
-    const SizedBox(height: 28),
-  ];
 
   List<Widget> _heroHeader(_RoleTheme theme) => [
     const SizedBox(height: 6),
@@ -250,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   ];
 
-  Widget _buildFormCard(_RoleTheme theme, {required bool showBanner}) {
+  Widget _buildFormCard(_RoleTheme theme) {
     return Container(
       margin: AppSpacing.x16,
       padding: const EdgeInsets.all(14),
@@ -268,7 +253,6 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (showBanner) ...[_buildRoleBanner(theme), AppSpacing.v16],
           Obx(() {
             final err = controller.accountError.value;
             if (err == null || err.isEmpty) return const SizedBox.shrink();
@@ -437,84 +421,6 @@ class _LoginScreenState extends State<LoginScreen> {
       color: AppColors.fieldLabel,
     ),
   );
-
-  Widget _buildRoleBanner(_RoleTheme theme) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: Opacity(
-              opacity: 0.12,
-              child: SizedBox(
-                width: 60,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.end,
-                  children: List.generate(
-                    6,
-                    (_) => Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: theme.color,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              Image.asset(
-                theme.image,
-                width: 72,
-                height: 64,
-                fit: BoxFit.contain,
-                cacheWidth: 220,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      theme.title,
-                      style: AppTextStyles.outfit(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      theme.subtitle,
-                      style: AppTextStyles.outfit(
-                        fontSize: 13,
-                        color: AppColors.textTertiary,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 40),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildTextField({
     TextEditingController? controller,
