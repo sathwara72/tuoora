@@ -20,6 +20,123 @@ class StudentFeesScreen extends GetView<FeesController> {
 
   const StudentFeesScreen({super.key, this.showBottomNav = true});
 
+  Widget _buildBatchFilterRow(BuildContext context) {
+    final active = controller.selectedBatchId.value?.toString() ?? 'all';
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.swap_horiz_rounded,
+                size: 14,
+                color: AppColors.textTertiary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'FILTER BY BATCH',
+                style: AppTextStyles.outfit(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textTertiary,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildBatchChip(
+                  label: 'All Batches',
+                  isSelected: active == 'all',
+                  onTap: () => controller.switchBatch('all'),
+                ),
+                const SizedBox(width: 8),
+                for (final b in controller.allBatches) ...[
+                  if (b is Map) ...[
+                    Builder(
+                      builder: (ctx) {
+                        final bId = b['id']?.toString() ?? '';
+                        final bName = b['name']?.toString() ?? 'Batch';
+                        final isSel = (active == bId);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _buildBatchChip(
+                            label: bName,
+                            isSelected: isSel,
+                            onTap: () => controller.switchBatch(bId),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBatchChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryBrand : AppColors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryBrand : AppColors.fieldBorder,
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryBrand.withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              const Icon(
+                Icons.check_rounded,
+                size: 13,
+                color: Colors.white,
+              ),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              label,
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,6 +165,10 @@ class StudentFeesScreen extends GetView<FeesController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        if (controller.allBatches.length > 1) ...[
+                          _buildBatchFilterRow(context),
+                          const SizedBox(height: AppSpacing.s12),
+                        ],
                         _SummaryCard(summary: controller.summary.value),
                         const SizedBox(height: AppSpacing.s12),
                         _PayNowButton(

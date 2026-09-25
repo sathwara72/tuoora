@@ -62,9 +62,9 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                       children: [
                         _buildHeroCard(profile.header),
                         const SizedBox(height: 12),
-                        _buildPerformanceScoreCard(profile.stats),
+                        _buildPerformanceScoreCard(context, profile.stats),
                         const SizedBox(height: 12),
-                        _buildStatsRow(profile.stats),
+                        _buildStatsRow(context, profile.stats),
                         const SizedBox(height: 12),
                         _buildGridActions(),
                         const SizedBox(height: 16),
@@ -288,38 +288,411 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
     );
   }
 
-  Widget _buildPerformanceScoreCard(StudentProfileStats stats) {
-    return Container(
-      padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: AppColors.white,
+  Widget _buildPerformanceScoreCard(
+    BuildContext context,
+    StudentProfileStats stats,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showPerformanceBreakdownSheet(context, stats),
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
-      ),
-      child: Center(
-        child: PerformanceGauge(score: stats.performanceScore, size: 180),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              PerformanceGauge(score: stats.performanceScore, size: 180),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBrandLight,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.touch_app_rounded,
+                      size: 14,
+                      color: AppColors.primaryBrand,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Tap to view 3-way average breakdown',
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryBrand,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 10,
+                      color: AppColors.primaryBrand,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildStatsRow(StudentProfileStats stats) {
+  void _showPerformanceBreakdownSheet(
+    BuildContext context,
+    StudentProfileStats stats,
+  ) {
+    final hw = stats.homeworkPct;
+    final att = stats.attendancePct;
+    final exam = stats.examPct;
+    final avgScore = stats.performanceScore > 0
+        ? stats.performanceScore
+        : ((hw + att + exam) / 3).round();
+    final statusColor = PerformanceGauge.statusColor(avgScore);
+    final statusLabel = PerformanceGauge.statusLabel(avgScore);
+
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s20,
+            AppSpacing.s12,
+            AppSpacing.s20,
+            AppSpacing.s20,
+          ),
+          decoration: const BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.s16),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderGrey,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                // Title row
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primaryBrandLight,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.analytics_rounded,
+                        color: AppColors.primaryBrand,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Academic Performance',
+                            style: AppTextStyles.outfit(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Average of Homework, Attendance & Exam',
+                            style: AppTextStyles.outfit(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      color: AppColors.textSecondary,
+                      splashRadius: 20,
+                      onPressed: () => Get.back(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Overall Combined Average Card
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$avgScore%',
+                          style: AppTextStyles.outfit(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$statusLabel Performance',
+                              style: AppTextStyles.outfit(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: statusColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Combined 3-way academic average',
+                              style: AppTextStyles.outfit(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 3 Metrics Breakdown List
+                _buildBreakdownItem(
+                  icon: Icons.assignment_outlined,
+                  iconBg: const Color(0xFFFEF4E8),
+                  iconColor: AppColors.instBrandOrange,
+                  title: 'Homework',
+                  subtitle: 'Completion rate (${stats.assignmentsLabel})',
+                  percentage: hw,
+                ),
+                const SizedBox(height: 10),
+                _buildBreakdownItem(
+                  icon: Icons.calendar_today_outlined,
+                  iconBg: const Color(0xFFECFDF5),
+                  iconColor: AppColors.green,
+                  title: 'Attendance',
+                  subtitle: 'Monthly attendance (${stats.attendanceLabel})',
+                  percentage: att,
+                ),
+                const SizedBox(height: 10),
+                _buildBreakdownItem(
+                  icon: Icons.school_outlined,
+                  iconBg: const Color(0xFFEFF6FF),
+                  iconColor: AppColors.studentProgressBlue,
+                  title: 'Exam',
+                  subtitle: 'Average exam marks',
+                  percentage: exam,
+                ),
+                const SizedBox(height: 16),
+
+                // Calculation formula summary
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.8)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.functions_rounded,
+                        size: 20,
+                        color: AppColors.primaryBrand,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Average = ($hw% + $att% + $exam%) ÷ 3 = $avgScore%',
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // Done Button
+                ElevatedButton(
+                  onPressed: () => Get.back(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBrand,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                    ),
+                  ),
+                  child: Text(
+                    'Close',
+                    style: AppTextStyles.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _buildBreakdownItem({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required int percentage,
+  }) {
+    final clamped = percentage.clamp(0, 100);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: iconColor, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '$clamped%',
+                style: AppTextStyles.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: iconColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: clamped / 100,
+              minHeight: 6,
+              backgroundColor: AppColors.borderGrey.withValues(alpha: 0.4),
+              valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsRow(BuildContext context, StudentProfileStats stats) {
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
-            label: AppStrings.attendance,
-            value: '${stats.attendancePct}%',
-            subValue: stats.attendanceLabel,
-            valueColor: AppColors.primaryBrand,
+            label: 'Homework',
+            value: '${stats.homeworkPct}%',
+            subValue: 'completed',
+            valueColor: AppColors.instBrandOrange,
+            onTap: () => _showPerformanceBreakdownSheet(context, stats),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
         Expanded(
           child: _buildStatCard(
-            label: AppStrings.assignment,
-            value: '${stats.assignmentsPct}%',
-            subValue: stats.assignmentsLabel,
-            valueColor: AppColors.primaryBrand,
+            label: AppStrings.attendance,
+            value: '${stats.attendancePct}%',
+            subValue: 'monthly',
+            valueColor: AppColors.green,
+            onTap: () => _showPerformanceBreakdownSheet(context, stats),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: _buildStatCard(
+            label: 'Exams',
+            value: '${stats.examPct}%',
+            subValue: 'average',
+            valueColor: AppColors.studentProgressBlue,
+            onTap: () => _showPerformanceBreakdownSheet(context, stats),
           ),
         ),
       ],
@@ -331,50 +704,64 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
     required String value,
     required String subValue,
     Color? valueColor,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: AppColors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.outfit(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textTertiary,
-            ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
           ),
-          const SizedBox(height: 6),
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                value,
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.outfit(
-                  fontSize: 20,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: valueColor ?? AppColors.textPrimary,
-                  height: 1,
+                  color: AppColors.textTertiary,
                 ),
               ),
-              const SizedBox(width: 6),
-              Text(
-                subValue,
-                style: AppTextStyles.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  height: 1,
-                ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Text(
+                    value,
+                    style: AppTextStyles.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: valueColor ?? AppColors.textPrimary,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      subValue,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textSecondary,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

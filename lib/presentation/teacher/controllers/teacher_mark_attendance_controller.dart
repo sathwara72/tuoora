@@ -1,4 +1,4 @@
-import 'package:get/get.dart';
+﻿import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
@@ -94,22 +94,26 @@ class TeacherMarkAttendanceController extends GetxController {
     rows.refresh();
   }
 
-  Future<void> markByQr(String qrPayload) async {
+  Future<QrAttendanceResult> markByQrDirect(String qrPayload) async {
     if (!isEditable) {
-      AppSnackBar.error('Attendance for this date can no longer be edited');
-      return;
+      throw Exception('Attendance for this date can no longer be edited');
     }
+    final result = await _repository.markAttendanceByQr(
+      batchId: batch.id,
+      date: apiDate,
+      qrPayload: qrPayload,
+    );
+    final row = rows.firstWhereOrNull((r) => r.studentId == result.studentId);
+    if (row != null) {
+      row.status = 'present';
+      rows.refresh();
+    }
+    return result;
+  }
+
+  Future<void> markByQr(String qrPayload) async {
     try {
-      final result = await _repository.markAttendanceByQr(
-        batchId: batch.id,
-        date: apiDate,
-        qrPayload: qrPayload,
-      );
-      final row = rows.firstWhereOrNull((r) => r.studentId == result.studentId);
-      if (row != null) {
-        row.status = 'present';
-        rows.refresh();
-      }
+      final result = await markByQrDirect(qrPayload);
       AppSnackBar.success('Marked ${result.studentName} present');
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));

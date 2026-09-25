@@ -171,6 +171,15 @@ class StudentReceipt {
 class StudentFeesData {
   final FeeSummary summary;
   final List<FeeStatement> fees;
+  final List<dynamic> allBatches;
+  final dynamic selectedBatchId;
+  final dynamic selectedBatch;
 
-  const StudentFeesData({required this.summary, required this.fees});
+  const StudentFeesData({
+    required this.summary,
+    required this.fees,
+    this.allBatches = const [],
+    this.selectedBatchId,
+    this.selectedBatch,
+  });
 }

@@ -44,6 +44,7 @@ class TimetableController extends GetxController {
   final batchClasses = <SchoolClassModel>[].obs;
   final isLoadingClasses = false.obs;
   final selectedClassId = RxnString();
+  final isCustomSubject = false.obs;
 
   final subjectController = TextEditingController();
   final roomNoController = TextEditingController();
@@ -244,6 +245,10 @@ class TimetableController extends GetxController {
       batchClasses.assignAll(classes);
       if (isEditing) {
         _syncSelectedClassWithSubject();
+      } else {
+        if (batchClasses.isNotEmpty && !isCustomSubject.value) {
+          selectClass(batchClasses.first.id.toString());
+        }
       }
     } catch (_) {
       batchClasses.clear();
@@ -256,6 +261,7 @@ class TimetableController extends GetxController {
     final subject = (targetSubject ?? subjectController.text).trim();
     if (subject.isEmpty) {
       selectedClassId.value = null;
+      isCustomSubject.value = false;
       return;
     }
 
@@ -266,20 +272,49 @@ class TimetableController extends GetxController {
     );
     if (classMatch != null) {
       selectedClassId.value = classMatch.id.toString();
+      isCustomSubject.value = false;
+      if (selectedStaffId.value == null && classMatch.teachers.isNotEmpty) {
+        selectedStaffId.value = classMatch.teachers.first.id;
+      }
       return;
     }
 
     if (batch != null && batch.subject.trim().toLowerCase() == subject.toLowerCase()) {
       selectedClassId.value = '__batch_subject__';
+      isCustomSubject.value = false;
       return;
     }
 
-    selectedClassId.value = subject;
+    selectedClassId.value = '__custom__';
+    isCustomSubject.value = true;
   }
 
   void selectClass(String? classId) {
     selectedClassId.value = classId;
-    if (classId == null) return;
+    if (classId == null) {
+      isCustomSubject.value = false;
+      subjectController.clear();
+      selectedStaffId.value = null;
+      return;
+    }
+    if (classId == '__custom__') {
+      isCustomSubject.value = true;
+      subjectController.clear();
+      selectedStaffId.value = null;
+      return;
+    }
+    isCustomSubject.value = false;
+    final found = batchClasses.firstWhereOrNull((c) => c.id.toString() == classId);
+    if (found != null) {
+      subjectController.text = found.name;
+      subjectError.value = null;
+      if (found.teachers.isNotEmpty) {
+        selectedStaffId.value = found.teachers.first.id;
+      } else {
+        selectedStaffId.value = null;
+      }
+      return;
+    }
     if (classId == '__batch_subject__') {
       final batch = batchesList.firstWhereOrNull((b) => b.id == selectedFormBatchId.value) ?? currentBatch.value;
       if (batch != null && batch.subject.trim().isNotEmpty) {
@@ -291,18 +326,6 @@ class TimetableController extends GetxController {
       }
       return;
     }
-    if (classId == '__custom__') {
-      return;
-    }
-    final found = batchClasses.firstWhereOrNull((c) => c.id.toString() == classId);
-    if (found != null) {
-      subjectController.text = found.name;
-      subjectError.value = null;
-      if (found.teachers.isNotEmpty) {
-        selectedStaffId.value = found.teachers.first.id;
-      }
-      return;
-    }
     subjectController.text = classId;
     subjectError.value = null;
   }
@@ -311,6 +334,7 @@ class TimetableController extends GetxController {
 
   void startCreate([BatchModel? batch, bool? lockBatch]) {
     clearForm();
+    isCustomSubject.value = false;
     final effectiveBatch = batch ?? (lockBatch == false ? null : currentBatch.value);
     if (effectiveBatch != null) {
       currentBatch.value = effectiveBatch;
@@ -394,6 +418,13 @@ class TimetableController extends GetxController {
       isValid = false;
     } else {
       batchError.value = null;
+    }
+
+    if (!isCustomSubject.value && selectedClassId.value != null && selectedClassId.value != '__custom__') {
+      final found = batchClasses.firstWhereOrNull((c) => c.id.toString() == selectedClassId.value);
+      if (found != null && subjectController.text.trim().isEmpty) {
+        subjectController.text = found.name;
+      }
     }
 
     final sErr = ValidationUtils.validateRequired(
@@ -501,7 +532,8 @@ class TimetableController extends GetxController {
     startTime.value = null;
     endTime.value = null;
     selectedStaffId.value = null;
-    selectedClassId.value = '__custom__';
+    selectedClassId.value = null;
+    isCustomSubject.value = false;
     batchClasses.clear();
     triedToSave.value = false;
     batchError.value = null;

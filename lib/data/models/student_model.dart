@@ -21,6 +21,10 @@ class Student {
   final num totalDue;
   final num totalPaid;
   final List<StudentFee> fees;
+  final num? totalFee;
+  final dynamic selectedBatchId;
+  final dynamic selectedBatch;
+  final List<dynamic> allBatches;
 
   const Student({
     required this.id,
@@ -45,6 +49,10 @@ class Student {
     this.totalDue = 0,
     this.totalPaid = 0,
     this.fees = const [],
+    this.totalFee,
+    this.selectedBatchId,
+    this.selectedBatch,
+    this.allBatches = const [],
   });
 
   factory Student.fromJson(Map<String, dynamic> json) {
@@ -91,6 +99,10 @@ class Student {
               .map((e) => StudentFee.fromJson(e.cast<String, dynamic>()))
               .toList() ??
           const [],
+      totalFee: num.tryParse(json['total_fee']?.toString() ?? '') ?? (num.tryParse(json['monthly_fee']?.toString() ?? '0') ?? 0),
+      selectedBatchId: json['selected_batch_id'],
+      selectedBatch: json['selected_batch'],
+      allBatches: (json['all_batches'] as List?) ?? const [],
     );
   }
 
@@ -118,6 +130,10 @@ class Student {
       'total_due': totalDue,
       'total_paid': totalPaid,
       'fees': fees.map((f) => f.toJson()).toList(),
+      'total_fee': totalFee,
+      'selected_batch_id': selectedBatchId,
+      'selected_batch': selectedBatch,
+      'all_batches': allBatches,
     };
   }
 
@@ -143,6 +159,10 @@ class Student {
     num? totalDue,
     num? totalPaid,
     List<StudentFee>? fees,
+    num? totalFee,
+    dynamic selectedBatchId,
+    dynamic selectedBatch,
+    List<dynamic>? allBatches,
   }) {
     return Student(
       id: id ?? this.id,
@@ -166,6 +186,10 @@ class Student {
       totalDue: totalDue ?? this.totalDue,
       totalPaid: totalPaid ?? this.totalPaid,
       fees: fees ?? this.fees,
+      totalFee: totalFee ?? this.totalFee,
+      selectedBatchId: selectedBatchId ?? this.selectedBatchId,
+      selectedBatch: selectedBatch ?? this.selectedBatch,
+      allBatches: allBatches ?? this.allBatches,
     );
   }
 
@@ -180,15 +204,89 @@ class Student {
   }
 
   String get enrollmentId => idHash.isNotEmpty ? idHash : id.toString();
+
+  List<FeeInstallmentModel> get allInstallments {
+    final list = <FeeInstallmentModel>[];
+    for (final f in fees) {
+      list.addAll(f.installments);
+    }
+    return list;
+  }
+}
+
+class FeeInstallmentModel {
+  final int id;
+  final int feeId;
+  final int studentId;
+  final String title;
+  final double amount;
+  final double paidAmount;
+  final String? dueDate;
+  final String status;
+  final int order;
+  final String? notes;
+
+  const FeeInstallmentModel({
+    required this.id,
+    this.feeId = 0,
+    this.studentId = 0,
+    required this.title,
+    required this.amount,
+    required this.paidAmount,
+    this.dueDate,
+    required this.status,
+    this.order = 1,
+    this.notes,
+  });
+
+  double get dueAmount {
+    final diff = amount - paidAmount;
+    return diff > 0 ? diff : 0.0;
+  }
+
+  bool get isPaid => status.toLowerCase() == 'paid' || dueAmount <= 0;
+  bool get isPartial => !isPaid && paidAmount > 0;
+  bool get isPending => !isPaid && !isPartial;
+
+  factory FeeInstallmentModel.fromJson(Map<String, dynamic> json) {
+    return FeeInstallmentModel(
+      id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      feeId: int.tryParse(json['fee_id']?.toString() ?? '0') ?? 0,
+      studentId: int.tryParse(json['student_id']?.toString() ?? '0') ?? 0,
+      title: json['title']?.toString() ?? 'Installment',
+      amount: double.tryParse(json['amount']?.toString() ?? '0') ?? 0.0,
+      paidAmount: double.tryParse(json['paid_amount']?.toString() ?? '0') ?? 0.0,
+      dueDate: json['due_date']?.toString(),
+      status: json['status']?.toString() ?? 'Pending',
+      order: int.tryParse(json['order']?.toString() ?? '1') ?? 1,
+      notes: json['notes']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'fee_id': feeId,
+    'student_id': studentId,
+    'title': title,
+    'amount': amount,
+    'paid_amount': paidAmount,
+    'due_date': dueDate,
+    'status': status,
+    'order': order,
+    'notes': notes,
+  };
 }
 
 class StudentFee {
   final int id;
   final int studentId;
+  final int? batchId;
   final String totalAmount;
   final String paidAmount;
   final String status;
   final String date;
+  final List<FeeInstallmentModel> installments;
+  final List<dynamic> payments;
 
   const StudentFee({
     required this.id,
@@ -197,25 +295,37 @@ class StudentFee {
     required this.paidAmount,
     required this.status,
     required this.date,
+    this.installments = const [],
+    this.payments = const [],
   });
 
   factory StudentFee.fromJson(Map<String, dynamic> json) {
     return StudentFee(
       id: int.tryParse(json['id']?.toString() ?? '0') ?? 0,
       studentId: int.tryParse(json['student_id']?.toString() ?? '0') ?? 0,
+      batchId: int.tryParse(json['batch_id']?.toString() ?? ''),
       totalAmount: json['total_amount']?.toString() ?? '0.00',
       paidAmount: json['paid_amount']?.toString() ?? '0.00',
       status: json['status']?.toString() ?? '',
       date: json['date']?.toString() ?? '',
+      installments: (json['installments'] as List?)
+              ?.whereType<Map>()
+              .map((e) => FeeInstallmentModel.fromJson(e.cast<String, dynamic>()))
+              .toList() ??
+          const [],
+      payments: (json['payments'] as List?) ?? const [],
     );
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'student_id': studentId,
+    'batch_id': batchId,
     'total_amount': totalAmount,
     'paid_amount': paidAmount,
     'status': status,
     'date': date,
+    'installments': installments.map((i) => i.toJson()).toList(),
+    'payments': payments,
   };
 }

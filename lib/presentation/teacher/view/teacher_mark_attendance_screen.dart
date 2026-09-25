@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:tuoora/config/app_routes.dart';
@@ -23,7 +23,7 @@ class TeacherMarkAttendanceScreen
         child: Column(
           children: [
             TeacherAppBar(
-              title: 'Attendance · ${controller.batch.name}',
+              title: 'Attendance • ${controller.batch.name}',
               actions: [
                 Obx(
                   () => controller.isEditable
@@ -236,9 +236,45 @@ class TeacherMarkAttendanceScreen
             ),
             if (controller.isEditable) ...[
               AppSpacing.v12,
+              // Prominent QR / Barcode Scanner action button
+              InkWell(
+                onTap: () => _scanQr(context),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBrand.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.primaryBrand.withValues(alpha: 0.35),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.qr_code_scanner_rounded,
+                        color: AppColors.primaryBrand,
+                        size: 20,
+                      ),
+                      AppSpacing.h8,
+                      Text(
+                        'Scan Student ID (QR / Barcode)',
+                        style: AppTextStyles.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryBrand,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              AppSpacing.v8,
               Row(
                 children: [
-                  // Single-tap "Mark All Present" Button
+                  // Single-tap Mark All Present Button
                   Expanded(
                     flex: 3,
                     child: InkWell(
@@ -280,7 +316,7 @@ class TeacherMarkAttendanceScreen
                     ),
                   ),
                   AppSpacing.h8,
-                  // Quick "Mark All Absent" button
+                  // Quick Mark All Absent button
                   Expanded(
                     flex: 2,
                     child: InkWell(

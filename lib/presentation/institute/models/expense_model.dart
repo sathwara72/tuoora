@@ -5,11 +5,13 @@ class ExpenseCategory {
   final int id;
   final int instituteId;
   final String name;
+  final bool isSalary;
 
   ExpenseCategory({
     required this.id,
     required this.instituteId,
     required this.name,
+    this.isSalary = false,
   });
 
   factory ExpenseCategory.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class ExpenseCategory {
       id: json['id'],
       instituteId: json['institute_id'],
       name: json['name'],
+      isSalary: json['is_salary'] == true || json['is_salary'] == 1,
     );
   }
 }
@@ -168,5 +171,63 @@ class ExpenseAnalysis {
           .toList(),
     );
   }
+}
+
+
+
+class ExpenseCategoryGroup {
+  final int categoryId;
+  final String categoryName;
+  final double totalAmount;
+  final List<ExpenseModel> transactions;
+  final ExpenseCategory? category;
+  final bool isSalary;
+
+  ExpenseCategoryGroup({
+    required this.categoryId,
+    required this.categoryName,
+    required this.totalAmount,
+    required this.transactions,
+    this.category,
+    this.isSalary = false,
+  });
+
+  int get count => transactions.length;
+
+  IconData get icon {
+    switch (categoryName) {
+      case 'Bills':
+        return Icons.bolt_rounded;
+      case 'Shopping':
+        return Icons.shopping_bag_rounded;
+      case 'Entertainment':
+        return Icons.movie_rounded;
+      case 'Food & Drink':
+        return Icons.local_cafe_rounded;
+      case 'Transport':
+        return Icons.directions_car_rounded;
+      default:
+        return Icons.category_rounded;
+    }
+  }
+
+  Color get color {
+    switch (categoryName) {
+      case 'Bills':
+        return AppColors.studentProgressBlue;
+      case 'Shopping':
+        return AppColors.warningAmber;
+      case 'Entertainment':
+        return AppColors.warningAmber;
+      case 'Food & Drink':
+        return AppColors.successGreen;
+      case 'Transport':
+        return AppColors.subjectPhysics;
+      default:
+        return AppColors.primaryBrand;
+    }
+  }
+
+  Color get iconBgColor => color.withValues(alpha: 0.1);
 }
 

@@ -15,14 +15,20 @@ class AttendanceStudent {
   final int id;
   final String name;
   final String? enrollmentId;
+  final String? phone;
   final String? profileImageUrl;
+  final int monthlyAbsentCount;
+  final List<String> monthlyAbsentDates;
   String status; // 'present' or 'absent'
 
   AttendanceStudent({
     required this.id,
     required this.name,
     this.enrollmentId,
+    this.phone,
     this.profileImageUrl,
+    this.monthlyAbsentCount = 0,
+    this.monthlyAbsentDates = const [],
     this.status = 'present',
   });
 
@@ -140,13 +146,44 @@ class AttendanceController extends GetxController {
             }
           }
 
+          String? resolvedPhone = record.phone;
+          if (resolvedPhone == null || resolvedPhone.trim().isEmpty) {
+            try {
+              if (Get.isRegistered<BatchDetailsController>(tag: batch.id)) {
+                final bdc = Get.find<BatchDetailsController>(tag: batch.id);
+                final match = bdc.assignedStudents.firstWhereOrNull(
+                  (bs) => bs.student.id == record.studentId,
+                );
+                if (match != null && match.student.phone != null && match.student.phone!.isNotEmpty) {
+                  resolvedPhone = match.student.phone;
+                }
+              }
+            } catch (_) {}
+
+            if (resolvedPhone == null || resolvedPhone.trim().isEmpty) {
+              try {
+                if (Get.isRegistered<InstituteController>()) {
+                  final inst = Get.find<InstituteController>();
+                  final match = inst.students.firstWhereOrNull(
+                    (s) => s.id == record.studentId,
+                  );
+                  if (match != null && match.phone != null && match.phone!.isNotEmpty) {
+                    resolvedPhone = match.phone;
+                  }
+                }
+              } catch (_) {}
+            }
+          }
+
           return AttendanceStudent(
             id: record.studentId,
             name: record.studentName,
             enrollmentId: resolvedEnrollment ?? record.studentId.toString(),
-            profileImageUrl: null, // API doesn't provide it in this endpoint
-            status:
-                record.status ?? 'present', // Default to present if not marked
+            phone: resolvedPhone,
+            profileImageUrl: record.profileImageUrl,
+            monthlyAbsentCount: record.monthlyAbsentCount,
+            monthlyAbsentDates: record.monthlyAbsentDates,
+            status: record.status ?? 'present',
           );
         }).toList();
         allStudents.assignAll(students);

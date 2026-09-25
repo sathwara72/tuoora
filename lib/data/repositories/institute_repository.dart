@@ -446,6 +446,62 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<PendingFeesResponse> getPendingFees({String? search, int? batchId}) async {
+    final query = <String, String>{};
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    if (batchId != null) query['batch_id'] = batchId.toString();
+
+    final response = await _apiClient.get(
+      '\/pending',
+      query: query,
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch pending fees: ');
+    }
+    return PendingFeesResponse.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<Map<String, dynamic>> sendFeeReminders({int? studentId, int? batchId}) async {
+    final body = <String, dynamic>{};
+    if (studentId != null) body['student_id'] = studentId;
+    if (batchId != null) body['batch_id'] = batchId;
+
+    final response = await _apiClient.post(
+      '\/send-reminders',
+      body,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to send fee reminders');
+    }
+    return response.body is Map ? (response.body as Map).cast<String, dynamic>() : <String, dynamic>{};
+  }
+
+  @override
+  Future<Map<String, dynamic>> saveFeePromise({
+    required int studentId,
+    required String promiseDate,
+    double? amount,
+    String? notes,
+  }) async {
+    final body = <String, dynamic>{
+      'student_id': studentId,
+      'promise_date': promiseDate,
+    };
+    if (amount != null) body['amount'] = amount;
+    if (notes != null && notes.isNotEmpty) body['notes'] = notes;
+
+    final response = await _apiClient.post(
+      '/promises',
+      body,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to save payment promise');
+    }
+    return response.body is Map ? (response.body as Map).cast<String, dynamic>() : <String, dynamic>{};
+  }
+
+  @override
   Future<FeeReportResponse> getFeeReport() async {
     final response = await _apiClient.get(ApiConstants.instituteReportFee);
     if (response.status.hasError) {
@@ -582,10 +638,17 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<StudentWiseReportData> getStudentWiseReport(int studentId) async {
+  Future<StudentWiseReportData> getStudentWiseReport(
+    int studentId, {
+    int? batchId,
+  }) async {
+    final query = <String, String>{'student_id': studentId.toString()};
+    if (batchId != null) {
+      query['batch_id'] = batchId.toString();
+    }
     final response = await _apiClient.get(
       ApiConstants.instituteReportStudent,
-      query: {'student_id': studentId.toString()},
+      query: query,
     );
     if (response.status.hasError) {
       throw Exception('Failed to fetch student report: ${response.statusText}');
@@ -596,9 +659,16 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<List<int>> exportStudentWiseReport(int studentId) async {
+  Future<List<int>> exportStudentWiseReport(
+    int studentId, {
+    int? batchId,
+  }) async {
+    var url = '${ApiConstants.instituteReportStudentExport}?student_id=$studentId';
+    if (batchId != null) {
+      url += '&batch_id=$batchId';
+    }
     return _downloadFile(
-      '${ApiConstants.instituteReportStudentExport}?student_id=$studentId',
+      url,
       acceptHeader: 'application/pdf',
     );
   }
@@ -1141,10 +1211,24 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<ExpenseListResponse> listExpenses({int page = 1}) async {
+  Future<ExpenseListResponse> listExpenses({
+    int page = 1,
+    int? month,
+    int? year,
+    int? categoryId,
+    int? perPage,
+  }) async {
+    final Map<String, String> queryParams = {
+      'page': page.toString(),
+    };
+    if (month != null) queryParams['month'] = month.toString();
+    if (year != null) queryParams['year'] = year.toString();
+    if (categoryId != null) queryParams['category_id'] = categoryId.toString();
+    if (perPage != null) queryParams['per_page'] = perPage.toString();
+
     final response = await _apiClient.get(
       ApiConstants.instituteExpenses,
-      query: {'page': page.toString()},
+      query: queryParams,
     );
     if (response.status.hasError) {
       throw Exception('Failed to fetch expenses: ${response.statusText}');
@@ -1176,6 +1260,27 @@ class InstituteRepository implements InstituteRepositoryImpl {
     return ExpenseCategory.fromJson(response.body['data']);
   }
 
+  @override
+  Future<ExpenseCategory> updateExpenseCategory(int categoryId, Map<String, dynamic> data) async {
+    final response = await _apiClient.put(
+      '${ApiConstants.instituteExpenseCategories}/$categoryId',
+      data,
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to update category: ${response.statusText}');
+    }
+    return ExpenseCategory.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<void> deleteExpenseCategory(int categoryId) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteExpenseCategories}/$categoryId',
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to delete category: ${response.statusText}');
+    }
+  }
   @override
   Future<ExpenseModel> createExpense(Map<String, dynamic> data) async {
     final Map<String, dynamic> fields = Map.from(data);

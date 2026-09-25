@@ -43,11 +43,25 @@ class AddExamScreen extends StatelessWidget {
                       ),
                     ),
                     AppSpacing.v24,
-                    AppInputField(
-                      label: 'SUBJECT',
-                      controller: controller.subjectController,
-                      hint: 'Defaults to batch subject',
-                    ),
+                    const InstituteLabel('CLASS *'),
+                    AppSpacing.v8,
+                    _buildClassDropdown(controller),
+                    Obx(() {
+                      if (controller.classError.value == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0, left: 4.0),
+                        child: Text(
+                          controller.classError.value!,
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    }),
                     AppSpacing.v24,
                     const InstituteLabel('EXAM DATE'),
                     _buildDatePicker(context, controller),
@@ -172,6 +186,82 @@ class AddExamScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildClassDropdown(ExamController controller) {
+    return Obx(() {
+      final classes = controller.batchClasses;
+      final selectedId = controller.selectedClassId.value;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.fieldBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: controller.classError.value != null
+                ? Colors.redAccent
+                : Colors.transparent,
+          ),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<int?>(
+            isExpanded: true,
+            value: classes.any((c) => c.id == selectedId) ? selectedId : null,
+            hint: Text(
+              controller.isLoadingClasses.value
+                  ? 'Loading classes...'
+                  : '-- Select Class --',
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                color: AppColors.textMuted,
+              ),
+            ),
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.textMuted,
+            ),
+            items: [
+              DropdownMenuItem<int?>(
+                value: null,
+                child: Text(
+                  '-- Select Class --',
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ),
+              ...classes.map((cls) {
+                final teacherInfo = cls.teachers.isNotEmpty
+                    ? ' (' + cls.teachers.map((t) => t.fullName).join(', ') + ')'
+                    : '';
+                return DropdownMenuItem<int?>(
+                  value: cls.id,
+                  child: Text(
+                    cls.name + teacherInfo,
+                    style: AppTextStyles.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }),
+            ],
+            onChanged: (newClassId) {
+              controller.selectedClassId.value = newClassId;
+              if (controller.classError.value != null) {
+                controller.classError.value = null;
+              }
+            },
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildSaveButton(ExamController controller) {

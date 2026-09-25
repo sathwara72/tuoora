@@ -73,6 +73,8 @@ class ApiConstants {
   static const String instituteWhatsAppSettings =
       '/institute/whatsapp-settings';
   static const String instituteFees = '/institute/fees';
+  static String institutePayInstallment(int installmentId) =>
+      '/institute/fees/installments/$installmentId/pay';
   static const String instituteFeesExport = '/institute/fees/export';
   static String instituteReceiptDownload(int id) =>
       '/institute/receipt/$id/download';

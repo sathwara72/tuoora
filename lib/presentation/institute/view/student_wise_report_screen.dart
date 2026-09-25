@@ -21,10 +21,26 @@ class StudentWiseReportScreen extends StatefulWidget {
 class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
   final ReportsController controller = Get.find<ReportsController>();
 
+  bool get _isDirectStudentMode {
+    final args = Get.arguments;
+    return args is Map && args['studentId'] != null;
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final args = Get.arguments;
+      if (args is Map && args['studentId'] != null) {
+        final sId = int.tryParse(args['studentId'].toString());
+        if (sId != null) {
+          final bId = args['batchId'] != null
+              ? int.tryParse(args['batchId'].toString())
+              : null;
+          controller.loadReportForStudentId(sId, batchId: bId);
+          return;
+        }
+      }
       controller.initStudentWiseReport();
     });
   }
@@ -57,8 +73,10 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _buildFilterSection(),
-                      AppSpacing.v16,
+                      if (!_isDirectStudentMode) ...[
+                        _buildFilterSection(),
+                        AppSpacing.v16,
+                      ],
                       Obx(() {
                         if (controller.isStudentReportLoading.value) {
                           return const Padding(
@@ -333,6 +351,8 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
                         letterSpacing: 0.5,
                       ),
                     ),
+                    AppSpacing.v8,
+                    _buildCompactBatchDropdown(report),
                   ],
                 ),
               ),
@@ -1521,6 +1541,242 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
       isScrollControlled: true,
     );
   }
+
+
+// --- COMPACT BATCH DROPDOWN (Supports Switching Between Active & Past Batches) ---
+  Widget _buildCompactBatchDropdown(StudentWiseReportData report) {
+    return Obx(() {
+      final selectedId = controller.selectedStudentReportBatchId.value ??
+          report.selectedBatchId ??
+          report.activeBatchId;
+      final batches = report.allBatches;
+
+      final currentBatch = batches.firstWhereOrNull((b) => b.id == selectedId) ??
+          (batches.isNotEmpty ? batches.first : null);
+
+      final batchName = currentBatch?.name ??
+          (report.student.batchName.isNotEmpty
+              ? report.student.batchName
+              : 'Unassigned');
+      final isActive =
+          currentBatch?.isActive ?? (selectedId == report.activeBatchId);
+      final hasMultipleBatches = batches.length > 1;
+
+      return GestureDetector(
+        onTap: hasMultipleBatches
+            ? () => _showBatchHistoryPicker(report)
+            : null,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: hasMultipleBatches
+                  ? const Color(0xFFCBD5E1)
+                  : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.school_outlined,
+                size: 14,
+                color: isActive
+                    ? AppColors.primaryBrand
+                    : AppColors.textMuted,
+              ),
+              const SizedBox(width: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 150),
+                child: Text(
+                  'Batch: $batchName',
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? const Color(0xFFDCFCE7)
+                      : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  isActive ? 'Active' : 'Past',
+                  style: AppTextStyles.outfit(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: isActive
+                        ? const Color(0xFF16A34A)
+                        : AppColors.textMuted,
+                  ),
+                ),
+              ),
+              if (hasMultipleBatches) ...[
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: AppColors.fieldLabel,
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  void _showBatchHistoryPicker(StudentWiseReportData report) {
+    final currentSelectedId =
+        controller.selectedStudentReportBatchId.value ??
+            report.selectedBatchId ??
+            report.activeBatchId;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Select Batch Records',
+                style: AppTextStyles.outfit(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Switch between current active batch and preserved past batch records.',
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: report.allBatches.length,
+                  separatorBuilder: (_, __) => const Divider(
+                    height: 1,
+                    color: Color(0xFFF1F5F9),
+                  ),
+                  itemBuilder: (context, index) {
+                    final b = report.allBatches[index];
+                    final isSelected = b.id == currentSelectedId;
+                    return InkWell(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        if (!isSelected) {
+                          controller.changeStudentReportBatch(b.id);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                          horizontal: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.school_rounded,
+                              size: 20,
+                              color: b.isActive
+                                  ? AppColors.primaryBrand
+                                  : AppColors.textMuted,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                b.name,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 15,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? AppColors.primaryBrand
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: b.isActive
+                                    ? const Color(0xFFDCFCE7)
+                                    : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                b.isActive ? 'Active Batch' : 'Past Batch',
+                                style: AppTextStyles.outfit(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: b.isActive
+                                      ? const Color(0xFF16A34A)
+                                      : AppColors.textMuted,
+                                ),
+                              ),
+                            ),
+                            if (isSelected) ...[
+                              const SizedBox(width: 10),
+                              const Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.primaryBrand,
+                                size: 20,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _StatBarItem {
@@ -1529,4 +1785,5 @@ class _StatBarItem {
   final Color? color;
 
   _StatBarItem(this.label, this.value, {this.color});
+
 }
