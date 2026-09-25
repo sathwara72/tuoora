@@ -42,6 +42,20 @@ class AppSnackBar {
     );
   }
 
+  static void info(String message, {String title = 'Info'}) {
+    Get.snackbar(
+      title,
+      message,
+      backgroundColor: AppColors.studentProgressBlue,
+      colorText: AppColors.white,
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      icon: const Icon(Icons.info_outline_rounded, color: AppColors.white),
+      duration: _successDuration,
+    );
+  }
+
   static void warning(String message, {String title = 'Warning'}) {
     Get.snackbar(
       title,

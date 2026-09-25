@@ -32,6 +32,7 @@ class ForgotPasswordLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       body: ForgotBackdrop(
         child: SafeArea(
           child: FitScreen(

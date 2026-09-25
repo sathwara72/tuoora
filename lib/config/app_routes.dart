@@ -92,6 +92,7 @@ class AppRoutes {
   static const String instituteUpdates = '/institute/updates';
   static const String instituteCreateUpdate = '/institute/updates/create';
   static const String instituteNotifications = '/institute/notifications';
+  static const String instituteComposeNotification = '/institute/notifications/compose';
   static const String instituteMain = '/institute/main';
   static const String instituteAddBatch = '/institute/batches/add';
   static const String instituteEditBatch = '/institute/batches/edit';

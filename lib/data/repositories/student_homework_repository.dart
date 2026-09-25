@@ -81,7 +81,7 @@ class StudentHomeworkRepository implements StudentHomeworkRepositoryImpl {
 
   @override
   Future<void> submitHomework(int id, {String? note, String? attachmentPath}) async {
-    final fields = <String, dynamic>{if (note != null) 'note': note};
+    final fields = <String, dynamic>{'note': ?note};
     final formData = FormData(fields);
     if (attachmentPath != null && attachmentPath.isNotEmpty) {
       formData.files.add(

@@ -63,7 +63,7 @@ class AddOnsScreen extends GetView<AddOnsController> {
                   child: ListView.separated(
                     padding: AppSpacing.all16,
                     itemCount: addOns.length,
-                    separatorBuilder: (_, __) => AppSpacing.v16,
+                    separatorBuilder: (_, _) => AppSpacing.v16,
                     itemBuilder: (context, index) => _AddOnCard(addOn: addOns[index]),
                   ),
                 );

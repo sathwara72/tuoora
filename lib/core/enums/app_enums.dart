@@ -46,11 +46,17 @@ enum UpdateTargetType {
 }
 
 enum UpdateCategory {
+  // ignore: constant_identifier_names
   Academic,
+  // ignore: constant_identifier_names
   Administrative,
+  // ignore: constant_identifier_names
   Emergency,
+  // ignore: constant_identifier_names
   Event,
+  // ignore: constant_identifier_names
   Holiday,
+  // ignore: constant_identifier_names
   Other;
 
   String toJson() => name;

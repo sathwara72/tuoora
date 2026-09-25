@@ -3,6 +3,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/services/download_service.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
@@ -50,7 +51,9 @@ class ResourceDetailController extends GetxController {
       );
       isVideoInitialized.value = true;
     } catch (e) {
-      print('Video Initialization Error: $e');
+      if (kDebugMode) {
+        print('Video Initialization Error: $e');
+      }
     }
   }
 

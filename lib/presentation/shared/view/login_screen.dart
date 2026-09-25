@@ -110,6 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       body: hasRoleBackdrop
           ? RoleLoginBackdrop(
               style: _selectedRole == 'TEACHER'

@@ -191,7 +191,7 @@ class PushNotificationService extends GetxService {
     );
 
     if (Platform.isAndroid) {
-      const channel = AndroidNotificationChannel(
+      final channel = AndroidNotificationChannel(
         _androidChannelId,
         _androidChannelName,
         description: _androidChannelDesc,
@@ -481,7 +481,7 @@ class PushNotificationService extends GetxService {
         id,
         title,
         body,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             _androidChannelId,
             _androidChannelName,
@@ -490,7 +490,7 @@ class PushNotificationService extends GetxService {
             importance: Importance.high,
             priority: Priority.high,
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,

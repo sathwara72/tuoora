@@ -251,16 +251,6 @@ class AddEditStudentScreen extends GetView<InstituteStudentController> {
               errorText: controller.dobError.value,
             ),
           ),
-          AppSpacing.v20,
-          Obx(
-            () => AppInputField(
-              label: AppStrings.instGradeLabel,
-              hint: AppStrings.instGradeHint,
-              icon: Icons.school,
-              controller: controller.standardController,
-              errorText: controller.standardError.value,
-            ),
-          ),
 
           AppSpacing.v20,
           Obx(

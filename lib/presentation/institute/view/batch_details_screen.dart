@@ -273,7 +273,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
       ),
       _ManagementTileData(
         icon: Icons.school_rounded,
-        title: 'Classes',
+        title: 'Subjects',
         accent: const Color(0xFF8B5CF6), // Purple
         onTap: () => Get.toNamed(
           AppRoutes.instituteBatchClasses,

@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import 'package:tuoora/config/app_routes.dart';
+
 class InstituteNotificationsScreen extends GetView<NotificationController> {
   const InstituteNotificationsScreen({super.key});
 
@@ -19,6 +21,16 @@ class InstituteNotificationsScreen extends GetView<NotificationController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Get.toNamed(AppRoutes.instituteComposeNotification);
+          if (result == true) {
+            controller.refreshNotifications();
+          }
+        },
+        backgroundColor: AppColors.primaryBrand,
+        child: const Icon(Icons.add_rounded, color: AppColors.white),
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

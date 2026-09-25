@@ -154,7 +154,7 @@ class AttendanceController extends GetxController {
                 final match = bdc.assignedStudents.firstWhereOrNull(
                   (bs) => bs.student.id == record.studentId,
                 );
-                if (match != null && match.student.phone != null && match.student.phone!.isNotEmpty) {
+                if (match != null && match.student.phone.isNotEmpty) {
                   resolvedPhone = match.student.phone;
                 }
               }
@@ -167,7 +167,7 @@ class AttendanceController extends GetxController {
                   final match = inst.students.firstWhereOrNull(
                     (s) => s.id == record.studentId,
                   );
-                  if (match != null && match.phone != null && match.phone!.isNotEmpty) {
+                  if (match != null && match.phone.isNotEmpty) {
                     resolvedPhone = match.phone;
                   }
                 }

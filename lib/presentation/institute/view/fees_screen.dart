@@ -380,7 +380,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
           ],
         ),
         content: Text(
-          'This will send in-app and push notification reminders to all \ pending student(s) and their parents.',
+          'This will send in-app and push notification reminders to all $count pending student(s) and their parents.',
           style: AppTextStyles.outfit(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [

@@ -315,22 +315,6 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     ],
                   ],
                 ),
-                if (hasClasses)
-                  GestureDetector(
-                    onTap: () {
-                      controller.isCustomSubject.value = true;
-                      controller.selectedClassId.value = '__custom__';
-                      controller.subjectController.clear();
-                    },
-                    child: Text(
-                      '+ Custom Subject',
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryBrand,
-                      ),
-                    ),
-                  ),
               ],
             ),
             AppSpacing.v8,
@@ -383,7 +367,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
               AppSpacing.v8,
             ],
             AppInputField(
-              label: hasClasses ? null : 'SUBJECT NAME *',
+              label: hasClasses ? '' : 'SUBJECT NAME *',
               controller: controller.subjectController,
               hint: 'e.g. Mathematics, Physics, Accounts',
               errorText: controller.subjectError.value,
@@ -426,7 +410,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
       // 2. Batch Classes
       for (final cls in controller.batchClasses) {
         final teacherInfo = cls.teachers.isNotEmpty
-            ? ' (' + cls.teachers.map((t) => t.fullName).join(', ') + ')'
+            ? ' (${cls.teachers.map((t) => t.fullName).join(', ')})'
             : '';
         items.add(
           DropdownMenuItem<String?>(
@@ -452,7 +436,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         );
         if (!alreadyIn) {
           final teacherName = batch.staffName != null && batch.staffName!.trim().isNotEmpty
-              ? ' (' + batch.staffName!.trim() + ')'
+              ? ' (${batch.staffName!.trim()})'
               : '';
           items.add(
             DropdownMenuItem<String?>(
@@ -471,21 +455,6 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
           );
         }
       }
-
-      // 4. Custom option
-      items.add(
-        DropdownMenuItem<String?>(
-          value: '__custom__',
-          child: Text(
-            '+ Custom / Other Subject',
-            style: AppTextStyles.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryBrand,
-            ),
-          ),
-        ),
-      );
 
       final selectedVal = controller.selectedClassId.value;
       final isValidValue = items.any((it) => it.value == selectedVal);
@@ -684,7 +653,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                 AppSpacing.h8,
                 Expanded(
                   child: Text(
-                    'Assigned Faculty: ' + teacherName,
+                    'Assigned Faculty: $teacherName',
                     style: AppTextStyles.outfit(
                       fontSize: 13,
                       color: const Color(0xFF14532D),

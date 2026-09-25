@@ -254,9 +254,4 @@ class LoginController extends GetxController {
     _captureRole();
     _prefillCredentials();
   }
-
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }

@@ -1,4 +1,3 @@
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -8,7 +7,6 @@ import 'package:tuoora/data/models/institute_profile_model.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_profile_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
-import 'package:tuoora/core/constants/app_images.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -222,121 +220,6 @@ class InstituteSettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showWhatsAppComingSoonDialog(BuildContext context) {
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        ),
-        insetPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
-        child: Container(
-          padding: AppSpacing.all24,
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: InkWell(
-                  onTap: () => Get.back(),
-                  child: const Icon(
-                    Icons.close_rounded,
-                    size: 20,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-              ),
-              AppSpacing.v12,
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF25D366),
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.cardRadius,
-                      ),
-                    ),
-                  ),
-                  SvgPicture.asset(AppImages.icWhatsapp, width: 48, height: 48),
-                ],
-              ),
-              AppSpacing.v20,
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryBrandLight,
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                ),
-                child: Text(
-                  'COMING SOON',
-                  style: AppTextStyles.outfit(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryBrand,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-              AppSpacing.v20,
-              Text(
-                'WhatsApp Integration',
-                style: AppTextStyles.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              AppSpacing.v16,
-              Text(
-                'We\'re building a direct integration with the Meta WhatsApp Cloud API. Soon you\'ll be able to send fee reminders, receipts, and daily updates straight to parents\' phones.',
-                textAlign: TextAlign.center,
-                style: AppTextStyles.outfit(
-                  fontSize: 13,
-                  height: 1.5,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              AppSpacing.v32,
-              ElevatedButton(
-                onPressed: () => Get.back(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.darkSlate,
-                  foregroundColor: AppColors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                  ),
-                ),
-                child: Text(
-                  'GOT IT',
-                  style: AppTextStyles.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildActiveSessionsCard(
     BuildContext context,

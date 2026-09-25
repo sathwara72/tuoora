@@ -235,7 +235,7 @@ class AddExamScreen extends StatelessWidget {
               ),
               ...classes.map((cls) {
                 final teacherInfo = cls.teachers.isNotEmpty
-                    ? ' (' + cls.teachers.map((t) => t.fullName).join(', ') + ')'
+                    ? ' (${cls.teachers.map((t) => t.fullName).join(', ')})'
                     : '';
                 return DropdownMenuItem<int?>(
                   value: cls.id,

@@ -93,7 +93,7 @@ class HomeworkSubmission {
       final str = rawAttachment.toString().trim();
       attachmentUrl = str.startsWith('http')
           ? str
-          : 'https://tuoora.com/storage/' + str.lstrip('/');
+          : 'https://tuoora.com/storage/${str.replaceFirst(RegExp(r'^/+'), '')}';
     }
 
     final noteStr = json['note']?.toString().trim();

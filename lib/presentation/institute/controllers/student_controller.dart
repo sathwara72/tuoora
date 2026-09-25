@@ -33,14 +33,12 @@ class InstituteStudentController extends GetxController {
   final emailController = TextEditingController();
   final dobController = TextEditingController();
   final addressController = TextEditingController();
-  final standardController = TextEditingController();
 
   final nameError = RxnString();
   final parentNameError = RxnString();
   final phoneError = RxnString();
   final emailError = RxnString();
   final dobError = RxnString();
-  final standardError = RxnString();
 
   final editingStudentId = Rxn<dynamic>();
   final selectedProfileBatchId = Rxn<dynamic>();
@@ -56,7 +54,6 @@ class InstituteStudentController extends GetxController {
     emailController.addListener(validateForm);
     dobController.addListener(validateForm);
     addressController.addListener(validateForm);
-    standardController.addListener(validateForm);
     handleArguments();
     fetchAvailableBatches();
   }
@@ -114,7 +111,6 @@ class InstituteStudentController extends GetxController {
     emailController.clear();
     dobController.clear();
     addressController.clear();
-    standardController.clear();
     selectedImagePath.value = null;
     selectedBatchId.value = null;
     selectedProfileBatchId.value = null;
@@ -124,7 +120,6 @@ class InstituteStudentController extends GetxController {
     phoneError.value = null;
     emailError.value = null;
     dobError.value = null;
-    standardError.value = null;
     triedToSave.value = false;
 
     validateForm();
@@ -138,7 +133,6 @@ class InstituteStudentController extends GetxController {
     emailController.dispose();
     dobController.dispose();
     addressController.dispose();
-    standardController.dispose();
     super.onClose();
   }
 
@@ -154,10 +148,6 @@ class InstituteStudentController extends GetxController {
       dobController.text,
       'Date of Birth',
     );
-    final sErr = ValidationUtils.validateRequired(
-      standardController.text,
-      'Grade/Standard',
-    );
 
     if (triedToSave.value) {
       nameError.value = nErr;
@@ -165,7 +155,6 @@ class InstituteStudentController extends GetxController {
       phoneError.value = pErr;
       emailError.value = eErr;
       dobError.value = dErr;
-      standardError.value = sErr;
     }
 
     isFormValid.value =
@@ -173,8 +162,7 @@ class InstituteStudentController extends GetxController {
         pnErr == null &&
         pErr == null &&
         eErr == null &&
-        dErr == null &&
-        sErr == null;
+        dErr == null;
   }
 
   Future<void> fetchStudentDetails(dynamic id, {dynamic batchId}) async {
@@ -208,7 +196,6 @@ class InstituteStudentController extends GetxController {
     dobController.text = student.dob;
     parentNameController.text = student.guardianName ?? '';
     phoneController.text = student.phone;
-    standardController.text = student.standard;
 
     validateForm();
   }
@@ -336,7 +323,6 @@ class InstituteStudentController extends GetxController {
         'phone': phoneController.text,
         'guardian_name': parentNameController.text,
         'dob': dobController.text,
-        'standard': standardController.text,
         if (selectedBatchId.value != null) 'batch_id': selectedBatchId.value,
         if (selectedImagePath.value != null)
           'profile_image_url': selectedImagePath.value,
@@ -397,9 +383,6 @@ class InstituteStudentController extends GetxController {
     }
     if (errors.containsKey('dob')) {
       dobError.value = (errors['dob'] as List).first.toString();
-    }
-    if (errors.containsKey('standard')) {
-      standardError.value = (errors['standard'] as List).first.toString();
     }
     isFormValid.value = false;
   }

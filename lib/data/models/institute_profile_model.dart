@@ -158,7 +158,7 @@ class InstituteProfile {
       lastLogin: lastLogin,
       lastOpen: lastOpen,
       fcmToken: fcmToken,
-      activeSessions: activeSessions ?? this.activeSessions,
+      activeSessions: activeSessions,
     );
   }
 }

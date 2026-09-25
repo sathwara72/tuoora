@@ -33,6 +33,7 @@ import 'package:tuoora/presentation/institute/view/institute_updates_screen.dart
 import 'package:tuoora/presentation/institute/view/create_update_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_report_detail_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_notifications_screen.dart';
+import 'package:tuoora/presentation/institute/view/compose_notification_screen.dart';
 import 'package:tuoora/presentation/institute/view/add_edit_batch_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_students_screen.dart';
 import 'package:tuoora/presentation/institute/view/assign_to_batch_screen.dart';
@@ -579,6 +580,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.instituteNotifications,
       page: () => const InstituteNotificationsScreen(),
+      binding: InstituteBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteComposeNotification,
+      page: () => const ComposeNotificationScreen(),
       binding: InstituteBinding(),
     ),
     GetPage(

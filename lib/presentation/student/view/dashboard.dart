@@ -16,8 +16,9 @@ import 'package:tuoora/presentation/student/controllers/student_dashboard_contro
 import 'package:tuoora/presentation/student/controllers/student_exams_controller.dart';
 import 'package:tuoora/presentation/student/models/assignment_model.dart';
 import 'package:tuoora/presentation/student/models/student_exam_model.dart';
-import 'package:tuoora/data/models/student_dashboard_model.dart';
+import 'package:tuoora/presentation/student/models/student_timetable_model.dart';
 import 'package:tuoora/data/models/student_resource_model.dart';
+import 'package:intl/intl.dart';
 
 class StudentDashboard extends GetView<StudentDashboardController> {
   final bool showBottomNav;
@@ -66,9 +67,9 @@ class StudentDashboard extends GetView<StudentDashboardController> {
             );
           }
 
-          final todayClass = controller.todayClassDisplay;
           final assignmentItems = controller.dashboardAssignments;
           final examItems = controller.dashboardUpcomingExams;
+          final classes = controller.classesForSelectedDate;
 
           return Column(
             children: [
@@ -89,13 +90,17 @@ class StudentDashboard extends GetView<StudentDashboardController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (todayClass != null) ...[
-                          _TodayClassCard(
-                            display: todayClass,
-                            weekDays: data.weekAttendanceDays,
-                          ),
-                          const SizedBox(height: AppSpacing.s24),
-                        ],
+                        _buildWeekCalendar(),
+                        const SizedBox(height: AppSpacing.s12),
+                        if (classes.isEmpty)
+                          const AppEmptyView(
+                            icon: Icons.event_busy_outlined,
+                            title: 'No Classes',
+                            message: 'No classes scheduled for this date.',
+                          )
+                        else
+                          ...classes.map((cls) => _buildClassCard(cls)),
+                        const SizedBox(height: AppSpacing.s24),
                         if (assignmentItems.isNotEmpty) ...[
                           StudentSectionHeader(
                             title: AppStrings.assignments,
@@ -213,6 +218,183 @@ class StudentDashboard extends GetView<StudentDashboardController> {
     );
   }
 
+  Widget _buildWeekCalendar() {
+    final now = DateTime.now();
+    final dates = List.generate(7, (index) => now.add(Duration(days: index)));
+
+    return Row(
+      children: List.generate(dates.length, (index) {
+        final date = dates[index];
+        final isSelected = controller.selectedDate.value.year == date.year &&
+            controller.selectedDate.value.month == date.month &&
+            controller.selectedDate.value.day == date.day;
+
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: index < dates.length - 1 ? 6 : 0,
+            ),
+            child: GestureDetector(
+              onTap: () => controller.selectDate(date),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primaryBrand : AppColors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? AppColors.primaryBrand : AppColors.borderGrey,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryBrand.withValues(alpha: 0.28),
+                            blurRadius: 6,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        DateFormat('E').format(date).toUpperCase(),
+                        maxLines: 1,
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? AppColors.white : AppColors.textTertiary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        date.day.toString(),
+                        maxLines: 1,
+                        style: AppTextStyles.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected ? AppColors.white : AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildClassCard(StudentTimetableSlot cls) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 72,
+                decoration: const BoxDecoration(color: AppColors.primaryBrand),
+                padding: AppSpacing.cardPadding,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      cls.formattedStartTime ?? cls.startTime,
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.white,
+                        height: 1,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.s16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cls.subject,
+                        style: AppTextStyles.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (cls.staffName != null && cls.staffName!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Teacher: ${cls.staffName}',
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                      if (cls.roomNo != null && cls.roomNo!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Room: ${cls.roomNo}',
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textTertiary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   static void _openAssignmentsTab() {
     if (Get.isRegistered<StudentController>()) {
       Get.find<StudentController>().changePage(1);
@@ -300,160 +482,7 @@ class _GreetingTitle extends StatelessWidget {
   }
 }
 
-class _TodayClassCard extends StatelessWidget {
-  final TodayClassDisplay display;
-  final List<WeekAttendanceDay> weekDays;
 
-  const _TodayClassCard({required this.display, required this.weekDays});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: 72,
-                decoration: const BoxDecoration(color: AppColors.primaryBrand),
-                padding: AppSpacing.cardPadding,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      display.dayNumber,
-                      style: AppTextStyles.outfit(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.white,
-                        height: 1,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      display.monthLabel,
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.white,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.s16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${display.weekdayLabel}  •  ${display.headerLabel}',
-                        style: AppTextStyles.outfit(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textTertiary,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        display.subject,
-                        style: AppTextStyles.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        display.subtitle,
-                        style: AppTextStyles.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textTertiary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: AppSpacing.s16),
-                      _WeekStrip(weekDays: weekDays),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WeekStrip extends StatelessWidget {
-  final List<WeekAttendanceDay> weekDays;
-  const _WeekStrip({required this.weekDays});
-
-  @override
-  Widget build(BuildContext context) {
-    if (weekDays.isEmpty) return const SizedBox.shrink();
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: weekDays.map((day) {
-        final isActive = day.date == DateTime.now().toString().substring(0, 10);
-        final isPresent = day.status.toLowerCase() == 'present';
-        final isAbsent = day.status.toLowerCase() == 'absent';
-
-        Color dotColor = AppColors.borderGrey;
-        if (isPresent) {
-          dotColor = AppColors.successGreen;
-        } else if (isAbsent) {
-          dotColor = AppColors.bohoRed;
-        } else if (isActive) {
-          dotColor = AppColors.orangeTag;
-        }
-
-        return Column(
-          children: [
-            Text(
-              day.day,
-              style: AppTextStyles.outfit(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textTertiary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: dotColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
-        );
-      }).toList(),
-    );
-  }
-}
 
 class _AssignmentTile extends StatelessWidget {
   final DashboardAssignmentDisplay item;

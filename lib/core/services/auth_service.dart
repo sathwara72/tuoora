@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:tuoora/data/models/user_model.dart';
 import 'package:tuoora/data/models/subscription_model.dart';
 import 'package:tuoora/core/services/push_notification_service.dart';
@@ -34,7 +35,9 @@ class AuthService extends GetxService {
       final savedToken = _storage.read('token');
       final savedRefresh = _storage.read('refresh_token') ?? '';
 
-      print('AuthService: Loading session. Token: $savedToken');
+      if (kDebugMode) {
+        print('AuthService: Loading session. Token: $savedToken');
+      }
 
       if (userData != null && savedToken != null) {
         _token.value = savedToken;
@@ -53,12 +56,18 @@ class AuthService extends GetxService {
             Map<String, dynamic>.from(subData),
           );
         }
-        print('AuthService: Session loaded for role: $role');
+        if (kDebugMode) {
+          print('AuthService: Session loaded for role: $role');
+        }
       } else {
-        print('AuthService: No session found.');
+        if (kDebugMode) {
+          print('AuthService: No session found.');
+        }
       }
     } catch (e) {
-      print('AuthService: Error loading session: $e');
+      if (kDebugMode) {
+        print('AuthService: Error loading session: $e');
+      }
     }
   }
 
@@ -123,7 +132,9 @@ class AuthService extends GetxService {
         await Get.find<PushNotificationService>().deleteToken();
       }
     } catch (e) {
-      print('AuthService: Failed to delete FCM token: $e');
+      if (kDebugMode) {
+        print('AuthService: Failed to delete FCM token: $e');
+      }
     }
 
     await _storage.remove('user');
@@ -132,9 +143,11 @@ class AuthService extends GetxService {
     await _storage.remove('logged_in');
     await _storage.remove('subscription');
 
-    print(
-      'AuthService: Session cleared (user and token removed). Preferences preserved.',
-    );
+    if (kDebugMode) {
+      print(
+        'AuthService: Session cleared (user and token removed). Preferences preserved.',
+      );
+    }
   }
 
   Future<void> updateTokens({

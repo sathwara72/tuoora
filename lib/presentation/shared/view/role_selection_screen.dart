@@ -28,6 +28,7 @@ class RoleSelectionScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       body: BrandBackdrop(
         child: SafeArea(
           child: FitScreen(
