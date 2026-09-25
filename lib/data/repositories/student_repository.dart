@@ -149,6 +149,24 @@ class StudentRepository implements StudentRepositoryImpl {
     }
   }
 
+  @override
+  Future<void> payInstallment(
+    int installmentId, {
+    required double amount,
+    String paymentMethod = 'Cash',
+  }) async {
+    final response = await _apiClient.post(
+      ApiConstants.institutePayInstallment(installmentId),
+      {
+        'amount': amount,
+        'payment_method': paymentMethod,
+      },
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to pay installment');
+    }
+  }
+
   void _handleError(Response response, String defaultMessage) {
     if (response.statusCode == 422 && response.body?['errors'] != null) {
       throw ValidationException(response.body['errors']);

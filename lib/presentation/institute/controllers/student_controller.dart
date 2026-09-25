@@ -391,6 +391,35 @@ class InstituteStudentController extends GetxController {
     isFormValid.value = false;
   }
 
+  final isPayingInstallment = false.obs;
+
+  Future<bool> payInstallment(
+    int installmentId, {
+    required double amount,
+    String paymentMethod = 'Cash',
+  }) async {
+    try {
+      isPayingInstallment.value = true;
+      await _studentRepository.payInstallment(
+        installmentId,
+        amount: amount,
+        paymentMethod: paymentMethod,
+      );
+      AppSnackBar.success('Milestone payment recorded successfully');
+
+      final student = currentStudent.value;
+      if (student != null) {
+        await fetchStudentDetails(student.id);
+      }
+      return true;
+    } catch (e) {
+      AppSnackBar.error('Payment failed: $e');
+      return false;
+    } finally {
+      isPayingInstallment.value = false;
+    }
+  }
+
   Future<void> sendFeeReminder() async {
     final student = currentStudent.value;
     if (student == null) return;

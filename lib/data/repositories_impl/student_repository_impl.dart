@@ -9,5 +9,10 @@ abstract class StudentRepositoryImpl {
   Future<void> sendFeeReminder(dynamic id);
   Future<String> sendPassword(dynamic id);
   Future<void> resetPassword(dynamic id, String password);
+  Future<void> payInstallment(
+    int installmentId, {
+    required double amount,
+    String paymentMethod = 'Cash',
+  });
 }
 
