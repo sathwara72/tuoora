@@ -52,7 +52,7 @@ class ResourceDetailController extends GetxController {
       isVideoInitialized.value = true;
     } catch (e) {
       if (kDebugMode) {
-        print('Video Initialization Error: $e');
+        debugPrint('Video Initialization Error: $e');
       }
     }
   }

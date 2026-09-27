@@ -36,7 +36,7 @@ class AuthService extends GetxService {
       final savedRefresh = _storage.read('refresh_token') ?? '';
 
       if (kDebugMode) {
-        print('AuthService: Loading session. Token: $savedToken');
+        debugPrint('AuthService: Loading session. Token: $savedToken');
       }
 
       if (userData != null && savedToken != null) {
@@ -57,16 +57,16 @@ class AuthService extends GetxService {
           );
         }
         if (kDebugMode) {
-          print('AuthService: Session loaded for role: $role');
+          debugPrint('AuthService: Session loaded for role: $role');
         }
       } else {
         if (kDebugMode) {
-          print('AuthService: No session found.');
+          debugPrint('AuthService: No session found.');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('AuthService: Error loading session: $e');
+        debugPrint('AuthService: Error loading session: $e');
       }
     }
   }
@@ -133,7 +133,7 @@ class AuthService extends GetxService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('AuthService: Failed to delete FCM token: $e');
+        debugPrint('AuthService: Failed to delete FCM token: $e');
       }
     }
 
@@ -144,7 +144,7 @@ class AuthService extends GetxService {
     await _storage.remove('subscription');
 
     if (kDebugMode) {
-      print(
+      debugPrint(
         'AuthService: Session cleared (user and token removed). Preferences preserved.',
       );
     }

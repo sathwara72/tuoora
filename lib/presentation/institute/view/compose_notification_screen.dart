@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
@@ -10,7 +9,6 @@ import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/toggle_switch.dart';
 import 'package:tuoora/presentation/institute/controllers/compose_notification_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
-import 'package:tuoora/data/models/batch_model.dart';
 
 class ComposeNotificationScreen extends GetView<ComposeNotificationController> {
   const ComposeNotificationScreen({super.key});

@@ -35,8 +35,10 @@ class ApiClient extends GetConnect {
       }
 
       if (kDebugMode) {
-        print('🚀 [API REQUEST] ${request.method.toUpperCase()} ${request.url}');
-        print('Headers: ${request.headers}');
+        debugPrint(
+          '🚀 [API REQUEST] ${request.method.toUpperCase()} ${request.url}',
+        );
+        debugPrint('Headers: ${request.headers}');
       }
 
       return request;
@@ -75,19 +77,21 @@ class ApiClient extends GetConnect {
 
     httpClient.addResponseModifier((request, response) {
       if (kDebugMode) {
-        print('📥 [API RESPONSE] ${request.method.toUpperCase()} ${request.url}');
-        print('Status Code: ${response.statusCode}');
+        debugPrint(
+          '📥 [API RESPONSE] ${request.method.toUpperCase()} ${request.url}',
+        );
+        debugPrint('Status Code: ${response.statusCode}');
       }
 
       if (response.hasError) {
         if (kDebugMode) {
-          print('❌ [API ERROR]');
-          print('URL: ${request.url}');
-          print('Status: ${response.statusCode} ${response.statusText}');
+          debugPrint('❌ [API ERROR]');
+          debugPrint('URL: ${request.url}');
+          debugPrint('Status: ${response.statusCode} ${response.statusText}');
           if (response.body is String || response.body is Map) {
-            print('Body: ${response.body}');
+            debugPrint('Body: ${response.body}');
           } else {
-            print('Body: [Binary Data or Unknown Format]');
+            debugPrint('Body: [Binary Data or Unknown Format]');
           }
         }
 
@@ -128,7 +132,7 @@ class ApiClient extends GetConnect {
       }
 
       if (kDebugMode) {
-        print('--------------------------------------------------');
+        debugPrint('--------------------------------------------------');
       }
       return response;
     });
