@@ -90,12 +90,6 @@ abstract class InstituteRepositoryImpl {
   Future<List<int>> downloadFeeReceipt(int feeId);
   Future<PendingFeesResponse> getPendingFees({String? search, int? batchId});
   Future<Map<String, dynamic>> sendFeeReminders({int? studentId, int? batchId});
-  Future<Map<String, dynamic>> saveFeePromise({
-    required int studentId,
-    required String promiseDate,
-    double? amount,
-    String? notes,
-  });
 
   // Reports
   Future<FeeReportResponse> getFeeReport();
@@ -191,7 +185,12 @@ abstract class InstituteRepositoryImpl {
   Future<ExpenseCategory> updateExpenseCategory(int categoryId, Map<String, dynamic> data);
   Future<void> deleteExpenseCategory(int categoryId);
   Future<ExpenseModel> createExpense(Map<String, dynamic> data);
-  Future<ExpenseAnalysis> getExpenseAnalysis(String month, String year);
+  Future<List<ExpenseModel>> listSalaryExpenses({
+    required int month,
+    required int year,
+  });
+  Future<bool> getIncludeSalaryInExpenses();
+  Future<bool> setIncludeSalaryInExpenses(bool include);
 
   // Staff
   Future<StaffListResponse> listStaff({int page = 1, String? search});

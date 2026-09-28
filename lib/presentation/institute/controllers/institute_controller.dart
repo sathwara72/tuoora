@@ -93,7 +93,8 @@ class InstituteController extends GetxController {
       } else {
         feesCurrentPage.value++;
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('fetchFees failed: $e\n$st');
       AppSnackBar.error(AppStrings.errFailedLoadFees);
     } finally {
       isLoadingFees.value = false;
@@ -110,7 +111,8 @@ class InstituteController extends GetxController {
       pendingStudents.assignAll(result.items);
       totalPending.value = result.totalPending;
       pendingStudentsCount.value = result.pendingStudentsCount;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('fetchPendingFees failed: $e\n$st');
       AppSnackBar.error('Failed to load pending fees');
     } finally {
       isLoadingPendingFees.value = false;
@@ -144,28 +146,6 @@ class InstituteController extends GetxController {
       AppSnackBar.error('Failed to send reminders');
     } finally {
       isSendingReminders.value = false;
-    }
-  }
-
-  Future<bool> saveFeePromise({
-    required int studentId,
-    required String promiseDate,
-    double? amount,
-    String? notes,
-  }) async {
-    try {
-      final res = await _instituteRepository.saveFeePromise(
-        studentId: studentId,
-        promiseDate: promiseDate,
-        amount: amount,
-        notes: notes,
-      );
-      AppSnackBar.success(res['message']?.toString() ?? 'Payment promise recorded successfully!');
-      await fetchPendingFees();
-      return true;
-    } catch (e) {
-      AppSnackBar.error('Failed to record payment promise');
-      return false;
     }
   }
 

@@ -5,273 +5,54 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_empty_view.dart';
-import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
 import 'package:tuoora/presentation/institute/models/report_models.dart';
-import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 
-class StudentWiseReportScreen extends StatefulWidget {
-  const StudentWiseReportScreen({super.key});
+/// The full student report (summary, fees, and the Exams / Attendance /
+/// Homework / Fee History tabs). Used by the Student Wise Report page and
+/// shown inline on the student profile.
+class StudentReportContent extends StatelessWidget {
+  final StudentWiseReportData report;
 
-  @override
-  State<StudentWiseReportScreen> createState() =>
-      _StudentWiseReportScreenState();
-}
+  /// Extra content shown at the bottom of the Fee Balance card (e.g. fee
+  /// reminder actions on the student profile).
+  final Widget? feeBalanceFooter;
 
-class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
-  final ReportsController controller = Get.find<ReportsController>();
+  /// Shown right after the Fee Balance card (e.g. the milestone schedule).
+  final Widget? afterFeeBalance;
 
-  bool get _isDirectStudentMode {
-    final args = Get.arguments;
-    return args is Map && args['studentId'] != null;
-  }
+  const StudentReportContent({
+    super.key,
+    required this.report,
+    this.feeBalanceFooter,
+    this.afterFeeBalance,
+  });
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = Get.arguments;
-      if (args is Map && args['studentId'] != null) {
-        final sId = int.tryParse(args['studentId'].toString());
-        if (sId != null) {
-          final bId = args['batchId'] != null
-              ? int.tryParse(args['batchId'].toString())
-              : null;
-          controller.loadReportForStudentId(sId, batchId: bId);
-          return;
-        }
-      }
-      controller.initStudentWiseReport();
-    });
-  }
+  ReportsController get controller => Get.find<ReportsController>();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            InstituteAppBar(
-              title: 'Student Wise Report',
-              onBackTap: () => Get.back(),
-            ),
-            Expanded(
-              child: RefreshIndicator(
-                color: AppColors.primaryBrand,
-                onRefresh: () async {
-                  final s = controller.selectedStudentForReport.value;
-                  if (s != null) {
-                    await controller.selectStudentForReport(s);
-                  } else {
-                    await controller.initStudentWiseReport();
-                  }
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: AppSpacing.all16,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (!_isDirectStudentMode) ...[
-                        _buildFilterSection(),
-                        AppSpacing.v16,
-                      ],
-                      Obx(() {
-                        if (controller.isStudentReportLoading.value) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
-                            child: CommonLoading(),
-                          );
-                        }
-
-                        final report = controller.studentWiseReport.value;
-                        if (report == null) {
-                          return const AppEmptyView(
-                            icon: Icons.person_search_rounded,
-                            title: 'No Student Report Selected',
-                            message:
-                                'Please select a batch and student from the dropdowns above to view their report.',
-                          );
-                        }
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildStudentSummaryCard(report),
-                            AppSpacing.v16,
-                            _buildFeeBalanceCard(report),
-                            AppSpacing.v20,
-                            _buildTabBar(report),
-                            AppSpacing.v16,
-                            _buildTabContent(report),
-                            AppSpacing.v32,
-                          ],
-                        );
-                      }),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // --- FILTERS (Batch & Student Pickers) ---
-  Widget _buildFilterSection() {
-    return Container(
-      padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Batch Selector
-          Text(
-            'SELECT BATCH',
-            style: AppTextStyles.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.fieldLabel,
-            ),
-          ),
-          AppSpacing.v8,
-          Obx(() {
-            final selectedBatch =
-                controller.selectedBatchForStudentReport.value;
-            return GestureDetector(
-              onTap: _showBatchPickerSheet,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.fieldBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.fieldBorder),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.school_outlined,
-                      size: 20,
-                      color: AppColors.textMuted,
-                    ),
-                    AppSpacing.h12,
-                    Expanded(
-                      child: Text(
-                        selectedBatch?.title ?? 'Select a batch',
-                        style: AppTextStyles.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: selectedBatch != null
-                              ? AppColors.textPrimary
-                              : AppColors.textTertiary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.fieldLabel,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildStudentSummaryCard(report),
+        // Nothing left to pay: the Fee Balance card has nothing to say.
+        if (!_isFullyPaid(report)) ...[
           AppSpacing.v16,
-
-          // Student Selector
-          Text(
-            'SELECT STUDENT',
-            style: AppTextStyles.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.fieldLabel,
-            ),
-          ),
-          AppSpacing.v8,
-          Obx(() {
-            if (controller.isBatchStudentsLoading.value) {
-              return Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                child: const CommonLoading(size: 20, strokeWidth: 2),
-              );
-            }
-            final selectedStudent =
-                controller.selectedStudentForReport.value;
-            return GestureDetector(
-              onTap: controller.batchStudentsForReport.isEmpty
-                  ? null
-                  : _showStudentPickerSheet,
-              behavior: HitTestBehavior.opaque,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.fieldBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.fieldBorder),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.person_outline_rounded,
-                      size: 20,
-                      color: AppColors.textMuted,
-                    ),
-                    AppSpacing.h12,
-                    Expanded(
-                      child: Text(
-                        selectedStudent != null
-                            ? '${selectedStudent.name} (${selectedStudent.enrollmentId})'
-                            : (controller.batchStudentsForReport.isEmpty
-                                  ? 'No students found in this batch'
-                                  : 'Select a student'),
-                        style: AppTextStyles.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: selectedStudent != null
-                              ? AppColors.textPrimary
-                              : AppColors.textTertiary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: AppColors.fieldLabel,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+          _buildFeeBalanceCard(report),
         ],
-      ),
+        if (afterFeeBalance != null) ...[
+          AppSpacing.v16,
+          afterFeeBalance!,
+        ],
+        AppSpacing.v20,
+        _buildTabBar(report),
+        AppSpacing.v16,
+        _buildTabContent(report),
+      ],
     );
   }
 
-  // --- STUDENT SUMMARY CARD (Matching Image 2) ---
   Widget _buildStudentSummaryCard(StudentWiseReportData report) {
     final student = report.student;
     final initials = student.name.trim().isNotEmpty
@@ -447,19 +228,41 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
   }
 
   // --- FEE BALANCE CARD (Matching Image 2) ---
+  bool _isFullyPaid(StudentWiseReportData report) {
+    final fin = report.financial;
+    return fin.monthlyFee > 0 && fin.balance <= 0;
+  }
+
   Widget _buildFeeBalanceCard(StudentWiseReportData report) {
-    final balance = report.financial.balance;
-    final total = report.financial.monthlyFee;
+    final fin = report.financial;
+    final total = fin.monthlyFee;
+    final paid = fin.totalPaid;
+    final pending = fin.balance < 0 ? 0.0 : fin.balance;
+    final hasFee = total > 0;
+    final fullyPaid = hasFee && pending <= 0;
+    final progress = hasFee ? (paid / total).clamp(0.0, 1.0) : 0.0;
+
+    final Color accent = fullyPaid
+        ? AppColors.successGreen
+        : AppColors.primaryBrand;
+    final String statusLabel = !hasFee
+        ? 'No fee'
+        : fullyPaid
+        ? 'Fully Paid'
+        : (paid > 0 ? 'Partially Paid' : 'Unpaid');
+
+    String rupees(num v) => '₹${v.toStringAsFixed(0)}';
 
     return Container(
-      padding: AppSpacing.cardPadding,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius + 2),
+        border: Border.all(color: AppColors.fieldBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -469,111 +272,179 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 18,
-                color: Color(0xFF3B82F6),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 15,
+                  color: accent,
+                ),
               ),
-              AppSpacing.h6,
-              Text(
-                'FEE BALANCE',
-                style: AppTextStyles.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                  letterSpacing: 0.5,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Fee Balance',
+                      style: AppTextStyles.outfit(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (report.student.batchName.isNotEmpty)
+                      Text(
+                        report.student.batchName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.outfit(
+                          fontSize: 10.5,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (fullyPaid) ...[
+                      Icon(Icons.check_circle_rounded, size: 14, color: accent),
+                      const SizedBox(width: 4),
+                    ],
+                    Text(
+                      statusLabel,
+                      style: AppTextStyles.outfit(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: accent,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          AppSpacing.v12,
-          Text(
-            'PENDING AMOUNT',
-            style: AppTextStyles.outfit(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textTertiary,
-              letterSpacing: 0.4,
+          const SizedBox(height: 10),
+          if (!hasFee)
+            Text(
+              'No fee has been assigned for this batch.',
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                color: AppColors.textTertiary,
+              ),
+            )
+          else ...[
+            Text(
+              fullyPaid ? 'TOTAL PAID' : 'PENDING AMOUNT',
+              style: AppTextStyles.outfit(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textTertiary,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
-          AppSpacing.v4,
-          RichText(
-            text: TextSpan(
+            Text(
+              rupees(fullyPaid ? paid : pending),
+              style: AppTextStyles.outfit(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: fullyPaid ? AppColors.successGreen : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 5,
+                backgroundColor: accent.withValues(alpha: 0.12),
+                valueColor: AlwaysStoppedAnimation<Color>(accent),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${(progress * 100).toStringAsFixed(0)}% of ${rupees(total)} paid',
+              style: AppTextStyles.outfit(
+                fontSize: 10.5,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
               children: [
-                TextSpan(
-                  text: '₹${balance.toStringAsFixed(0)} ',
-                  style: AppTextStyles.outfit(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                TextSpan(
-                  text: '/ ₹${total.toStringAsFixed(0)} Total',
-                  style: AppTextStyles.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textTertiary,
-                  ),
+                _feeTile('Total Fee', rupees(total), AppColors.textPrimary),
+                const SizedBox(width: 6),
+                _feeTile('Paid', rupees(paid), AppColors.successGreen),
+                const SizedBox(width: 6),
+                _feeTile(
+                  'Pending',
+                  rupees(pending),
+                  fullyPaid ? AppColors.textTertiary : AppColors.primaryBrand,
                 ),
               ],
             ),
-          ),
-          AppSpacing.v12,
-          Divider(height: 1, color: Colors.grey.shade200),
-          AppSpacing.v12,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'STANDARD',
-                    style: AppTextStyles.outfit(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                  AppSpacing.v2,
-                  Text(
-                    report.student.standard.isNotEmpty
-                        ? report.student.standard
-                        : 'N/A',
-                    style: AppTextStyles.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'BATCH',
-                    style: AppTextStyles.outfit(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                  AppSpacing.v2,
-                  Text(
-                    report.student.batchName,
-                    style: AppTextStyles.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          ],
+          // Reminder actions only make sense while something is still due.
+          if (feeBalanceFooter != null && hasFee && !fullyPaid) ...[
+            const SizedBox(height: 10),
+            const Divider(height: 1, color: AppColors.fieldBorder),
+            const SizedBox(height: 8),
+            feeBalanceFooter!,
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _feeTile(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
+        decoration: BoxDecoration(
+          color: AppColors.scaffoldBg,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: AppTextStyles.outfit(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textTertiary,
+              ),
+            ),
+            const SizedBox(height: 1),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: AppTextStyles.outfit(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1370,180 +1241,7 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
     );
   }
 
-  // --- BOTTOM SHEETS FOR PICKERS ---
-  void _showBatchPickerSheet() {
-    final batches = controller.batchController.batchesList;
-    Get.bottomSheet(
-      Container(
-        constraints: BoxConstraints(maxHeight: Get.height * 0.6),
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: AppSpacing.all20,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            AppSpacing.v16,
-            Text(
-              'Select Batch',
-              style: AppTextStyles.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            AppSpacing.v12,
-            Expanded(
-              child: ListView.separated(
-                itemCount: batches.length,
-                separatorBuilder: (_, _) =>
-                    Divider(height: 1, color: Colors.grey.shade100),
-                itemBuilder: (context, index) {
-                  final b = batches[index];
-                  final isSelected =
-                      controller.selectedBatchForStudentReport.value?.id ==
-                          b.id;
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                    title: Text(
-                      b.title,
-                      style: AppTextStyles.outfit(
-                        fontSize: 14,
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected
-                            ? AppColors.primaryBrand
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                    subtitle: Text(
-                      '${b.studentCount} students',
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? const Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.primaryBrand,
-                            size: 20,
-                          )
-                        : null,
-                    onTap: () {
-                      Get.back();
-                      controller.selectBatchForStudentReport(b);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
-  }
-
-  void _showStudentPickerSheet() {
-    final students = controller.batchStudentsForReport;
-    Get.bottomSheet(
-      Container(
-        constraints: BoxConstraints(maxHeight: Get.height * 0.6),
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: AppSpacing.all20,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            AppSpacing.v16,
-            Text(
-              'Select Student',
-              style: AppTextStyles.outfit(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            AppSpacing.v12,
-            Expanded(
-              child: ListView.separated(
-                itemCount: students.length,
-                separatorBuilder: (_, _) =>
-                    Divider(height: 1, color: Colors.grey.shade100),
-                itemBuilder: (context, index) {
-                  final s = students[index];
-                  final isSelected =
-                      controller.selectedStudentForReport.value?.id == s.id;
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                    title: Text(
-                      s.name,
-                      style: AppTextStyles.outfit(
-                        fontSize: 14,
-                        fontWeight:
-                            isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected
-                            ? AppColors.primaryBrand
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Enrollment ID: ${s.enrollmentId}',
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? const Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.primaryBrand,
-                            size: 20,
-                          )
-                        : null,
-                    onTap: () {
-                      Get.back();
-                      controller.selectStudentForReport(s);
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
-  }
-
-
-// --- COMPACT BATCH DROPDOWN (Supports Switching Between Active & Past Batches) ---
+  // --- COMPACT BATCH DROPDOWN (Supports Switching Between Active & Past Batches) ---
   Widget _buildCompactBatchDropdown(StudentWiseReportData report) {
     return Obx(() {
       final selectedId = controller.selectedStudentReportBatchId.value ??
@@ -1645,7 +1343,7 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
             report.activeBatchId;
 
     showModalBottomSheet(
-      context: context,
+      context: Get.context!,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Container(

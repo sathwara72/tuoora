@@ -34,16 +34,21 @@ class BatchStudentsScreen extends StatelessWidget {
           children: [
             const InstituteAppBar(title: AppStrings.batchStudents),
             Expanded(
-              child: SingleChildScrollView(
-                padding: AppSpacing.x16.add(AppSpacing.y16),
-                child: Column(
-                  children: [
-                    _buildEnrolledHeader(controller),
-                    AppSpacing.v24,
-                    _buildSearchBar(controller),
-                    AppSpacing.v24,
-                    _buildAssignedStudentList(controller, context),
-                  ],
+              child: RefreshIndicator(
+                color: AppColors.primaryBrand,
+                onRefresh: controller.refreshStudents,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: AppSpacing.x16.add(AppSpacing.y16),
+                  child: Column(
+                    children: [
+                      _buildEnrolledHeader(controller),
+                      AppSpacing.v24,
+                      _buildSearchBar(controller),
+                      AppSpacing.v24,
+                      _buildAssignedStudentList(controller, context),
+                    ],
+                  ),
                 ),
               ),
             ),

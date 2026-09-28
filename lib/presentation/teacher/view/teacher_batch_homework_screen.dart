@@ -9,7 +9,8 @@ import 'package:tuoora/presentation/teacher/controllers/teacher_batch_homework_c
 import 'package:tuoora/presentation/teacher/models/teacher_homework_model.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
 
-class TeacherBatchHomeworkScreen extends GetView<TeacherBatchHomeworkController> {
+class TeacherBatchHomeworkScreen
+    extends GetView<TeacherBatchHomeworkController> {
   const TeacherBatchHomeworkScreen({super.key});
 
   @override
@@ -31,7 +32,10 @@ class TeacherBatchHomeworkScreen extends GetView<TeacherBatchHomeworkController>
                       color: AppColors.primaryBrand,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.add_rounded, color: AppColors.white),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      color: AppColors.white,
+                    ),
                   ),
                 ),
               ],
@@ -91,6 +95,13 @@ class _HomeworkCard extends StatelessWidget {
     required this.onGrade,
   });
 
+  Color get _badgeColor {
+    if (homework.isCompleted) return AppColors.successGreen;
+    if (homework.isOverdue) return AppColors.textTertiary;
+    if (homework.daysLeft == 0) return Colors.amber.shade800;
+    return AppColors.primaryBrand;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -116,7 +127,10 @@ class _HomeworkCard extends StatelessWidget {
                 ),
               ),
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.textTertiary),
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: AppColors.textTertiary,
+                ),
                 onSelected: (value) {
                   if (value == 'edit') onEdit();
                   if (value == 'delete') onDelete();
@@ -133,7 +147,10 @@ class _HomeworkCard extends StatelessWidget {
             homework.description,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.outfit(fontSize: 13, color: AppColors.textSecondary),
+            style: AppTextStyles.outfit(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
           AppSpacing.v8,
           Row(
@@ -142,25 +159,27 @@ class _HomeworkCard extends StatelessWidget {
                 'Due ${homework.dueDate}',
                 style: AppTextStyles.outfit(
                   fontSize: 11,
-                  color: homework.isOverdue ? AppColors.bohoRed : AppColors.textTertiary,
+                  color: AppColors.textTertiary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               AppSpacing.h12,
               Text(
                 '${homework.submissionsCount ?? 0} submissions',
-                style: AppTextStyles.outfit(fontSize: 11, color: AppColors.textTertiary),
+                style: AppTextStyles.outfit(
+                  fontSize: 11,
+                  color: AppColors.textTertiary,
+                ),
               ),
               if (homework.daysLeftText.isNotEmpty) ...[
                 AppSpacing.h12,
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: homework.isOverdue
-                        ? AppColors.bohoRed.withValues(alpha: 0.1)
-                        : (homework.daysLeft == 0
-                            ? Colors.amber.withValues(alpha: 0.15)
-                            : AppColors.primaryBrand.withValues(alpha: 0.08)),
+                    color: _badgeColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -168,11 +187,7 @@ class _HomeworkCard extends StatelessWidget {
                     style: AppTextStyles.outfit(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: homework.isOverdue
-                          ? AppColors.bohoRed
-                          : (homework.daysLeft == 0
-                              ? Colors.amber.shade900
-                              : AppColors.primaryBrand),
+                      color: _badgeColor,
                     ),
                   ),
                 ),
@@ -181,7 +196,10 @@ class _HomeworkCard extends StatelessWidget {
               GestureDetector(
                 onTap: onGrade,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.primaryBrand.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),

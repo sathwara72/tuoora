@@ -12,7 +12,6 @@ class TeacherBatchStudentsController extends GetxController {
 
   final RxList<TeacherBatchStudent> students = <TeacherBatchStudent>[].obs;
   final RxBool isLoading = false.obs;
-  final RxBool isSubmitting = false.obs;
   final RxString searchQuery = ''.obs;
 
   @override
@@ -49,51 +48,6 @@ class TeacherBatchStudentsController extends GetxController {
       AppSnackBar.error(e.toString());
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  Future<bool> removeStudent(TeacherBatchStudent student) async {
-    isSubmitting.value = true;
-    try {
-      await _repository.removeStudentFromBatch(batch.id, student.id);
-      students.removeWhere((s) => s.id == student.id);
-      AppSnackBar.success('${student.name} removed from batch.');
-      return true;
-    } catch (e) {
-      AppSnackBar.error(e.toString());
-      return false;
-    } finally {
-      isSubmitting.value = false;
-    }
-  }
-
-  Future<bool> updateStudentInfo(int studentId, Map<String, dynamic> data) async {
-    isSubmitting.value = true;
-    try {
-      await _repository.updateBatchStudent(batch.id, studentId, data);
-      AppSnackBar.success('Student updated successfully.');
-      await fetchStudents();
-      return true;
-    } catch (e) {
-      AppSnackBar.error(e.toString());
-      return false;
-    } finally {
-      isSubmitting.value = false;
-    }
-  }
-
-  Future<bool> registerNewStudent(Map<String, dynamic> data) async {
-    isSubmitting.value = true;
-    try {
-      await _repository.registerStudentToBatch(batch.id, data);
-      AppSnackBar.success('Student registered & added to batch.');
-      await fetchStudents();
-      return true;
-    } catch (e) {
-      AppSnackBar.error(e.toString());
-      return false;
-    } finally {
-      isSubmitting.value = false;
     }
   }
 }

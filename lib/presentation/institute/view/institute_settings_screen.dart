@@ -1,3 +1,5 @@
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -66,8 +68,6 @@ class InstituteSettingsScreen extends StatelessWidget {
                         AppSpacing.v16,
                         _buildAccountCard(context),
                         AppSpacing.v16,
-                        _buildNotificationsCard(context),
-                        AppSpacing.v12,
                       ],
                     ),
                   ),
@@ -109,28 +109,6 @@ class InstituteSettingsScreen extends StatelessWidget {
             title: AppStrings.labelChangePassword,
             subtitle: AppStrings.updateYourLoginCredentials,
             onTap: () => Get.toNamed(AppRoutes.instituteChangePassword),
-            isLast: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNotificationsCard(BuildContext context) {
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _cardSectionHeader(
-            'Notifications & Channels',
-            Icons.notifications_active_rounded,
-          ),
-          _buildSettingsItem(
-            icon: Icons.tune_rounded,
-            title: 'Notification Preferences',
-            subtitle: 'Toggle WhatsApp, Push & Email per campus module',
-            onTap: () =>
-                Get.toNamed(AppRoutes.instituteNotificationPreferences),
             isLast: true,
           ),
         ],

@@ -257,38 +257,6 @@ class FeeInstallment {
   }
 }
 
-class FeePromiseInfo {
-  final int id;
-  final String promiseDate;
-  final String rawDate;
-  final double amount;
-  final String status;
-  final String? notes;
-  final bool isBroken;
-
-  const FeePromiseInfo({
-    required this.id,
-    required this.promiseDate,
-    required this.rawDate,
-    required this.amount,
-    required this.status,
-    this.notes,
-    required this.isBroken,
-  });
-
-  factory FeePromiseInfo.fromJson(Map<String, dynamic> json) {
-    return FeePromiseInfo(
-      id: FeeRecord.safeInt(json['id']),
-      promiseDate: FeeRecord.safeString(json['promise_date']),
-      rawDate: FeeRecord.safeString(json['raw_date']),
-      amount: FeeRecord.safeDouble(json['amount']),
-      status: FeeRecord.safeString(json['status']),
-      notes: json['notes']?.toString(),
-      isBroken: json['is_broken'] == 1 || json['is_broken'] == true,
-    );
-  }
-}
-
 class PendingFeeStudent {
   final int id;
   final String name;
@@ -302,8 +270,6 @@ class PendingFeeStudent {
   final String phone;
   final String email;
   final String guardianName;
-  final FeePromiseInfo? promise;
-  final bool hasBrokenPromise;
 
   PendingFeeStudent({
     required this.id,
@@ -318,8 +284,6 @@ class PendingFeeStudent {
     required this.phone,
     required this.email,
     required this.guardianName,
-    this.promise,
-    this.hasBrokenPromise = false,
   });
 
   factory PendingFeeStudent.fromJson(Map<String, dynamic> json) {
@@ -336,10 +300,6 @@ class PendingFeeStudent {
       phone: FeeRecord.safeString(json['phone']),
       email: FeeRecord.safeString(json['email']),
       guardianName: FeeRecord.safeString(json['guardian_name']),
-      promise: json['promise'] != null && json['promise'] is Map
-          ? FeePromiseInfo.fromJson((json['promise'] as Map).cast<String, dynamic>())
-          : null,
-      hasBrokenPromise: json['has_broken_promise'] == 1 || json['has_broken_promise'] == true,
     );
   }
 }

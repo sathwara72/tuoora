@@ -1005,11 +1005,15 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
           ElevatedButton(
             onPressed: () async {
               Get.back();
+              CommonLoading.show();
               try {
-                await Get.find<AuthRepository>().logout('STUDENT');
-              } catch (_) {}
-              final authService = Get.find<AuthService>();
-              await authService.clearSession();
+                try {
+                  await Get.find<AuthRepository>().logout('STUDENT');
+                } catch (_) {}
+                await Get.find<AuthService>().clearSession();
+              } finally {
+                CommonLoading.dismiss();
+              }
               Get.offAllNamed(AppRoutes.roleSelection);
             },
             style: ElevatedButton.styleFrom(

@@ -3,18 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
-import 'package:tuoora/core/widgets/app_button.dart';
-import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_students_controller.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_batch_model.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
 
-class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController> {
+class TeacherBatchStudentsScreen
+    extends GetView<TeacherBatchStudentsController> {
   const TeacherBatchStudentsScreen({super.key});
 
   @override
@@ -24,9 +22,7 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
       body: SafeArea(
         child: Column(
           children: [
-            TeacherAppBar(
-              title: '${controller.batch.name} Students',
-            ),
+            TeacherAppBar(title: '${controller.batch.name} Students'),
             _buildSearchAndSummary(),
             Expanded(
               child: Obx(() {
@@ -45,7 +41,9 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                           Icon(
                             Icons.people_outline_rounded,
                             size: 64,
-                            color: AppColors.textTertiary.withValues(alpha: 0.5),
+                            color: AppColors.textTertiary.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           AppSpacing.v12,
                           Text(
@@ -58,12 +56,6 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                               color: AppColors.textSecondary,
                             ),
                           ),
-                          AppSpacing.v20,
-                          if (controller.searchQuery.value.isEmpty)
-                            AppButton(
-                              label: 'Assign Students',
-                              onPressed: () => _navigateToAssignStudents(context),
-                            ),
                         ],
                       ),
                     ),
@@ -80,15 +72,14 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                       final student = list[index];
                       return _StudentCard(
                         student: student,
-                        onView: () => _showStudentDetailsSheet(context, student),
-                        onEdit: () => _showEditStudentDialog(context, student),
+                        onView: () =>
+                            _showStudentDetailsSheet(context, student),
                       );
                     },
                   ),
                 );
               }),
             ),
-            _buildBottomActionBar(context),
           ],
         ),
       ),
@@ -109,20 +100,35 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
             ),
             child: TextField(
               onChanged: (val) => controller.searchQuery.value = val,
-              style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
               decoration: InputDecoration(
                 hintText: 'Search by name, enrollment ID, or phone...',
-                hintStyle: AppTextStyles.outfit(fontSize: 13, color: AppColors.textTertiary),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textTertiary, size: 20),
+                hintStyle: AppTextStyles.outfit(
+                  fontSize: 13,
+                  color: AppColors.textTertiary,
+                ),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: AppColors.textTertiary,
+                  size: 20,
+                ),
                 suffixIcon: Obx(() {
-                  if (controller.searchQuery.value.isEmpty) return const SizedBox.shrink();
+                  if (controller.searchQuery.value.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
                   return IconButton(
                     icon: const Icon(Icons.clear_rounded, size: 18),
                     onPressed: () => controller.searchQuery.value = '',
                   );
                 }),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -134,7 +140,11 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                 : '${controller.filteredStudents.length} of $total Student${total == 1 ? '' : 's'}';
             return Row(
               children: [
-                Icon(Icons.school_outlined, size: 16, color: AppColors.primaryBrand),
+                Icon(
+                  Icons.school_outlined,
+                  size: 16,
+                  color: AppColors.primaryBrand,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   countText,
@@ -152,217 +162,20 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
     );
   }
 
-  Widget _buildBottomActionBar(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () => _navigateToAssignStudents(context),
-          icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-          label: Text(
-            'Assign Student',
-            style: AppTextStyles.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.white,
-            ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryBrand,
-            foregroundColor: AppColors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 0,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _navigateToAssignStudents(BuildContext context) async {
-    final result = await Get.toNamed(
-      AppRoutes.teacherAssignStudents,
-      arguments: controller.batch,
-    );
-    if (result == true) {
-      controller.fetchStudents();
-    }
-  }
-
-  void _confirmRemoveStudent(BuildContext context, TeacherBatchStudent student) {
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 28),
-            const SizedBox(width: 8),
-            Text(
-              'Remove Student',
-              style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to remove ${student.name} from batch "${controller.batch.name}"? This will unassign the student from this batch.',
-          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text(
-              'Cancel',
-              style: AppTextStyles.outfit(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Get.back();
-              await controller.removeStudent(student);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              'Remove',
-              style: AppTextStyles.outfit(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditStudentDialog(BuildContext context, TeacherBatchStudent student) {
-    final nameCtrl = TextEditingController(text: student.name);
-    final phoneCtrl = TextEditingController(text: student.phone ?? '');
-    final emailCtrl = TextEditingController(text: student.email ?? '');
-    final enrollmentCtrl = TextEditingController(text: student.enrollmentId ?? '');
-    final standardCtrl = TextEditingController(text: student.standard ?? '');
-    final guardianCtrl = TextEditingController(text: student.guardianName ?? '');
-
-    Get.bottomSheet(
-      Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Edit Student Info',
-                  style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Get.back(),
-                ),
-              ],
-            ),
-            const Divider(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _inputField(label: 'Full Name *', controller: nameCtrl, icon: Icons.person_outline),
-                    _inputField(label: 'Phone Number', controller: phoneCtrl, icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
-                    _inputField(label: 'Email Address', controller: emailCtrl, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-                    _inputField(label: 'Enrollment ID', controller: enrollmentCtrl, icon: Icons.badge_outlined),
-                    _inputField(label: 'Standard / Grade', controller: standardCtrl, icon: Icons.school_outlined),
-                    _inputField(label: 'Parent / Guardian Name', controller: guardianCtrl, icon: Icons.family_restroom_outlined),
-                  ],
-                ),
-              ),
-            ),
-            AppSpacing.v12,
-            AppButton(
-              label: 'Save Changes',
-              onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty) {
-                  AppSnackBar.error('Student name is required');
-                  return;
-                }
-                final data = <String, dynamic>{
-                  'name': nameCtrl.text.trim(),
-                  'phone': phoneCtrl.text.trim(),
-                  'email': emailCtrl.text.trim(),
-                  'enrollment_id': enrollmentCtrl.text.trim(),
-                  'standard': standardCtrl.text.trim(),
-                  'guardian_name': guardianCtrl.text.trim(),
-                };
-                final ok = await controller.updateStudentInfo(student.id, data);
-                if (ok) Get.back();
-              },
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
-  }
-
-
-  Widget _inputField({
-    required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textPrimary),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: AppTextStyles.outfit(fontSize: 13, color: AppColors.textSecondary),
-          prefixIcon: Icon(icon, size: 20, color: AppColors.textTertiary),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.borderGrey),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.borderGrey),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.primaryBrand, width: 1.5),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        ),
-      ),
-    );
-  }
-
-  void _showStudentDetailsSheet(BuildContext context, TeacherBatchStudent student) {
-    final enrollmentId = student.enrollmentId != null && student.enrollmentId!.isNotEmpty
+  void _showStudentDetailsSheet(
+    BuildContext context,
+    TeacherBatchStudent student,
+  ) {
+    final enrollmentId =
+        student.enrollmentId != null && student.enrollmentId!.isNotEmpty
         ? student.enrollmentId!
         : student.id.toString();
 
     Get.bottomSheet(
       Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -377,7 +190,10 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
               children: [
                 Text(
                   'Student Details',
-                  style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: AppTextStyles.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
@@ -395,12 +211,15 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                       child: _hasValidPhoto(student.profileImageUrl)
                           ? CachedNetworkImage(
                               imageUrl: student.profileImageUrl!,
-                              imageBuilder: (context, imageProvider) => CircleAvatar(
-                                radius: 36,
-                                backgroundImage: imageProvider,
-                              ),
-                              placeholder: (context, url) => _buildSheetInitials(student.name),
-                              errorWidget: (context, url, error) => _buildSheetInitials(student.name),
+                              imageBuilder: (context, imageProvider) =>
+                                  CircleAvatar(
+                                    radius: 36,
+                                    backgroundImage: imageProvider,
+                                  ),
+                              placeholder: (context, url) =>
+                                  _buildSheetInitials(student.name),
+                              errorWidget: (context, url, error) =>
+                                  _buildSheetInitials(student.name),
                             )
                           : _buildSheetInitials(student.name),
                     ),
@@ -419,7 +238,10 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(8),
@@ -436,7 +258,10 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF0FDF4),
                             borderRadius: BorderRadius.circular(8),
@@ -454,16 +279,6 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                       ],
                     ),
                     AppSpacing.v20,
-                    _detailTile(
-                      icon: Icons.school_outlined,
-                      label: 'Standard',
-                      value: student.standard?.isNotEmpty == true ? student.standard! : '-',
-                    ),
-                    _detailTile(
-                      icon: Icons.family_restroom_outlined,
-                      label: 'Guardian Name',
-                      value: student.guardianName?.isNotEmpty == true ? student.guardianName! : '-',
-                    ),
                     if (student.phone != null && student.phone!.isNotEmpty)
                       _detailTile(
                         icon: Icons.phone_outlined,
@@ -482,7 +297,10 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                         value: student.email!,
                         actionIcon: Icons.mail_outline,
                         onTapAction: () {
-                          final uri = Uri(scheme: 'mailto', path: student.email);
+                          final uri = Uri(
+                            scheme: 'mailto',
+                            path: student.email,
+                          );
                           launchUrl(uri);
                         },
                       ),
@@ -510,49 +328,6 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                   ],
                 ),
               ),
-            ),
-            AppSpacing.v12,
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Get.back();
-                      _confirmRemoveStudent(context, student);
-                    },
-                    icon: const Icon(Icons.person_remove_outlined, size: 18, color: Colors.redAccent),
-                    label: Text(
-                      'Remove',
-                      style: AppTextStyles.outfit(color: Colors.redAccent, fontWeight: FontWeight.w600),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.redAccent),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Get.back();
-                      _showEditStudentDialog(context, student);
-                    },
-                    icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
-                    label: Text(
-                      'Edit Info',
-                      style: AppTextStyles.outfit(color: Colors.white, fontWeight: FontWeight.w600),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBrand,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),
@@ -587,7 +362,10 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
               children: [
                 Text(
                   label,
-                  style: AppTextStyles.outfit(fontSize: 11, color: AppColors.textTertiary),
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
                 Text(
                   value,
@@ -619,7 +397,13 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
 
   Widget _buildSheetInitials(String name) {
     final initials = name.isNotEmpty
-        ? name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        ? name
+              .trim()
+              .split(' ')
+              .map((e) => e.isNotEmpty ? e[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase()
         : '?';
     return Container(
       width: 72,
@@ -644,17 +428,13 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
 class _StudentCard extends StatelessWidget {
   final TeacherBatchStudent student;
   final VoidCallback onView;
-  final VoidCallback onEdit;
 
-  const _StudentCard({
-    required this.student,
-    required this.onView,
-    required this.onEdit,
-  });
+  const _StudentCard({required this.student, required this.onView});
 
   @override
   Widget build(BuildContext context) {
-    final enrollmentId = student.enrollmentId != null && student.enrollmentId!.isNotEmpty
+    final enrollmentId =
+        student.enrollmentId != null && student.enrollmentId!.isNotEmpty
         ? student.enrollmentId!
         : student.id.toString();
 
@@ -686,7 +466,10 @@ class _StudentCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         borderRadius: BorderRadius.circular(6),
@@ -702,7 +485,10 @@ class _StudentCard extends StatelessWidget {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF0FDF4),
                         borderRadius: BorderRadius.circular(6),
@@ -739,7 +525,8 @@ class _StudentCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (student.email != null && student.email!.isNotEmpty) ...[
+                          if (student.email != null &&
+                              student.email!.isNotEmpty) ...[
                             const SizedBox(height: 1),
                             Text(
                               student.email!,
@@ -752,11 +539,15 @@ class _StudentCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
-                          if (student.phone != null && student.phone!.isNotEmpty) ...[
+                          if (student.phone != null &&
+                              student.phone!.isNotEmpty) ...[
                             const SizedBox(height: 1),
                             GestureDetector(
                               onTap: () {
-                                final uri = Uri(scheme: 'tel', path: student.phone);
+                                final uri = Uri(
+                                  scheme: 'tel',
+                                  path: student.phone,
+                                );
                                 launchUrl(uri);
                               },
                               child: Text(
@@ -774,54 +565,6 @@ class _StudentCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                const Divider(height: 1, thickness: 0.8, color: Color(0xFFF1F5F9)),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'STANDARD',
-                      style: AppTextStyles.outfit(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF94A3B8),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    Text(
-                      student.standard?.isNotEmpty == true ? student.standard! : '-',
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'GUARDIAN',
-                      style: AppTextStyles.outfit(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF94A3B8),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    Text(
-                      student.guardianName?.isNotEmpty == true ? student.guardianName! : '-',
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E293B),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -830,9 +573,7 @@ class _StudentCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: const BoxDecoration(
               color: Color(0xFFFBFDFF),
-              border: Border(
-                top: BorderSide(color: Color(0xFFF1F5F9)),
-              ),
+              border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -841,7 +582,10 @@ class _StudentCard extends StatelessWidget {
                   onTap: onView,
                   borderRadius: BorderRadius.circular(6),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 2),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 2,
+                      horizontal: 2,
+                    ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -863,17 +607,6 @@ class _StudentCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: Color(0xFF94A3B8),
-                  ),
-                  splashRadius: 16,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: onEdit,
-                ),
               ],
             ),
           ),
@@ -883,7 +616,8 @@ class _StudentCard extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    final bool hasPhoto = student.profileImageUrl != null &&
+    final bool hasPhoto =
+        student.profileImageUrl != null &&
         student.profileImageUrl!.isNotEmpty &&
         student.profileImageUrl!.startsWith('http') &&
         !student.profileImageUrl!.contains('ui-avatars.com');
@@ -900,7 +634,8 @@ class _StudentCard extends StatelessWidget {
           ),
         ),
         placeholder: (context, url) => _buildAvatarInitials(student.name),
-        errorWidget: (context, url, error) => _buildAvatarInitials(student.name),
+        errorWidget: (context, url, error) =>
+            _buildAvatarInitials(student.name),
       );
     }
     return _buildAvatarInitials(student.name);
@@ -908,7 +643,13 @@ class _StudentCard extends StatelessWidget {
 
   Widget _buildAvatarInitials(String name) {
     final initials = name.isNotEmpty
-        ? name.trim().split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase()
+        ? name
+              .trim()
+              .split(' ')
+              .map((e) => e.isNotEmpty ? e[0] : '')
+              .take(2)
+              .join()
+              .toUpperCase()
         : '?';
     return Container(
       width: 38,

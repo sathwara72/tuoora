@@ -9,11 +9,42 @@ import 'package:tuoora/presentation/institute/controllers/batch_controller.dart'
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+/// One fee milestone (installment) being set up while assigning a student.
+class MilestoneDraft {
+  String title;
+  double amount;
+  DateTime dueDate;
+
+  /// Bumped when the amount is changed for the user, so its text field resets.
+  int stamp = 0;
+
+  MilestoneDraft({
+    required this.title,
+    required this.amount,
+    required this.dueDate,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'amount': amount,
+    'due_date':
+        '${dueDate.year.toString().padLeft(4, '0')}-${dueDate.month.toString().padLeft(2, '0')}-${dueDate.day.toString().padLeft(2, '0')}',
+  };
+}
+
 class BatchStudent {
   final Student student;
   double assignedFee;
+  final List<MilestoneDraft> milestones;
 
-  BatchStudent({required this.student, required this.assignedFee});
+  /// Bumped whenever milestones are rebuilt so their text fields reset.
+  int version = 0;
+
+  BatchStudent({
+    required this.student,
+    required this.assignedFee,
+    List<MilestoneDraft>? milestones,
+  }) : milestones = milestones ?? [];
 }
 
 class BatchDetailsController extends GetxController {
@@ -73,11 +104,27 @@ class BatchDetailsController extends GetxController {
       instituteController.fetchStudents();
     }
 
-    ever(instituteController.students, (_) {
-      if (batch.students != null && batch.students!.isNotEmpty) {
-        _loadAssignedStudents(batch.students);
+    // Keep each enrolled student's details in sync with the global list, but
+    // never rebuild who is enrolled from the (possibly stale) batch snapshot.
+    ever(instituteController.students, (_) => _refreshStudentDetails());
+  }
+
+  void _refreshStudentDetails() {
+    var changed = false;
+    for (final bs in assignedStudents) {
+      final fresh = instituteController.students.firstWhereOrNull(
+        (st) => st.id == bs.student.id,
+      );
+      if (fresh != null && !identical(fresh, bs.student)) {
+        assignedStudents[assignedStudents.indexOf(bs)] = BatchStudent(
+          student: fresh,
+          assignedFee: bs.assignedFee,
+          milestones: bs.milestones,
+        );
+        changed = true;
       }
-    });
+    }
+    if (changed) assignedStudents.refresh();
   }
 
   void _loadAssignedStudents(List<dynamic>? studentsList) {
@@ -144,27 +191,24 @@ class BatchDetailsController extends GetxController {
 
       await _repository.removeStudentFromBatch(int.parse(batch.id), studentId);
 
-      // Refresh the batches list in BatchController
-      if (Get.isRegistered<BatchController>()) {
-        Get.find<BatchController>().loadBatches(isRefresh: true);
-      }
-
-      // Update global students list to reflect batch removal
+      // Update local list and count straight away so the screen reflects it.
       final student = assignedStudents
           .firstWhereOrNull((s) => s.student.id == studentId)
           ?.student;
-      if (student != null) {
-        // We use -1 or null? The copyWith expects int?.
-        // Usually, safeNullableInt handles null.
-        instituteController.updateStudent(student.copyWith(batchId: null));
-      }
-
-      // Update local list and count
       assignedStudents.removeWhere((s) => s.student.id == studentId);
       studentCount.value = assignedStudents.length;
       assignedStudents.refresh();
 
+      // The student is unassigned again, so clear their batch in the global
+      // list (copyWith(batchId: null) would keep the old batch).
+      if (student != null) {
+        instituteController.updateStudent(student.copyWith(clearBatch: true));
+      }
+
       AppSnackBar.success(AppStrings.studentRemoved);
+
+      // Reconcile with the server in the background.
+      refreshStudents();
     } catch (e) {
       AppSnackBar.error(AppStrings.failedToRemoveStudent);
     } finally {
@@ -175,7 +219,7 @@ class BatchDetailsController extends GetxController {
   Future<void> refreshStudents() async {
     if (Get.isRegistered<BatchController>()) {
       final bc = Get.find<BatchController>();
-      await bc.loadBatches(isRefresh: true);
+      await bc.loadBatches(isRefresh: true, force: true);
 
       final updatedBatch = bc.batchesList.firstWhereOrNull(
         (b) => b.id == batch.id,

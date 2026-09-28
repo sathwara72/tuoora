@@ -63,6 +63,39 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
                                 color: AppColors.textSecondary,
                               ),
                             ),
+                            if (_timeRange(batch.startTime, batch.endTime) != null) ...[
+                              AppSpacing.v12,
+                              _infoRow(
+                                Icons.access_time_rounded,
+                                _timeRange(batch.startTime, batch.endTime)!,
+                              ),
+                            ],
+                            if (batch.days.isNotEmpty) ...[
+                              AppSpacing.v8,
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 3),
+                                    child: Icon(
+                                      Icons.calendar_today_rounded,
+                                      size: 15,
+                                      color: AppColors.primaryBrand,
+                                    ),
+                                  ),
+                                  AppSpacing.h8,
+                                  Expanded(
+                                    child: Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      children: [
+                                        for (final day in batch.days) _dayChip(day),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -168,6 +201,60 @@ class TeacherBatchDetailsScreen extends GetView<TeacherBatchDetailsController> {
       ),
     );
   }
+}
+
+Widget _infoRow(IconData icon, String text) {
+  return Row(
+    children: [
+      Icon(icon, size: 15, color: AppColors.primaryBrand),
+      AppSpacing.h8,
+      Text(
+        text,
+        style: AppTextStyles.outfit(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary,
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _dayChip(String day) {
+  final label = day.length > 3 ? day.substring(0, 3) : day;
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: AppColors.primaryBrand.withValues(alpha: 0.1),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      label,
+      style: AppTextStyles.outfit(
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        color: AppColors.primaryBrand,
+      ),
+    ),
+  );
+}
+
+String? _formatTime(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return null;
+  final m = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(raw.trim());
+  if (m == null) return raw.trim();
+  final h = int.parse(m.group(1)!);
+  final period = h >= 12 ? 'PM' : 'AM';
+  final h12 = h % 12 == 0 ? 12 : h % 12;
+  return '$h12:${m.group(2)} $period';
+}
+
+String? _timeRange(String? start, String? end) {
+  final s = _formatTime(start);
+  final e = _formatTime(end);
+  if (s == null && e == null) return null;
+  if (s != null && e != null) return '$s - $e';
+  return s ?? e;
 }
 
 class _FeatureTile extends StatelessWidget {

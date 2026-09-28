@@ -14,6 +14,7 @@ import 'package:tuoora/core/services/institute_account_status_handler.dart';
 import 'package:tuoora/core/services/push_notification_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/config/app_routes.dart';
+import 'package:tuoora/presentation/teacher/widgets/teacher_institute_switcher_sheet.dart';
 
 class LoginController extends GetxController {
   final AuthRepository _authRepository;
@@ -98,7 +99,7 @@ class LoginController extends GetxController {
         if (Get.isRegistered<PushNotificationService>()) {
           unawaited(Get.find<PushNotificationService>().syncToken());
         }
-        _navigateToDashboard(role);
+        await _navigateToDashboard(role);
       }
     } on AccountStatusException catch (e) {
       if (e.message.contains('Maximum device limit reached') ||
@@ -194,7 +195,7 @@ class LoginController extends GetxController {
     );
   }
 
-  void _navigateToDashboard(String role) {
+  Future<void> _navigateToDashboard(String role) async {
     if (role == 'INSTITUTE') {
       final isProfileSetup = _authService.currentUser?.isProfileSetup ?? true;
       if (isProfileSetup) {
@@ -205,6 +206,11 @@ class LoginController extends GetxController {
     } else if (role == 'STUDENT') {
       Get.offAllNamed(AppRoutes.studentDashboard);
     } else if (role == 'TEACHER') {
+      // Teachers registered with several institutes pick one right after
+      // login (same as the web's "Select Your Institute" step).
+      if (_authService.currentUser?.hasMultipleInstitutes == true) {
+        await TeacherInstituteSwitcherSheet.show(Get.context!);
+      }
       final mustChangePassword =
           _authService.currentUser?.mustChangePassword ?? false;
       if (mustChangePassword) {

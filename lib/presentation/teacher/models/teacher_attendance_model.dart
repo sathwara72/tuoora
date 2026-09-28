@@ -113,6 +113,7 @@ class TeacherSelfAttendanceHistory {
 }
 
 class TeacherCalendarDay {
+  final int? id;
   final String date;
   final String status;
   final String? note;
@@ -120,6 +121,7 @@ class TeacherCalendarDay {
   final String? outTime;
 
   const TeacherCalendarDay({
+    this.id,
     required this.date,
     required this.status,
     this.note,
@@ -135,6 +137,7 @@ class TeacherCalendarDay {
     }
     final rawStatus = json['status'] ?? json['attendance_status'] ?? json['attendance'] ?? json['type'] ?? '';
     return TeacherCalendarDay(
+      id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}'),
       date: cleanDate,
       status: rawStatus.toString(),
       note: json['note']?.toString(),
@@ -227,6 +230,18 @@ class TeacherAttendanceCalendarData {
       });
     }
 
+    // calendar.days only carries a status string per day; calendar.details
+    // adds the attendance record id and the note (leave reason).
+    final details = calendarBlock is Map ? calendarBlock['details'] : null;
+    if (details is Map) {
+      details.forEach((key, value) {
+        if (value is! Map) return;
+        final valMap = Map<String, dynamic>.from(value);
+        valMap['date'] ??= key.toString();
+        addMapped(key.toString(), TeacherCalendarDay.fromJson(valMap));
+      });
+    }
+
     int parseNum(dynamic v) {
       if (v == null) return 0;
       if (v is int) return v;
@@ -268,11 +283,19 @@ class TeacherLeaveItem {
     this.createdAt,
   });
 
-  bool get isPending => status.toLowerCase() == 'pending';
-  bool get isApproved => status.toLowerCase() == 'approved';
-  bool get isRejected => status.toLowerCase() == 'rejected';
-  bool get isCancelled => status.toLowerCase() == 'cancelled';
+  /// A leave can be cancelled until its last day has passed (the server has no
+  /// approval step: a leave is a day marked "Leave" on the teacher's attendance).
+  bool get canCancel {
+    if (status.toLowerCase().contains('cancel')) return false;
+    final end = DateTime.tryParse(endDate);
+    if (end == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return !DateTime(end.year, end.month, end.day).isBefore(today);
+  }
 
+  /// Parses one leave record. The API returns one attendance row per leave day
+  /// (`date`, `note`, `status: Leave`), so each day becomes its own item.
   factory TeacherLeaveItem.fromJson(Map<String, dynamic> json) {
     int parseInt(dynamic val, {int fallback = 0}) {
       if (val == null) return fallback;
@@ -280,14 +303,29 @@ class TeacherLeaveItem {
       return int.tryParse(val.toString()) ?? fallback;
     }
 
+    String dateOnly(dynamic val) {
+      final raw = val?.toString() ?? '';
+      return raw.length >= 10 ? raw.substring(0, 10) : raw;
+    }
+
+    final start = dateOnly(json['start_date'] ?? json['date']);
+    final end = dateOnly(json['end_date'] ?? json['start_date'] ?? json['date']);
+
+    var reason = (json['reason'] ?? json['note'])?.toString().trim() ?? '';
+    if (reason.toLowerCase().startsWith('leave:')) {
+      reason = reason.substring(6).trim();
+    } else if (reason.toLowerCase() == 'leave') {
+      reason = '';
+    }
+
     return TeacherLeaveItem(
       id: parseInt(json['id']),
-      startDate: json['start_date']?.toString() ?? '',
-      endDate: json['end_date']?.toString() ?? json['start_date']?.toString() ?? '',
-      reason: json['reason']?.toString() ?? '',
+      startDate: start,
+      endDate: end,
+      reason: reason,
       skipSundays: json['skip_sundays'] == true || json['skip_sundays'] == 1 || json['skip_sundays'] == '1',
       daysCount: parseInt(json['days_count'] ?? json['total_days'], fallback: 1),
-      status: json['status']?.toString() ?? 'Pending',
+      status: json['status']?.toString() ?? 'Leave',
       createdAt: json['created_at']?.toString(),
     );
   }

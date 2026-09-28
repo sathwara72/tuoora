@@ -126,6 +126,7 @@ class TeacherSelfAttendanceController extends GetxController {
     if (byDayNumber == null) return null;
 
     return TeacherCalendarDay(
+      id: byDayNumber.id,
       date: isoDateStr,
       status: byDayNumber.status,
       note: byDayNumber.note,
@@ -176,8 +177,11 @@ class TeacherSelfAttendanceController extends GetxController {
         skipSundays: skipSundays,
       );
       AppSnackBar.success('Leave application submitted successfully.');
+      final keepSelected = selectedDay.value?.date;
       await fetchLeaves();
       await fetchCalendar(month: currentMonth.value, year: currentYear.value);
+      await fetchToday();
+      if (keepSelected != null && keepSelected.isNotEmpty) onDaySelected(keepSelected);
       return true;
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
@@ -188,11 +192,15 @@ class TeacherSelfAttendanceController extends GetxController {
   }
 
   Future<bool> cancelLeave(int leaveId) async {
+    final keepSelected = selectedDay.value?.date;
     try {
       await _repository.cancelLeave(leaveId);
       leaves.removeWhere((l) => l.id == leaveId);
       AppSnackBar.success('Leave cancelled successfully.');
       await fetchCalendar(month: currentMonth.value, year: currentYear.value);
+      await fetchToday();
+      // Stay on the day the teacher was looking at.
+      if (keepSelected != null && keepSelected.isNotEmpty) onDaySelected(keepSelected);
       return true;
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));

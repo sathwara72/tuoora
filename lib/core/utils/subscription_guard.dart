@@ -65,9 +65,9 @@ class SubscriptionGuard {
 
     if (sub.isPending) {
       AppSnackBar.warning(
-        'Your renewal request is under review. Adding new records will be '
-        'enabled once your subscription is reactivated.',
-        title: AppStrings.renewalUnderReview,
+        'Your subscription is awaiting activation. Adding new records will be '
+        'enabled once it is active.',
+        title: 'Subscription Pending',
       );
       return;
     }

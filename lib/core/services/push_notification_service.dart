@@ -149,12 +149,21 @@ class PushNotificationService extends GetxService {
 
   Future<PushNotificationService> init() async {
     await _setupLocalNotifications();
-    await _requestPermissions();
     await _configureForegroundPresentation();
     await _registerListeners();
-    // Not awaited: on iOS this may poll for the APNs token for several seconds.
-    unawaited(_refreshToken());
-    await _checkInitialMessage();
+    // Not awaited: main() waits for init() before runApp(), and the iOS
+    // permission prompt blocks until the user answers it — awaiting it here
+    // leaves the app on a blank screen behind the dialog. The token refresh
+    // still runs only after the prompt is resolved (on iOS it may also poll
+    // for the APNs token for several seconds).
+    unawaited(_requestPermissions().then((_) => _refreshToken()));
+    // Also not awaited: on iOS getInitialMessage() does not return while the
+    // permission prompt is up, which would block runApp() the same way.
+    unawaited(
+      _checkInitialMessage().catchError((Object e) {
+        if (kDebugMode) print('[FCM] initial message check failed: $e');
+      }),
+    );
     return this;
   }
 

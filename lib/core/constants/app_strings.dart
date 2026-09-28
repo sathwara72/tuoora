@@ -335,9 +335,6 @@ class AppStrings {
   static const String feeHistory = 'Fee History';
   static const String instituteAccountBlocked = 'Institute Account Blocked';
   static const String logout = 'Logout';
-  static const String yourRenewalRequestIsUnderReview =
-      'Your renewal request is under review. Adding new records will be ';
-  static const String renewalUnderReview = 'Renewal Under Review';
   static const String subscriptionExpired = 'Subscription Expired';
   static const String yourSubscriptionHasExpiredSoAdding =
       'Your subscription has expired, so adding new records is disabled. ';
@@ -674,8 +671,6 @@ class AppStrings {
   static const String studentIdentityCard = 'STUDENT IDENTITY CARD';
   static const String deleteStudent = 'Delete Student';
   static const String export = 'Export';
-  static const String renewalRequestPendingReview =
-      'Renewal Request Pending Review';
   static const String yourSubscriptionHasBeenExpired =
       'Your subscription has been expired.';
   static const String loginFailed = 'Login Failed';

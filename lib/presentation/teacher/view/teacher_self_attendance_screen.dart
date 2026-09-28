@@ -93,8 +93,16 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
+        // The active pill is the only selection indicator. Without this, the
+        // pressed tab gets a grey highlight while the old tab is still orange,
+        // so both tabs look selected at once.
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 120),
           padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
           decoration: BoxDecoration(
             color: isActive ? AppColors.primaryBrand : Colors.transparent,
@@ -159,7 +167,7 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
           AppSpacing.v16,
           _buildMonthlyCalendarGrid(),
           AppSpacing.v16,
-          _buildSelectedDayDetailCard(),
+          _buildSelectedDayDetailCard(context),
           AppSpacing.v20,
         ],
       ),
@@ -559,7 +567,7 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
     );
   }
 
-  Widget _buildSelectedDayDetailCard() {
+  Widget _buildSelectedDayDetailCard(BuildContext context) {
     return Obx(() {
       final day = controller.selectedDay.value;
       if (day == null) return const SizedBox.shrink();
@@ -631,6 +639,44 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
+            if (day.status.toLowerCase() == 'leave') ...[
+              if (day.id != null) ...[
+                AppSpacing.v12,
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => _confirmCancelLeaveDay(context, day, formatted),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      side: const BorderSide(color: Colors.redAccent),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(
+                      'Cancel Leave',
+                      style: AppTextStyles.outfit(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ] else ...[
+              AppSpacing.v12,
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _showApplyLeaveBottomSheet(context, initialDate: parsedDate),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBrand,
+                    foregroundColor: AppColors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: Text(
+                    'Take Leave',
+                    style: AppTextStyles.outfit(fontWeight: FontWeight.w700, color: AppColors.white),
+                  ),
                 ),
               ),
             ],
@@ -730,9 +776,10 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
     );
   }
 
-  void _showApplyLeaveBottomSheet(BuildContext context) {
-    final startCtrl = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
-    final endCtrl = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
+  void _showApplyLeaveBottomSheet(BuildContext context, {DateTime? initialDate}) {
+    final initialText = DateFormat('yyyy-MM-dd').format(initialDate ?? DateTime.now());
+    final startCtrl = TextEditingController(text: initialText);
+    final endCtrl = TextEditingController(text: initialText);
     final reasonCtrl = TextEditingController();
     final skipSundays = true.obs;
 
@@ -767,10 +814,12 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
+                      final current = DateTime.tryParse(startCtrl.text) ?? DateTime.now();
+                      final weekAgo = DateTime.now().subtract(const Duration(days: 7));
                       final picked = await showDatePicker(
                         context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now().subtract(const Duration(days: 7)),
+                        initialDate: current,
+                        firstDate: current.isBefore(weekAgo) ? current : weekAgo,
                         lastDate: DateTime.now().add(const Duration(days: 365)),
                       );
                       if (picked != null) {
@@ -875,6 +924,39 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
         ),
       ),
       isScrollControlled: true,
+    );
+  }
+
+  void _confirmCancelLeaveDay(BuildContext context, TeacherCalendarDay day, String formattedDate) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Cancel Leave?',
+          style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Are you sure you want to cancel your leave on $formattedDate?',
+          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Keep', style: AppTextStyles.outfit(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Get.back();
+              await controller.cancelLeave(day.id!);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text('Cancel Leave', style: AppTextStyles.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1029,14 +1111,16 @@ class _LeaveCard extends StatelessWidget {
               ),
             ],
           ),
-          AppSpacing.v8,
-          Text(
-            leave.reason,
-            style: AppTextStyles.outfit(
-              fontSize: 13,
-              color: AppColors.textSecondary,
+          if (leave.reason.isNotEmpty) ...[
+            AppSpacing.v8,
+            Text(
+              leave.reason,
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
+          ],
           AppSpacing.v10,
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1071,7 +1155,7 @@ class _LeaveCard extends StatelessWidget {
                   ],
                 ],
               ),
-              if (leave.isPending)
+              if (leave.canCancel)
                 TextButton(
                   onPressed: onCancel,
                   style: TextButton.styleFrom(

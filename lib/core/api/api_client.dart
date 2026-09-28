@@ -3,6 +3,7 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/services/auth_service.dart';
+import 'package:tuoora/core/services/bug_report_service.dart';
 import 'package:tuoora/core/services/institute_account_status_handler.dart';
 import 'package:tuoora/core/services/server_error_handler.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
@@ -10,7 +11,7 @@ import 'package:tuoora/data/repositories_impl/auth_repository_impl.dart';
 import 'package:get/get.dart';
 
 class ApiClient extends GetConnect {
-  Future<bool>? _refreshFuture;
+  Future<_RefreshOutcome>? _refreshFuture;
   bool _loggingOut = false;
 
   bool get isLoggingOut => _loggingOut;
@@ -66,9 +67,15 @@ class ApiClient extends GetConnect {
         return request;
       }
 
-      final ok = await _tryRefresh();
-      if (!ok) {
+      final outcome = await _tryRefresh();
+      if (outcome == _RefreshOutcome.rejected) {
+        // The refresh token itself is invalid or expired: sign in again.
         await _forceLogout();
+        return request;
+      }
+      if (outcome == _RefreshOutcome.unavailable) {
+        // Server or network trouble while refreshing: keep the session and
+        // let this request fail normally instead of logging the user out.
         return request;
       }
       request.headers['Authorization'] = 'Bearer ${authService.token}';
@@ -81,6 +88,21 @@ class ApiClient extends GetConnect {
           '📥 [API RESPONSE] ${request.method.toUpperCase()} ${request.url}',
         );
         debugPrint('Status Code: ${response.statusCode}');
+      }
+
+      if (Get.isRegistered<BugReportService>()) {
+        String? serverMessage;
+        final b = response.body;
+        if (response.hasError && b is Map) {
+          serverMessage = (b['message'] ?? b['error'])?.toString();
+        }
+        BugReportService.to.record(
+          method: request.method,
+          url: request.url,
+          status: response.statusCode ?? 0,
+          message: response.hasError ? (serverMessage ?? response.statusText) : null,
+          isError: response.hasError && (response.statusCode ?? 0) >= 500,
+        );
       }
 
       if (response.hasError) {
@@ -110,14 +132,10 @@ class ApiClient extends GetConnect {
           }
         }
 
-        if (response.statusCode == 401) {
-          final urlStr = request.url.toString();
-          if (!urlStr.contains(ApiConstants.instituteLogin) &&
-              !urlStr.contains(ApiConstants.studentLogin) &&
-              !urlStr.contains(ApiConstants.teacherLogin)) {
-            _forceLogout();
-          }
-        }
+        // A 401 is NOT handled here. GetConnect runs this modifier before the
+        // authenticator above, which refreshes the access token and retries
+        // the request. Logging out here would wipe the session before the
+        // refresh token could ever be used.
 
         final code = response.statusCode ?? 0;
         if (code >= 500 && code < 600) {
@@ -140,7 +158,7 @@ class ApiClient extends GetConnect {
     super.onInit();
   }
 
-  Future<bool> _tryRefresh() {
+  Future<_RefreshOutcome> _tryRefresh() {
     final existing = _refreshFuture;
     if (existing != null) return existing;
     final fut = _doRefresh();
@@ -149,23 +167,25 @@ class ApiClient extends GetConnect {
     return fut;
   }
 
-  Future<bool> _doRefresh() async {
-    if (!Get.isRegistered<AuthRepositoryImpl>()) return false;
+  Future<_RefreshOutcome> _doRefresh() async {
+    if (!Get.isRegistered<AuthRepositoryImpl>()) {
+      return _RefreshOutcome.unavailable;
+    }
     final auth = Get.find<AuthService>();
     final refreshToken = auth.refreshToken;
-    if (refreshToken.isEmpty) return false;
+    if (refreshToken.isEmpty) return _RefreshOutcome.rejected;
 
     try {
       final repo = Get.find<AuthRepositoryImpl>();
       final fresh = await repo.refreshAccessToken(refreshToken);
-      if (fresh == null) return false;
+      if (fresh == null) return _RefreshOutcome.rejected;
       await auth.updateTokens(
         accessToken: fresh.accessToken,
         refreshToken: fresh.refreshToken,
       );
-      return true;
+      return _RefreshOutcome.refreshed;
     } catch (_) {
-      return false;
+      return _RefreshOutcome.unavailable;
     }
   }
 
@@ -192,3 +212,6 @@ class ApiClient extends GetConnect {
     }
   }
 }
+
+/// Result of trying to swap the refresh token for new tokens.
+enum _RefreshOutcome { refreshed, rejected, unavailable }

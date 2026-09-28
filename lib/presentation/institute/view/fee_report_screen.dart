@@ -58,7 +58,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                       ReportSummaryCard(
                         title: AppStrings.totalCollectionAcrossBatches,
                         value:
-                            '₹',
+                            '₹${report.summary.paidAmount.toStringAsFixed(0)}',
                       ),
                       AppSpacing.v20,
                       _buildViewToggle(report),
@@ -109,7 +109,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'Student Log ()',
+                  'Student Log (${report.students.length})',
                   style: AppTextStyles.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -135,7 +135,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'Batch Summary ()',
+                  'Batch Summary (${report.batches.length})',
                   style: AppTextStyles.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -203,7 +203,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            ' • ',
+                            '${stu.enrollmentId} • ${stu.batchName}',
                             style: AppTextStyles.outfit(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -246,11 +246,19 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildAmtCol('Total', '₹', AppColors.textPrimary),
-                      _buildAmtCol('Paid', '₹', AppColors.successGreen),
+                      _buildAmtCol(
+                        'Total',
+                        '₹${stu.totalAmount.toStringAsFixed(0)}',
+                        AppColors.textPrimary,
+                      ),
+                      _buildAmtCol(
+                        'Paid',
+                        '₹${stu.paidAmount.toStringAsFixed(0)}',
+                        AppColors.successGreen,
+                      ),
                       _buildAmtCol(
                         'Due',
-                        '₹',
+                        '₹${stu.dueAmount.toStringAsFixed(0)}',
                         isDue ? AppColors.error : AppColors.textTertiary,
                       ),
                     ],
@@ -259,7 +267,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                 if (stu.lastPaymentDate.isNotEmpty && stu.lastPaymentDate != 'N/A') ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Last payment: ',
+                    'Last payment: ${stu.lastPaymentDate}',
                     style: AppTextStyles.outfit(
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
@@ -309,7 +317,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             name: batch.batchName,
             strength: batch.studentsCount,
             metricLabel: 'Total Collected',
-            metricValue: '₹',
+            metricValue: '₹${batch.totalCollected.toStringAsFixed(0)}',
             progress: batch.batchFees > 0
                 ? batch.totalCollected / batch.batchFees
                 : 0.0,

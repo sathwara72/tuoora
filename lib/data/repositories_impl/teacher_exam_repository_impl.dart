@@ -4,6 +4,7 @@ abstract class TeacherExamRepositoryImpl {
   Future<TeacherExamListPage> getExams({
     required int batchId,
     String? status,
+    String? search,
     int page = 1,
   });
 
