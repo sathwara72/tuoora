@@ -291,6 +291,7 @@ class StudentFee {
   const StudentFee({
     required this.id,
     required this.studentId,
+    this.batchId,
     required this.totalAmount,
     required this.paidAmount,
     required this.status,

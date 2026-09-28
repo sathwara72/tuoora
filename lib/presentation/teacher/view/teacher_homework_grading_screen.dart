@@ -39,7 +39,7 @@ class TeacherHomeworkGradingScreen extends GetView<TeacherHomeworkGradingControl
                 return ListView.separated(
                   padding: AppSpacing.x16,
                   itemCount: list.length,
-                  separatorBuilder: (_, __) => AppSpacing.v12,
+                  separatorBuilder: (_, _) => AppSpacing.v12,
                   itemBuilder: (context, index) =>
                       _SubmissionRow(submission: list[index], controller: controller),
                 );
@@ -99,7 +99,7 @@ class _SubmissionRow extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.1),
+                    color: Colors.amber.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -188,7 +188,7 @@ class _SubmissionRow extends StatelessWidget {
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     filled: true,
-                    fillColor: isPending ? AppColors.borderGrey.withOpacity(0.25) : AppColors.fieldBg,
+                    fillColor: isPending ? AppColors.borderGrey.withValues(alpha: 0.25) : AppColors.fieldBg,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: const BorderSide(color: AppColors.fieldBorder),
@@ -199,7 +199,7 @@ class _SubmissionRow extends StatelessWidget {
                     ),
                     disabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: AppColors.borderGrey.withOpacity(0.5)),
+                      borderSide: BorderSide(color: AppColors.borderGrey.withValues(alpha: 0.5)),
                     ),
                   ),
                   onChanged: (value) => controller.updateScore(submission, value),

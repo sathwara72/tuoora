@@ -28,6 +28,7 @@ class RoleSelectionScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       body: BrandBackdrop(
         child: SafeArea(
           child: FitScreen(
@@ -37,7 +38,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const SizedBox(height: 48),
-                  const AppLogo(height: 56),
+                  const AppLogo(height: 48),
                   const SizedBox(height: 10),
                   Text(
                     AppStrings.smartInstituteErp,

@@ -189,8 +189,8 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }) async {
     final fields = <String, dynamic>{
       'app_name': appName,
-      if (primaryColor != null) 'primary_color': primaryColor,
-      if (secondaryColor != null) 'secondary_color': secondaryColor,
+      'primary_color': ?primaryColor,
+      'secondary_color': ?secondaryColor,
     };
     final formData = FormData(fields);
     if (logoPath != null && logoPath.isNotEmpty) {
@@ -453,11 +453,11 @@ class InstituteRepository implements InstituteRepositoryImpl {
     if (batchId != null) query['batch_id'] = batchId.toString();
 
     final response = await _apiClient.get(
-      '\/pending',
+      '${ApiConstants.instituteFees}/pending',
       query: query,
     );
     if (response.status.hasError) {
-      throw Exception('Failed to fetch pending fees: ');
+      _handleError(response, 'Failed to fetch pending fees');
     }
     return PendingFeesResponse.fromJson(response.body['data']);
   }
@@ -469,7 +469,7 @@ class InstituteRepository implements InstituteRepositoryImpl {
     if (batchId != null) body['batch_id'] = batchId;
 
     final response = await _apiClient.post(
-      '\/send-reminders',
+      '${ApiConstants.instituteFees}/send-reminders',
       body,
     );
     if (response.status.hasError) {

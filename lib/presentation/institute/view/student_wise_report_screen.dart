@@ -1690,7 +1690,7 @@ class _StudentWiseReportScreenState extends State<StudentWiseReportScreen> {
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: report.allBatches.length,
-                  separatorBuilder: (_, __) => const Divider(
+                  separatorBuilder: (_, _) => const Divider(
                     height: 1,
                     color: Color(0xFFF1F5F9),
                   ),

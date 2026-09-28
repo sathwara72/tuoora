@@ -90,8 +90,8 @@ class AddOnsController extends GetxController {
         'description': addOn.title,
         'theme': {'color': '#F97316'},
         'prefill': {
-          if (_prefillName != null) 'name': _prefillName!,
-          if (_prefillPhone != null) 'contact': _prefillPhone!,
+          'name': ?_prefillName,
+          'contact': ?_prefillPhone,
         },
       };
 

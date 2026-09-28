@@ -381,7 +381,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
       // 2. Batch Classes
       for (final cls in controller.batchClasses) {
         final teacherInfo = cls.teachers.isNotEmpty
-            ? ' (' + cls.teachers.map((t) => t.fullName).join(', ') + ')'
+            ? ' (${cls.teachers.map((t) => t.fullName).join(', ')})'
             : '';
         items.add(
           DropdownMenuItem<String?>(
@@ -407,7 +407,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         );
         if (!alreadyIn) {
           final teacherName = batch.staffName != null && batch.staffName!.trim().isNotEmpty
-              ? ' (' + batch.staffName!.trim() + ')'
+              ? ' (${batch.staffName!.trim()})'
               : '';
           items.add(
             DropdownMenuItem<String?>(
@@ -643,7 +643,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                 AppSpacing.h8,
                 Expanded(
                   child: Text(
-                    'Assigned Faculty: ' + teacherName,
+                    'Assigned Faculty: $teacherName',
                     style: AppTextStyles.outfit(
                       fontSize: 13,
                       color: const Color(0xFF14532D),

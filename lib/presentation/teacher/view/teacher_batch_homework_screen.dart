@@ -57,7 +57,7 @@ class TeacherBatchHomeworkScreen extends GetView<TeacherBatchHomeworkController>
                   child: ListView.separated(
                     padding: AppSpacing.x16,
                     itemCount: controller.homeworks.length,
-                    separatorBuilder: (_, __) => AppSpacing.v12,
+                    separatorBuilder: (_, _) => AppSpacing.v12,
                     itemBuilder: (context, index) {
                       final hw = controller.homeworks[index];
                       return _HomeworkCard(
@@ -157,10 +157,10 @@ class _HomeworkCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: homework.isOverdue
-                        ? AppColors.bohoRed.withOpacity(0.1)
+                        ? AppColors.bohoRed.withValues(alpha: 0.1)
                         : (homework.daysLeft == 0
-                            ? Colors.amber.withOpacity(0.15)
-                            : AppColors.primaryBrand.withOpacity(0.08)),
+                            ? Colors.amber.withValues(alpha: 0.15)
+                            : AppColors.primaryBrand.withValues(alpha: 0.08)),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(

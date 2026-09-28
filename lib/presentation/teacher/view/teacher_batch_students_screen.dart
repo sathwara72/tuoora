@@ -45,7 +45,7 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                           Icon(
                             Icons.people_outline_rounded,
                             size: 64,
-                            color: AppColors.textTertiary.withOpacity(0.5),
+                            color: AppColors.textTertiary.withValues(alpha: 0.5),
                           ),
                           AppSpacing.v12,
                           Text(
@@ -75,7 +75,7 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: list.length,
-                    separatorBuilder: (_, __) => AppSpacing.v12,
+                    separatorBuilder: (_, _) => AppSpacing.v12,
                     itemBuilder: (context, index) {
                       final student = list[index];
                       return _StudentCard(
@@ -159,7 +159,7 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
         color: AppColors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
@@ -320,89 +320,6 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
     );
   }
 
-  void _showRegisterStudentDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    final enrollmentCtrl = TextEditingController();
-    final standardCtrl = TextEditingController();
-    final guardianCtrl = TextEditingController();
-
-    Get.bottomSheet(
-      Container(
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Register Student',
-                      style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-                    Text(
-                      'Add directly into ${controller.batch.name}',
-                      style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Get.back(),
-                ),
-              ],
-            ),
-            const Divider(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    _inputField(label: 'Full Name *', controller: nameCtrl, icon: Icons.person_outline),
-                    _inputField(label: 'Phone Number', controller: phoneCtrl, icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
-                    _inputField(label: 'Email Address', controller: emailCtrl, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
-                    _inputField(label: 'Enrollment ID', controller: enrollmentCtrl, icon: Icons.badge_outlined),
-                    _inputField(label: 'Standard / Grade', controller: standardCtrl, icon: Icons.school_outlined),
-                    _inputField(label: 'Parent / Guardian Name', controller: guardianCtrl, icon: Icons.family_restroom_outlined),
-                  ],
-                ),
-              ),
-            ),
-            AppSpacing.v12,
-            AppButton(
-              label: 'Register & Add to Batch',
-              onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty) {
-                  AppSnackBar.error('Student name is required');
-                  return;
-                }
-                final data = <String, dynamic>{
-                  'name': nameCtrl.text.trim(),
-                  'phone': phoneCtrl.text.trim(),
-                  'email': emailCtrl.text.trim(),
-                  'enrollment_id': enrollmentCtrl.text.trim(),
-                  'standard': standardCtrl.text.trim(),
-                  'guardian_name': guardianCtrl.text.trim(),
-                };
-                final ok = await controller.registerNewStudent(data);
-                if (ok) Get.back();
-              },
-            ),
-          ],
-        ),
-      ),
-      isScrollControlled: true,
-    );
-  }
 
   Widget _inputField({
     required String label,
@@ -658,7 +575,7 @@ class TeacherBatchStudentsScreen extends GetView<TeacherBatchStudentsController>
       decoration: BoxDecoration(
         color: AppColors.scaffoldBg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderGrey.withOpacity(0.5)),
+        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
@@ -748,7 +665,7 @@ class _StudentCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

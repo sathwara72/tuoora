@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -33,8 +34,12 @@ class ApiClient extends GetConnect {
         request.headers['Authorization'] = 'Bearer ${authService.token}';
       }
 
-      print('🚀 [API REQUEST] ${request.method.toUpperCase()} ${request.url}');
-      print('Headers: ${request.headers}');
+      if (kDebugMode) {
+        debugPrint(
+          '🚀 [API REQUEST] ${request.method.toUpperCase()} ${request.url}',
+        );
+        debugPrint('Headers: ${request.headers}');
+      }
 
       return request;
     });
@@ -71,17 +76,23 @@ class ApiClient extends GetConnect {
     });
 
     httpClient.addResponseModifier((request, response) {
-      print('📥 [API RESPONSE] ${request.method.toUpperCase()} ${request.url}');
-      print('Status Code: ${response.statusCode}');
+      if (kDebugMode) {
+        debugPrint(
+          '📥 [API RESPONSE] ${request.method.toUpperCase()} ${request.url}',
+        );
+        debugPrint('Status Code: ${response.statusCode}');
+      }
 
       if (response.hasError) {
-        print('❌ [API ERROR]');
-        print('URL: ${request.url}');
-        print('Status: ${response.statusCode} ${response.statusText}');
-        if (response.body is String || response.body is Map) {
-          print('Body: ${response.body}');
-        } else {
-          print('Body: [Binary Data or Unknown Format]');
+        if (kDebugMode) {
+          debugPrint('❌ [API ERROR]');
+          debugPrint('URL: ${request.url}');
+          debugPrint('Status: ${response.statusCode} ${response.statusText}');
+          if (response.body is String || response.body is Map) {
+            debugPrint('Body: ${response.body}');
+          } else {
+            debugPrint('Body: [Binary Data or Unknown Format]');
+          }
         }
 
         if (response.statusCode == 403 &&
@@ -120,7 +131,9 @@ class ApiClient extends GetConnect {
         }
       }
 
-      print('--------------------------------------------------');
+      if (kDebugMode) {
+        debugPrint('--------------------------------------------------');
+      }
       return response;
     });
 

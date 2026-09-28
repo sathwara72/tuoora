@@ -9,7 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:tuoora/presentation/student/models/assignment_model.dart';
 import 'package:tuoora/presentation/student/models/student_exam_model.dart';
+import 'package:tuoora/presentation/student/models/student_timetable_model.dart';
 import 'package:tuoora/presentation/student/widgets/birthday_wish_dialog.dart';
+import 'package:tuoora/data/repositories/student_timetable_repository.dart';
 
 class TodayClassDisplay {
   final String dayNumber;
@@ -74,20 +76,55 @@ class StudentDashboardController extends GetxController {
 
   final RxBool isLoading = true.obs;
   final Rxn<StudentDashboardData> dashboardData = Rxn<StudentDashboardData>();
+  
+  final RxList<StudentTimetableSlot> timetableSlots = <StudentTimetableSlot>[].obs;
+  final Rx<DateTime> selectedDate = DateTime.now().obs;
 
   late final StudentDashboardRepository _repository;
+  late final StudentTimetableRepository _timetableRepo;
 
   @override
   void onInit() {
     super.onInit();
-    _repository = StudentDashboardRepository(Get.find<ApiClient>());
+    final apiClient = Get.find<ApiClient>();
+    _repository = StudentDashboardRepository(apiClient);
+    _timetableRepo = StudentTimetableRepository(apiClient);
     fetchDashboard();
+  }
+
+  void selectDate(DateTime date) {
+    selectedDate.value = date;
+  }
+
+  List<StudentTimetableSlot> get classesForSelectedDate {
+    final dayStr = _weekdayA[selectedDate.value.weekday - 1].toLowerCase();
+    final dayMap = {
+      'mon': 'monday',
+      'tue': 'tuesday',
+      'wed': 'wednesday',
+      'thu': 'thursday',
+      'fri': 'friday',
+      'sat': 'saturday',
+      'sun': 'sunday',
+    };
+    final fullDayStr = dayMap[dayStr] ?? 'monday';
+
+    final filtered = timetableSlots
+        .where((s) => s.dayOfWeek.toLowerCase() == fullDayStr)
+        .toList();
+    filtered.sort((a, b) => a.startTime.compareTo(b.startTime));
+    return filtered;
   }
 
   Future<void> fetchDashboard() async {
     try {
       isLoading.value = true;
-      final data = await _repository.getDashboardData();
+      final futures = await Future.wait([
+        _repository.getDashboardData(),
+        _timetableRepo.getTimetable(day: 'all').catchError((_) => <StudentTimetableSlot>[]),
+      ]);
+      final data = futures[0] as StudentDashboardData;
+      timetableSlots.assignAll(futures[1] as List<StudentTimetableSlot>);
       dashboardData.value = data;
 
       _checkAndShowBirthdayWish(data);

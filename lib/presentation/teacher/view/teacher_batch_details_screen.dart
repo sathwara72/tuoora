@@ -199,7 +199,7 @@ class _FeatureTile extends StatelessWidget {
           border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

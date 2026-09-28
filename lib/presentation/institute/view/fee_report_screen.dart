@@ -164,7 +164,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
       children: students.map((stu) {
         final isDue = stu.dueAmount > 0;
         final statusColor = switch (stu.status.toLowerCase()) {
-          'paid' => AppColors.success,
+          'paid' => AppColors.successGreen,
           'partial' => Colors.amber.shade700,
           'no fee' => AppColors.textTertiary,
           _ => AppColors.error,
@@ -247,7 +247,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildAmtCol('Total', '₹', AppColors.textPrimary),
-                      _buildAmtCol('Paid', '₹', AppColors.success),
+                      _buildAmtCol('Paid', '₹', AppColors.successGreen),
                       _buildAmtCol(
                         'Due',
                         '₹',

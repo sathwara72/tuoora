@@ -334,10 +334,10 @@ class ExpenseController extends GetxController {
 
       final filteredItems = items.where((exp) {
         final matchPay = selectedPaymentFilter.value == 'all' ||
-            (exp.paymentMethod ?? 'Cash').toLowerCase() == selectedPaymentFilter.value.toLowerCase();
+            exp.paymentMethod.toLowerCase() == selectedPaymentFilter.value.toLowerCase();
         final search = searchQuery.value.trim().toLowerCase();
         final matchSearch = search.isEmpty ||
-            (exp.description != null && exp.description!.toLowerCase().contains(search)) ||
+            exp.description.toLowerCase().contains(search) ||
             exp.amount.toString().contains(search);
         return matchPay && matchSearch;
       }).toList();

@@ -131,8 +131,9 @@ class TeacherBatchResourcesScreen
                   size: 20,
                 ),
                 suffixIcon: Obx(() {
-                  if (controller.searchQuery.value.isEmpty)
+                  if (controller.searchQuery.value.isEmpty) {
                     return const SizedBox.shrink();
+                  }
                   return IconButton(
                     icon: const Icon(Icons.clear_rounded, size: 18),
                     onPressed: () => controller.searchQuery.value = '',

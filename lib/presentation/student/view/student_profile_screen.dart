@@ -64,8 +64,6 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                         const SizedBox(height: 12),
                         _buildPerformanceScoreCard(context, profile.stats),
                         const SizedBox(height: 12),
-                        _buildStatsRow(context, profile.stats),
-                        const SizedBox(height: 12),
                         _buildGridActions(),
                         const SizedBox(height: 16),
                         _buildSectionTitle('YOUR INFO'),
@@ -663,108 +661,6 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
     );
   }
 
-  Widget _buildStatsRow(BuildContext context, StudentProfileStats stats) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            label: 'Homework',
-            value: '${stats.homeworkPct}%',
-            subValue: 'completed',
-            valueColor: AppColors.instBrandOrange,
-            onTap: () => _showPerformanceBreakdownSheet(context, stats),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _buildStatCard(
-            label: AppStrings.attendance,
-            value: '${stats.attendancePct}%',
-            subValue: 'monthly',
-            valueColor: AppColors.green,
-            onTap: () => _showPerformanceBreakdownSheet(context, stats),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _buildStatCard(
-            label: 'Exams',
-            value: '${stats.examPct}%',
-            subValue: 'average',
-            valueColor: AppColors.studentProgressBlue,
-            onTap: () => _showPerformanceBreakdownSheet(context, stats),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard({
-    required String label,
-    required String value,
-    required String subValue,
-    Color? valueColor,
-    VoidCallback? onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.outfit(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Text(
-                    value,
-                    style: AppTextStyles.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: valueColor ?? AppColors.textPrimary,
-                      height: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      subValue,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.outfit(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textSecondary,
-                        height: 1,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildGridActions() {
     return Column(

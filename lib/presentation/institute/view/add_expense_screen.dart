@@ -143,7 +143,9 @@ class AddExpenseScreen extends GetView<ExpenseController> {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    items: controller.categories.map((
+                    items: controller.categories
+                        .where((c) => !c.isSalary)
+                        .map((
                       ExpenseCategory category,
                     ) {
                       return DropdownMenuItem<ExpenseCategory>(

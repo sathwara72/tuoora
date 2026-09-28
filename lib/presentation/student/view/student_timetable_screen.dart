@@ -59,7 +59,7 @@ class StudentTimetableScreen extends GetView<StudentTimetableController> {
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: AppSpacing.x16.add(AppSpacing.bottom16),
                     itemCount: controller.slotsForSelectedDay.length,
-                    separatorBuilder: (_, __) => AppSpacing.v10,
+                    separatorBuilder: (_, _) => AppSpacing.v10,
                     itemBuilder: (context, index) =>
                         _buildSlotCard(controller.slotsForSelectedDay[index]),
                   );

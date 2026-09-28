@@ -49,7 +49,7 @@ class TeacherFeesScreen extends GetView<TeacherFeesController> {
                   child: ListView.separated(
                     padding: AppSpacing.x16,
                     itemCount: controller.fees.length,
-                    separatorBuilder: (_, __) => AppSpacing.v12,
+                    separatorBuilder: (_, _) => AppSpacing.v12,
                     itemBuilder: (context, index) {
                       final fee = controller.fees[index];
                       final total = double.tryParse(fee.totalAmount) ?? 0;

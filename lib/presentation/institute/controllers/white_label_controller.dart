@@ -96,8 +96,8 @@ class WhiteLabelController extends GetxController {
         'description': addon?.title ?? 'Mobile App White Label',
         'theme': {'color': '#F97316'},
         'prefill': {
-          if (_prefillName != null) 'name': _prefillName!,
-          if (_prefillPhone != null) 'contact': _prefillPhone!,
+          'name': ?_prefillName,
+          'contact': ?_prefillPhone,
         },
       };
 

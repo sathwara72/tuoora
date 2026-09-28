@@ -62,7 +62,7 @@ class _TeacherQrScanScreenState extends State<TeacherQrScanScreen> {
       });
 
       try {
-        final result = await markController.markByQrDirect(trimmedValue);
+        await markController.markByQrDirect(trimmedValue);
         HapticFeedback.mediumImpact();
         if (mounted) {
           setState(() {

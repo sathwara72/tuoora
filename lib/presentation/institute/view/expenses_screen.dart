@@ -457,7 +457,7 @@ class ExpensesScreen extends GetView<ExpenseController> {
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         onPressed: () => _editCategoryDialog(context, group),
-                        icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 19),
+                        icon: const Icon(Icons.edit_outlined, color: AppColors.primaryBrand, size: 19),
                         tooltip: 'Edit Category',
                       ),
                       AppSpacing.h8,
@@ -518,7 +518,7 @@ class ExpensesScreen extends GetView<ExpenseController> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.edit_outlined, color: AppColors.primary, size: 22),
+            const Icon(Icons.edit_outlined, color: AppColors.primaryBrand, size: 22),
             AppSpacing.h8,
             Text(
               'Edit Category',
@@ -550,7 +550,7 @@ class ExpensesScreen extends GetView<ExpenseController> {
                 hintText: 'e.g. Maintenance, Utilities',
                 hintStyle: AppTextStyles.outfit(
                   fontSize: 13,
-                  color: AppColors.textHint,
+                  color: AppColors.textMuted,
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 border: OutlineInputBorder(
@@ -563,7 +563,7 @@ class ExpensesScreen extends GetView<ExpenseController> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                  borderSide: const BorderSide(color: AppColors.primaryBrand, width: 1.5),
                 ),
               ),
               style: AppTextStyles.outfit(
@@ -588,7 +588,7 @@ class ExpensesScreen extends GetView<ExpenseController> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.primaryBrand,
               foregroundColor: AppColors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),

@@ -1389,7 +1389,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
   }
 
   Widget _buildIdHeader() {
-    String resolvedName = (Get.isRegistered<BrandingService>() ? Get.find<BrandingService>().appName : 'Tuoora') + ' Institute';
+    String resolvedName = '${Get.isRegistered<BrandingService>() ? Get.find<BrandingService>().appName : 'Tuoora'} Institute';
     if (Get.isRegistered<InstituteProfileController>()) {
       final v = Get.find<InstituteProfileController>().instituteName.value
           .trim();

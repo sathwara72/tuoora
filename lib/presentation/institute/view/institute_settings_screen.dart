@@ -1,4 +1,3 @@
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -8,7 +7,6 @@ import 'package:tuoora/data/models/institute_profile_model.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_profile_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
-import 'package:tuoora/core/constants/app_images.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
