@@ -22,6 +22,7 @@ import 'package:tuoora/presentation/institute/view/institute_subscription_screen
 import 'package:tuoora/presentation/institute/view/white_label_screen.dart';
 import 'package:tuoora/presentation/institute/view/add_ons_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_whatsapp_screen.dart';
+import 'package:tuoora/presentation/institute/view/notification_preferences_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_upi_payment_settings_screen.dart';
 import 'package:tuoora/presentation/institute/view/fee_report_screen.dart';
 import 'package:tuoora/presentation/institute/view/attendance_report_screen.dart';
@@ -529,6 +530,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.instituteWhatsApp,
       page: () => const InstituteWhatsAppScreen(),
+      binding: InstituteBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteNotificationPreferences,
+      page: () => const NotificationPreferencesScreen(),
       binding: InstituteBinding(),
     ),
     GetPage(

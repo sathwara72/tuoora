@@ -74,6 +74,12 @@ class Batch {
         bg = AppColors.errorBg;
         textColor = AppColors.bohoRed;
         break;
+      case 'cancelled':
+      case 'canceled':
+        label = 'Cancelled';
+        bg = AppColors.errorBg;
+        textColor = AppColors.bohoRed;
+        break;
       case 'inactive':
         label = 'Inactive';
         bg = AppColors.errorBg;

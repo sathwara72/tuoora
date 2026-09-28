@@ -93,6 +93,8 @@ class ApiConstants {
   static const String instituteNotifications = '/institute/notifications';
   static const String instituteNotificationsSendPush =
       '/institute/notifications/send-push';
+  static const String instituteNotificationPreferences =
+      '/institute/notification-preferences';
   static const String instituteBirthdays = '/institute/birthdays';
   static const String instituteExpenses = '/institute/expenses';
   static const String instituteExpenseCategories =

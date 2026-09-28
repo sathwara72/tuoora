@@ -18,7 +18,7 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
@@ -46,11 +46,12 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
   Widget _buildTabSelector() {
     return Container(
       color: AppColors.white,
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.scaffoldBg,
-          borderRadius: BorderRadius.circular(10),
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
         ),
         padding: const EdgeInsets.all(4),
         child: Obx(() {
@@ -62,15 +63,16 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                   title: 'Calendar & Check-in',
                   icon: Icons.calendar_month_rounded,
                   isActive: tab == 0,
-                  onTap: () => controller.selectedTab.value = 0,
+                  onTap: () => controller.switchTab(0),
                 ),
               ),
+              const SizedBox(width: 4),
               Expanded(
                 child: _tabButton(
                   title: 'Leave Applications',
                   icon: Icons.beach_access_rounded,
                   isActive: tab == 1,
-                  onTap: () => controller.selectedTab.value = 1,
+                  onTap: () => controller.switchTab(1),
                 ),
               ),
             ],
@@ -86,42 +88,51 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
     required bool isActive,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isActive ? AppColors.primaryBrand : AppColors.textSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? AppColors.primaryBrand : AppColors.textSecondary,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isActive ? AppColors.primaryBrand : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: AppColors.primaryBrand.withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isActive ? Colors.white : const Color(0xFF64748B),
               ),
-            ),
-          ],
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                    color: isActive ? Colors.white : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

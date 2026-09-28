@@ -2,6 +2,7 @@ import 'package:tuoora/data/models/institute_subscription_model.dart';
 import 'package:tuoora/data/models/batch_model.dart';
 import 'package:tuoora/data/models/institute_profile_model.dart';
 import 'package:tuoora/data/models/staff_model.dart';
+import 'package:tuoora/data/models/notification_preference_model.dart';
 import 'package:tuoora/data/models/whatsapp_settings_model.dart';
 import 'package:tuoora/presentation/institute/models/expense_model.dart';
 import 'package:tuoora/presentation/institute/models/fee_record.dart';
@@ -228,4 +229,8 @@ abstract class InstituteRepositoryImpl {
   Future<void> logSalary(Map<String, dynamic> data);
   Future<void> deleteResource(int id);
   Future<void> deleteDeviceSession(int sessionId);
+  Future<List<NotificationPreferenceModule>> getNotificationPreferences();
+  Future<List<NotificationPreferenceModule>> updateNotificationPreferences(
+    List<Map<String, dynamic>> modules,
+  );
 }

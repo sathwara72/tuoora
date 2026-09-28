@@ -148,7 +148,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '\u20B9',
+                    '₹${controller.totalCollected.value.toStringAsFixed(0)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.outfit(
@@ -225,7 +225,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                '',
+                                '$pendingCount',
                                 style: AppTextStyles.outfit(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,
@@ -254,7 +254,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '\u20B9',
+                    '₹${controller.totalPending.value.toStringAsFixed(0)}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.outfit(
@@ -299,7 +299,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '',
+                    '$count',
                     style: AppTextStyles.outfit(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -380,7 +380,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
           ],
         ),
         content: Text(
-          'This will send in-app and push notification reminders to all \ pending student(s) and their parents.',
+          'This will send in-app and push notification reminders to all $count pending student(s) and their parents.',
           style: AppTextStyles.outfit(fontSize: 13, color: AppColors.textSecondary),
         ),
         actions: [
@@ -427,6 +427,16 @@ class InstituteFeesScreen extends GetView<InstituteController> {
 
     return Column(
       children: controller.feeRecords.map((record) {
+        final amount = record.paidAmount > 0 ? record.paidAmount : record.totalAmount;
+        final studentName = record.student?.name?.trim().isNotEmpty == true
+            ? record.student!.name
+            : 'Student';
+        final displayId = (record.student?.enrollmentID?.isNotEmpty == true)
+            ? record.student!.enrollmentID!
+            : (record.student?.id != null && record.student!.id != 0
+                ? record.student!.id.toString()
+                : (record.studentId != 0 ? record.studentId.toString() : 'N/A'));
+
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.s10),
           child: GestureDetector(
@@ -434,9 +444,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
             onTap: () =>
                 Get.toNamed(AppRoutes.instituteFeeReceipt, arguments: record),
             child: _buildFeeItem(
-              record.student?.name ?? '',
-              '\u20B9',
-              'ID: ',
+              studentName,
+              '₹${amount.toStringAsFixed(0)}',
+              'ID: $displayId',
               record.date,
             ),
           ),
@@ -606,7 +616,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                         if (student.phone.isNotEmpty) ...[
                           const SizedBox(width: 6),
                           Text(
-                            '• ',
+                            '• ${student.phone}',
                             style: AppTextStyles.outfit(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -655,7 +665,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '₹ / ₹',
+                    '₹${student.monthlyFee.toStringAsFixed(0)} / ₹${student.totalPaid.toStringAsFixed(0)}',
                     style: AppTextStyles.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -683,7 +693,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      '₹',
+                      '₹${student.pendingAmount.toStringAsFixed(0)}',
                       style: AppTextStyles.outfit(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,

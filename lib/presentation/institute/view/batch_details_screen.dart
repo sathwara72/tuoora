@@ -115,15 +115,6 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                       ? 'Closed'
                       : batch.statusLabel,
                 ),
-                AppSpacing.h12,
-                Text(
-                  'Batch ID: ${batch.id.length > 4 ? batch.id.substring(0, 4) : batch.id}',
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
                 const Spacer(),
                 if (!controller.isStatusClosed.value)
                   GestureDetector(

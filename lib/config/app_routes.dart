@@ -81,6 +81,8 @@ class AppRoutes {
   static const String instituteWhiteLabel = '/institute/profile/white-label';
   static const String instituteAddOns = '/institute/profile/add-ons';
   static const String instituteWhatsApp = '/institute/profile/whatsapp';
+  static const String instituteNotificationPreferences =
+      '/institute/profile/notification-preferences';
   static const String instituteUpiPaymentSettings =
       '/institute/profile/upi-payment';
   static const String instituteFeeReport = '/institute/reports/fee-main';

@@ -19,6 +19,7 @@ import 'package:tuoora/presentation/institute/models/school_class_model.dart';
 import 'package:tuoora/presentation/institute/models/attendance_record_model.dart';
 import 'package:tuoora/data/models/notification_model.dart';
 import 'package:tuoora/data/models/staff_model.dart';
+import 'package:tuoora/data/models/notification_preference_model.dart';
 import 'package:tuoora/data/models/subscription_model.dart';
 import 'package:tuoora/data/models/white_label_model.dart';
 import 'package:tuoora/presentation/institute/models/birthday_model.dart';
@@ -1605,4 +1606,49 @@ class InstituteRepository implements InstituteRepositoryImpl {
       _handleError(response, 'Failed to delete device session');
     }
   }
+
+  @override
+  Future<List<NotificationPreferenceModule>> getNotificationPreferences() async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteNotificationPreferences,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to load notification preferences');
+    }
+
+    final body = response.body;
+    if (body is Map && body['data'] is List) {
+      final list = body['data'] as List;
+      return list
+          .map((item) => NotificationPreferenceModule.fromJson(
+              Map<String, dynamic>.from(item as Map)))
+          .toList();
+    }
+    return <NotificationPreferenceModule>[];
+  }
+
+  @override
+  Future<List<NotificationPreferenceModule>> updateNotificationPreferences(
+    List<Map<String, dynamic>> modules,
+  ) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteNotificationPreferences,
+      {'modules': modules},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to save notification preferences');
+    }
+
+    final body = response.body;
+    if (body is Map && body['data'] is List) {
+      final list = body['data'] as List;
+      return list
+          .map((item) => NotificationPreferenceModule.fromJson(
+              Map<String, dynamic>.from(item as Map)))
+          .toList();
+    }
+    return <NotificationPreferenceModule>[];
+  }
 }
+
+

@@ -18,6 +18,7 @@ import 'package:tuoora/presentation/institute/controllers/institute_profile_cont
 import 'package:tuoora/presentation/institute/controllers/leads_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/notes_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/notification_controller.dart';
+import 'package:tuoora/presentation/institute/controllers/notification_preferences_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/record_fee_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/security_controller.dart';
@@ -121,6 +122,12 @@ class InstituteBinding extends Bindings {
     Get.lazyPut<NotificationController>(
       () => NotificationController(
         Get.find<InstituteRepositoryImpl>() as InstituteRepository,
+      ),
+      fenix: true,
+    );
+    Get.lazyPut<NotificationPreferencesController>(
+      () => NotificationPreferencesController(
+        Get.find<InstituteRepositoryImpl>(),
       ),
       fenix: true,
     );

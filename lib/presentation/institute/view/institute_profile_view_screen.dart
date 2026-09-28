@@ -87,6 +87,8 @@ class InstituteProfileViewScreen extends StatelessWidget {
                         _buildUpiPaymentCard(context, controller),
                         AppSpacing.v16,
                         _buildSettingsNavigationCard(),
+                        AppSpacing.v16,
+                        _buildNotificationPreferencesNavigationCard(),
                         if (!Platform.isIOS) ...[
                           AppSpacing.v16,
                           _buildAddOnsNavigationCard(),
@@ -935,6 +937,62 @@ class InstituteProfileViewScreen extends StatelessWidget {
                     ),
                     Text(
                       'Manage active devices, logins, passwords & alert integrations',
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationPreferencesNavigationCard() {
+    return _card(
+      child: InkWell(
+        onTap: () => Get.toNamed(AppRoutes.instituteNotificationPreferences),
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+          child: Row(
+            children: [
+              Container(
+                padding: AppSpacing.all8,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.tune_rounded,
+                  size: 18,
+                  color: Color(0xFF4F46E5),
+                ),
+              ),
+              AppSpacing.h12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Notification Preferences',
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Toggle WhatsApp, Push & Email per campus module',
                       style: AppTextStyles.outfit(
                         fontSize: 11,
                         color: AppColors.textMuted,

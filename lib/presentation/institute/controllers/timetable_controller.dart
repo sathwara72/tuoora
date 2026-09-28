@@ -50,6 +50,8 @@ class TimetableController extends GetxController {
   final roomNoController = TextEditingController();
   final descriptionController = TextEditingController();
   final formDay = DayOfWeek.monday.obs;
+  final isAllDays = false.obs;
+  final formStatus = 'active'.obs;
   final startTime = Rxn<TimeOfDay>();
   final endTime = Rxn<TimeOfDay>();
 
@@ -201,26 +203,51 @@ class TimetableController extends GetxController {
   /// Active days for the selected batch or all 7 days
   List<String> get availableDays {
     final bId = selectedFormBatchId.value;
-    if (bId != null) {
-      final batch = batchesList.firstWhereOrNull((b) => b.id == bId) ?? currentBatch.value;
-      if (batch != null && batch.days.isNotEmpty) {
-        const shortDayToDayOfWeek = {
-          'Mon': DayOfWeek.monday,
-          'Tue': DayOfWeek.tuesday,
-          'Wed': DayOfWeek.wednesday,
-          'Thu': DayOfWeek.thursday,
-          'Fri': DayOfWeek.friday,
-          'Sat': DayOfWeek.saturday,
-          'Sun': DayOfWeek.sunday,
-        };
-        final mapped = batch.days
-            .map((d) => shortDayToDayOfWeek[d])
-            .whereType<String>()
-            .toList();
-        if (mapped.isNotEmpty) return mapped;
-      }
+    final batch = (bId != null
+            ? batchesList.firstWhereOrNull((b) => b.id == bId)
+            : null) ??
+        currentBatch.value;
+    if (batch != null && batch.days.isNotEmpty) {
+      const shortDayToDayOfWeek = {
+        'mon': DayOfWeek.monday,
+        'monday': DayOfWeek.monday,
+        'tue': DayOfWeek.tuesday,
+        'tuesday': DayOfWeek.tuesday,
+        'wed': DayOfWeek.wednesday,
+        'wednesday': DayOfWeek.wednesday,
+        'thu': DayOfWeek.thursday,
+        'thursday': DayOfWeek.thursday,
+        'fri': DayOfWeek.friday,
+        'friday': DayOfWeek.friday,
+        'sat': DayOfWeek.saturday,
+        'saturday': DayOfWeek.saturday,
+        'sun': DayOfWeek.sunday,
+        'sunday': DayOfWeek.sunday,
+      };
+      final mapped = batch.days
+          .map((d) => shortDayToDayOfWeek[d.trim().toLowerCase()])
+          .whereType<String>()
+          .toSet()
+          .toList();
+      if (mapped.isNotEmpty) return mapped;
     }
     return DayOfWeek.values;
+  }
+
+  void toggleAllDays([bool? val]) {
+    final next = val ?? !isAllDays.value;
+    isAllDays.value = next;
+    if (next) {
+      formDay.value = 'all';
+    } else {
+      final days = availableDays;
+      formDay.value = days.isNotEmpty ? days.first : DayOfWeek.monday;
+    }
+  }
+
+  void setFormDay(String day) {
+    formDay.value = day.toLowerCase();
+    isAllDays.value = (formDay.value == 'all');
   }
 
   // ── Form interactions ──────────────────────────────────────────────────
@@ -229,6 +256,21 @@ class TimetableController extends GetxController {
     selectedFormBatchId.value = batchId;
     batchError.value = null;
     selectedClassId.value = null;
+    subjectController.clear();
+    selectedStaffId.value = null;
+
+    final batch = batchesList.firstWhereOrNull((b) => b.id == batchId);
+    if (batch != null) {
+      currentBatch.value = batch;
+    }
+
+    if (!isAllDays.value && formDay.value != 'all') {
+      final days = availableDays;
+      if (!days.contains(formDay.value.toLowerCase()) && days.isNotEmpty) {
+        formDay.value = days.first;
+      }
+    }
+
     if (batchId != null) {
       await fetchClassesForBatch(batchId);
     } else {
@@ -246,12 +288,24 @@ class TimetableController extends GetxController {
       if (isEditing) {
         _syncSelectedClassWithSubject();
       } else {
-        if (batchClasses.isNotEmpty && !isCustomSubject.value) {
+        if (batchClasses.isNotEmpty) {
           selectClass(batchClasses.first.id.toString());
+        } else {
+          final batch = batchesList.firstWhereOrNull((b) => b.id == batchId) ?? currentBatch.value;
+          if (batch != null && batch.subject.trim().isNotEmpty) {
+            selectClass('__batch_subject__');
+          } else {
+            selectedClassId.value = null;
+            subjectController.clear();
+            selectedStaffId.value = null;
+          }
         }
       }
     } catch (_) {
       batchClasses.clear();
+      selectedClassId.value = null;
+      subjectController.clear();
+      selectedStaffId.value = null;
     } finally {
       isLoadingClasses.value = false;
     }
@@ -282,37 +336,24 @@ class TimetableController extends GetxController {
     if (batch != null && batch.subject.trim().toLowerCase() == subject.toLowerCase()) {
       selectedClassId.value = '__batch_subject__';
       isCustomSubject.value = false;
+      if (selectedStaffId.value == null && batch.staffId != null) {
+        selectedStaffId.value = batch.staffId;
+      }
       return;
     }
 
-    selectedClassId.value = '__custom__';
-    isCustomSubject.value = true;
+    // Preserve existing subject for editing
+    selectedClassId.value = '__existing__';
+    subjectController.text = subject;
+    isCustomSubject.value = false;
   }
 
   void selectClass(String? classId) {
     selectedClassId.value = classId;
-    if (classId == null) {
-      isCustomSubject.value = false;
-      subjectController.clear();
-      selectedStaffId.value = null;
-      return;
-    }
-    if (classId == '__custom__') {
-      isCustomSubject.value = true;
-      subjectController.clear();
-      selectedStaffId.value = null;
-      return;
-    }
     isCustomSubject.value = false;
-    final found = batchClasses.firstWhereOrNull((c) => c.id.toString() == classId);
-    if (found != null) {
-      subjectController.text = found.name;
-      subjectError.value = null;
-      if (found.teachers.isNotEmpty) {
-        selectedStaffId.value = found.teachers.first.id;
-      } else {
-        selectedStaffId.value = null;
-      }
+    if (classId == null) {
+      subjectController.clear();
+      selectedStaffId.value = null;
       return;
     }
     if (classId == '__batch_subject__') {
@@ -326,6 +367,21 @@ class TimetableController extends GetxController {
       }
       return;
     }
+    if (classId == '__existing__') {
+      subjectError.value = null;
+      return;
+    }
+    final found = batchClasses.firstWhereOrNull((c) => c.id.toString() == classId);
+    if (found != null) {
+      subjectController.text = found.name;
+      subjectError.value = null;
+      if (found.teachers.isNotEmpty) {
+        selectedStaffId.value = found.teachers.first.id;
+      } else {
+        selectedStaffId.value = null;
+      }
+      return;
+    }
     subjectController.text = classId;
     subjectError.value = null;
   }
@@ -335,6 +391,8 @@ class TimetableController extends GetxController {
   void startCreate([BatchModel? batch, bool? lockBatch]) {
     clearForm();
     isCustomSubject.value = false;
+    isAllDays.value = false;
+    formStatus.value = 'active';
     final effectiveBatch = batch ?? (lockBatch == false ? null : currentBatch.value);
     if (effectiveBatch != null) {
       currentBatch.value = effectiveBatch;
@@ -347,7 +405,14 @@ class TimetableController extends GetxController {
       batchClasses.clear();
     }
     selectedClassId.value = null;
-    formDay.value = selectedDay.value;
+    final days = availableDays;
+    if (days.contains(selectedDay.value.toLowerCase())) {
+      formDay.value = selectedDay.value.toLowerCase();
+    } else if (days.isNotEmpty) {
+      formDay.value = days.first;
+    } else {
+      formDay.value = DayOfWeek.monday;
+    }
     fetchStaffForAssignment();
     fetchBatches();
   }
@@ -359,7 +424,9 @@ class TimetableController extends GetxController {
     subjectController.text = slot.subject;
     roomNoController.text = slot.roomNo ?? '';
     descriptionController.text = slot.description ?? '';
-    formDay.value = slot.dayOfWeek;
+    formDay.value = slot.dayOfWeek.toLowerCase();
+    isAllDays.value = false;
+    formStatus.value = slot.status.isNotEmpty ? slot.status.toLowerCase() : 'active';
     startTime.value = _parseTimeOfDay(slot.startTime);
     endTime.value = _parseTimeOfDay(slot.endTime);
     selectedStaffId.value = slot.staffId;
@@ -420,7 +487,7 @@ class TimetableController extends GetxController {
       batchError.value = null;
     }
 
-    if (!isCustomSubject.value && selectedClassId.value != null && selectedClassId.value != '__custom__') {
+    if (selectedClassId.value != null && selectedClassId.value != '__existing__') {
       final found = batchClasses.firstWhereOrNull((c) => c.id.toString() == selectedClassId.value);
       if (found != null && subjectController.text.trim().isEmpty) {
         subjectController.text = found.name;
@@ -455,13 +522,17 @@ class TimetableController extends GetxController {
     triedToSave.value = true;
     if (!validateForm()) return;
 
+    final isAll = !isEditing && (isAllDays.value || formDay.value.toLowerCase() == 'all');
+
     final data = <String, dynamic>{
       'batch_id': selectedFormBatchId.value,
       'staff_id': selectedStaffId.value,
       'subject': subjectController.text.trim(),
-      'day_of_week': formDay.value.toLowerCase(),
+      'day_of_week': isAll ? 'all' : formDay.value.toLowerCase(),
+      if (isAll) 'all_days': true,
       'start_time': _formatTime(startTime.value!),
       'end_time': _formatTime(endTime.value!),
+      'status': formStatus.value,
       'room_no': roomNoController.text.trim().isEmpty
           ? null
           : roomNoController.text.trim(),
@@ -534,6 +605,8 @@ class TimetableController extends GetxController {
     selectedStaffId.value = null;
     selectedClassId.value = null;
     isCustomSubject.value = false;
+    isAllDays.value = false;
+    formStatus.value = 'active';
     batchClasses.clear();
     triedToSave.value = false;
     batchError.value = null;

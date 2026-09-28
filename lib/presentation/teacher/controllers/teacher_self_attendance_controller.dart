@@ -29,6 +29,12 @@ class TeacherSelfAttendanceController extends GetxController {
 
   static const statuses = ['Present', 'Absent', 'Half Day', 'Late', 'Leave'];
 
+  void switchTab(int index) {
+    if (selectedTab.value != index) {
+      selectedTab.value = index;
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();

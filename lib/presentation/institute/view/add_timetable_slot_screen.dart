@@ -64,7 +64,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         child: Column(
           children: [
             InstituteAppBar(
-              title: controller.isEditing ? 'Edit Class Schedule' : 'Add Class Schedule',
+              title: controller.isEditing ? 'Edit Subject Schedule' : 'Add Subject Schedule',
               onBackTap: () => Get.back(),
             ),
             Expanded(
@@ -95,16 +95,14 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     }),
                     AppSpacing.v20,
 
-                    // 2. Class / Subject Section (Direct class selection or custom fallback)
+                    // 2. Class / Subject Section
                     _buildClassOrSubjectSection(context),
 
-                    // 4. Day Dropdown
-                    const InstituteLabel('DAY *'),
-                    AppSpacing.v8,
-                    _buildDayDropdown(),
+                    // 3. Day Dropdown with All Days
+                    _buildDaySection(),
                     AppSpacing.v20,
 
-                    // 5. Start and End Time
+                    // 4. Start and End Time
                     Row(
                       children: [
                         Expanded(
@@ -142,9 +140,13 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     }),
                     AppSpacing.v20,
 
+                    // 5. Status (Active / Cancelled)
+                    const InstituteLabel('STATUS'),
+                    AppSpacing.v8,
+                    _buildStatusSelector(),
+                    AppSpacing.v20,
 
-
-                    // 7. Room / Classroom
+                    // 6. Room / Classroom
                     AppInputField(
                       label: 'ROOM / CLASSROOM (OPTIONAL)',
                       controller: controller.roomNoController,
@@ -152,7 +154,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     ),
                     AppSpacing.v20,
 
-                    // 8. Description / Notes
+                    // 7. Description / Notes
                     AppInputField(
                       label: 'DESCRIPTION (OPTIONAL)',
                       controller: controller.descriptionController,
@@ -161,7 +163,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     ),
                     AppSpacing.v32,
 
-                    // 9. Save Button
+                    // 8. Save Button
                     _buildSaveButton(),
                   ],
                 ),
@@ -288,114 +290,67 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
 
   Widget _buildClassOrSubjectSection(BuildContext context) {
     return Obx(() {
+      final batch = controller.batchesList.firstWhereOrNull(
+            (b) => b.id == controller.selectedFormBatchId.value,
+          ) ??
+          controller.currentBatch.value;
+      final hasBatch = controller.selectedFormBatchId.value != null;
       final hasClasses = controller.batchClasses.isNotEmpty;
-      final isCustom = controller.isCustomSubject.value ||
-          (!hasClasses && !controller.isLoadingClasses.value);
+      final hasBatchSubject = batch != null && batch.subject.trim().isNotEmpty;
+      final hasAnySubject = hasClasses || hasBatchSubject;
 
-      if (!isCustom && (hasClasses || controller.isLoadingClasses.value)) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const InstituteLabel('SELECT CLASS *'),
-                    if (controller.isLoadingClasses.value) ...[
-                      AppSpacing.h8,
-                      const SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.primaryBrand,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                if (hasClasses)
-                  GestureDetector(
-                    onTap: () {
-                      controller.isCustomSubject.value = true;
-                      controller.selectedClassId.value = '__custom__';
-                      controller.subjectController.clear();
-                    },
-                    child: Text(
-                      '+ Custom Subject',
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryBrand,
-                      ),
-                    ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const InstituteLabel('SELECT SUBJECT *'),
+              if (controller.isLoadingClasses.value) ...[
+                AppSpacing.h8,
+                const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primaryBrand,
                   ),
+                ),
               ],
-            ),
-            AppSpacing.v8,
-            _buildClassDropdown(),
-            if (controller.subjectError.value != null) ...[
-              Padding(
-                padding: const EdgeInsets.only(top: 6.0, left: 4.0),
-                child: Text(
-                  controller.subjectError.value!,
-                  style: AppTextStyles.outfit(
-                    fontSize: 12,
-                    color: Colors.redAccent,
-                    fontWeight: FontWeight.w500,
-                  ),
+            ],
+          ),
+          AppSpacing.v8,
+          _buildClassDropdown(),
+          if (controller.subjectError.value != null) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 6.0, left: 4.0),
+              child: Text(
+                controller.subjectError.value!,
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ],
-            AppSpacing.v12,
-            _buildAssignedFacultyCard(),
-            AppSpacing.v20,
-          ],
-        );
-      } else {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hasClasses) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const InstituteLabel('SUBJECT NAME *'),
-                  GestureDetector(
-                    onTap: () {
-                      controller.isCustomSubject.value = false;
-                      if (controller.batchClasses.isNotEmpty) {
-                        controller.selectClass(controller.batchClasses.first.id.toString());
-                      }
-                    },
-                    child: Text(
-                      '← Select from Classes',
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryBrand,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              AppSpacing.v8,
-            ],
-            AppInputField(
-              label: hasClasses ? null : 'SUBJECT NAME *',
-              controller: controller.subjectController,
-              hint: 'e.g. Mathematics, Physics, Accounts',
-              errorText: controller.subjectError.value,
             ),
-            AppSpacing.v20,
-            const InstituteLabel('ASSIGN FACULTY / TEACHER'),
-            AppSpacing.v8,
-            _buildStaffDropdown(),
-            AppSpacing.v20,
           ],
-        );
-      }
+          if (hasBatch && !controller.isLoadingClasses.value && !hasAnySubject) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 6.0, left: 4.0),
+              child: Text(
+                'No subjects found for this batch.',
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  color: const Color(0xFFD97706),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+          AppSpacing.v12,
+          _buildAssignedFacultyCard(),
+          AppSpacing.v20,
+        ],
+      );
     });
   }
 
@@ -413,7 +368,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         DropdownMenuItem<String?>(
           value: null,
           child: Text(
-            '-- Select Class --',
+            '-- Select Subject --',
             style: AppTextStyles.outfit(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -472,20 +427,24 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         }
       }
 
-      // 4. Custom option
-      items.add(
-        DropdownMenuItem<String?>(
-          value: '__custom__',
-          child: Text(
-            '+ Custom / Other Subject',
-            style: AppTextStyles.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primaryBrand,
+      // 4. Existing Subject if editing
+      if (controller.isEditing && controller.selectedClassId.value == '__existing__') {
+        items.add(
+          DropdownMenuItem<String?>(
+            value: '__existing__',
+            child: Text(
+              controller.subjectController.text,
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        ),
-      );
+        );
+      }
 
       final selectedVal = controller.selectedClassId.value;
       final isValidValue = items.any((it) => it.value == selectedVal);
@@ -508,7 +467,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
             isExpanded: true,
             value: finalValue,
             hint: Text(
-              '-- Select Class --',
+              '-- Select Subject --',
               style: AppTextStyles.outfit(
                 fontSize: 14,
                 color: AppColors.textMuted,
@@ -702,11 +661,158 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
     });
   }
 
+  Widget _buildDaySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const InstituteLabel('DAY *'),
+            if (!controller.isEditing)
+              Obx(
+                () => GestureDetector(
+                  onTap: () => controller.toggleAllDays(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: Checkbox(
+                          value: controller.isAllDays.value,
+                          onChanged: (val) => controller.toggleAllDays(val),
+                          activeColor: AppColors.primaryBrand,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      AppSpacing.h6,
+                      Text(
+                        'All Days',
+                        style: AppTextStyles.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryBrand,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+        AppSpacing.v8,
+        _buildDayDropdown(),
+        Obx(() {
+          if (controller.isEditing ||
+              (!controller.isAllDays.value && controller.formDay.value != 'all')) {
+            return const SizedBox.shrink();
+          }
+          final daysList = controller.availableDays
+              .map((d) => DayOfWeek.labelFor(d))
+              .join(', ');
+          return Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFFEDD5)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: Color(0xFFC2410C),
+                  size: 16,
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'This lecture will be scheduled across all days: ',
+                          style: AppTextStyles.outfit(
+                            fontSize: 11,
+                            color: const Color(0xFF9A3412),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        TextSpan(
+                          text: daysList,
+                          style: AppTextStyles.outfit(
+                            fontSize: 11,
+                            color: const Color(0xFF7C2D12),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   Widget _buildDayDropdown() {
     return Obx(() {
+      final isEdit = controller.isEditing;
       final available = controller.availableDays;
       final currentDay = controller.formDay.value.toLowerCase();
-      final days = {currentDay, ...available.map((d) => d.toLowerCase())}.toList();
+      final isAll = controller.isAllDays.value || currentDay == 'all';
+
+      final items = <DropdownMenuItem<String>>[];
+
+      if (!isEdit) {
+        items.add(
+          DropdownMenuItem<String>(
+            value: 'all',
+            child: Text(
+              'All Days',
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryBrand,
+              ),
+            ),
+          ),
+        );
+      }
+
+      final dayValues = {
+        if (currentDay != 'all') currentDay,
+        ...available.map((d) => d.toLowerCase())
+      }.toList();
+
+      for (final day in dayValues) {
+        items.add(
+          DropdownMenuItem<String>(
+            value: day,
+            child: Text(
+              DayOfWeek.labelFor(day),
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        );
+      }
+
+      final selectedValue = isAll
+          ? 'all'
+          : (items.any((i) => i.value == currentDay)
+              ? currentDay
+              : (items.isNotEmpty ? items.first.value : null));
 
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -718,26 +824,21 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             isExpanded: true,
-            value: days.contains(currentDay) ? currentDay : days.first,
+            value: selectedValue,
             icon: const Icon(
               Icons.keyboard_arrow_down_rounded,
               color: AppColors.textMuted,
             ),
-            items: days.map((day) {
-              return DropdownMenuItem<String>(
-                value: day,
-                child: Text(
-                  DayOfWeek.labelFor(day),
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              );
-            }).toList(),
+            items: items,
             onChanged: (day) {
-              if (day != null) controller.formDay.value = day;
+              if (day != null) {
+                if (day == 'all') {
+                  controller.toggleAllDays(true);
+                } else {
+                  controller.isAllDays.value = false;
+                  controller.formDay.value = day;
+                }
+              }
             },
           ),
         ),
@@ -878,13 +979,104 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
     });
   }
 
+  Widget _buildStatusSelector() {
+    return Obx(() {
+      final status = controller.formStatus.value;
+      final isActive = status == 'active';
+
+      return Row(
+        children: [
+          // Active
+          Expanded(
+            child: GestureDetector(
+              onTap: () => controller.formStatus.value = 'active',
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isActive ? const Color(0xFFECFDF5) : AppColors.fieldBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isActive ? const Color(0xFF6EE7B7) : AppColors.fieldBorder,
+                    width: isActive ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isActive ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    AppSpacing.h8,
+                    Text(
+                      'Active',
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                        color: isActive ? const Color(0xFF047857) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          AppSpacing.h12,
+          // Cancelled
+          Expanded(
+            child: GestureDetector(
+              onTap: () => controller.formStatus.value = 'cancelled',
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: !isActive ? const Color(0xFFFFF1F2) : AppColors.fieldBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: !isActive ? const Color(0xFFFDA4AF) : AppColors.fieldBorder,
+                    width: !isActive ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: !isActive ? const Color(0xFFF43F5E) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    AppSpacing.h8,
+                    Text(
+                      'Cancelled',
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        fontWeight: !isActive ? FontWeight.w700 : FontWeight.w500,
+                        color: !isActive ? const Color(0xFFBE123C) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
   Widget _buildSaveButton() {
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.only(bottom: 16),
       child: Obx(
         () => AppButton(
-          label: controller.isEditing ? 'Save Changes' : 'Add Class Schedule',
+          label: controller.isEditing ? 'Save Changes' : 'Add Subject Schedule',
           isLoading: controller.isSaving.value,
           onPressed: () => controller.submitForm(),
         ),

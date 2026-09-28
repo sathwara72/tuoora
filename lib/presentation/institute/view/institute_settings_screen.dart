@@ -67,6 +67,8 @@ class InstituteSettingsScreen extends StatelessWidget {
                         _buildActiveSessionsCard(context, controller),
                         AppSpacing.v16,
                         _buildAccountCard(context),
+                        AppSpacing.v16,
+                        _buildNotificationsCard(context),
                         AppSpacing.v12,
                       ],
                     ),
@@ -111,8 +113,28 @@ class InstituteSettingsScreen extends StatelessWidget {
             onTap: () => Get.toNamed(AppRoutes.instituteChangePassword),
             isLast: true,
           ),
-          // WhatsApp Integration is unfinished (coming-soon placeholder) —
-          // hidden until the feature actually ships.
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationsCard(BuildContext context) {
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _cardSectionHeader(
+            'Notifications & Channels',
+            Icons.notifications_active_rounded,
+          ),
+          _buildSettingsItem(
+            icon: Icons.tune_rounded,
+            title: 'Notification Preferences',
+            subtitle: 'Toggle WhatsApp, Push & Email per campus module',
+            onTap: () =>
+                Get.toNamed(AppRoutes.instituteNotificationPreferences),
+            isLast: true,
+          ),
         ],
       ),
     );
@@ -222,6 +244,7 @@ class InstituteSettingsScreen extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   void _showWhatsAppComingSoonDialog(BuildContext context) {
     Get.dialog(
       Dialog(

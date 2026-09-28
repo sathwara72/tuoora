@@ -307,6 +307,7 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
         ? slot.timeSlot!
         : controller.formatTimeRange(slot.startTime, slot.endTime);
     final dayText = _getDayBadgeText(slot.dayOfWeek);
+    final isCancelled = slot.status.toLowerCase() == 'cancelled';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -314,7 +315,9 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isCancelled ? const Color(0xFFFECDD3) : const Color(0xFFE2E8F0),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -326,25 +329,64 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Day badge (MON, TUE, etc.) & Action icons (Edit & Delete)
+          // Row 1: Day badge (MON, TUE, etc.), Cancelled badge & Action icons (Edit & Delete)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  dayText,
-                  style: AppTextStyles.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF475569),
-                    letterSpacing: 0.5,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isCancelled ? const Color(0xFFFFE4E6) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      dayText,
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isCancelled ? const Color(0xFFBE123C) : const Color(0xFF475569),
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
-                ),
+                  if (isCancelled) ...[
+                    AppSpacing.h8,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFE4E6),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFFDA4AF)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFFF43F5E),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'CANCELLED',
+                            style: AppTextStyles.outfit(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFFBE123C),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -379,21 +421,23 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
           ),
           AppSpacing.v8,
 
-          // Row 2: Soft orange time pill
+          // Row 2: Timing pill
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF4EC),
+              color: isCancelled ? const Color(0xFFFFF1F2) : const Color(0xFFFFF4EC),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFFFD8C2)),
+              border: Border.all(
+                color: isCancelled ? const Color(0xFFFFE4E6) : const Color(0xFFFFD8C2),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.access_time_rounded,
                   size: 13,
-                  color: AppColors.primaryBrand,
+                  color: isCancelled ? const Color(0xFFE11D48) : AppColors.primaryBrand,
                 ),
                 const SizedBox(width: 5),
                 Text(
@@ -401,7 +445,7 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
                   style: AppTextStyles.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primaryBrand,
+                    color: isCancelled ? const Color(0xFFE11D48) : AppColors.primaryBrand,
                   ),
                 ),
               ],
@@ -415,7 +459,8 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
             style: AppTextStyles.outfit(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF0F172A),
+              color: isCancelled ? const Color(0xFF64748B) : const Color(0xFF0F172A),
+              decoration: isCancelled ? TextDecoration.lineThrough : null,
             ),
           ),
 

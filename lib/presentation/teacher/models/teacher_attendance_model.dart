@@ -3,6 +3,9 @@ class TeacherAttendanceRow {
   final String studentName;
   final String? phone;
   final String? enrollmentId;
+  final String? profileImageUrl;
+  final int monthlyAbsentCount;
+  final List<String> monthlyAbsentDates;
   String? status;
   final int? attendanceId;
 
@@ -11,16 +14,31 @@ class TeacherAttendanceRow {
     required this.studentName,
     this.phone,
     this.enrollmentId,
+    this.profileImageUrl,
+    this.monthlyAbsentCount = 0,
+    this.monthlyAbsentDates = const [],
     this.status,
     this.attendanceId,
   });
 
   factory TeacherAttendanceRow.fromJson(Map<String, dynamic> json) {
+    final absentCount = json['monthly_absent_count'] != null
+        ? int.tryParse(json['monthly_absent_count'].toString()) ?? 0
+        : 0;
+
+    final rawDates = json['monthly_absent_dates'];
+    final List<String> absentDates = (rawDates is List)
+        ? rawDates.map((e) => e.toString()).toList()
+        : [];
+
     return TeacherAttendanceRow(
-      studentId: json['student_id'],
-      studentName: json['student_name'] ?? '',
-      phone: json['phone'],
-      enrollmentId: json['enrollment_id'],
+      studentId: json['student_id'] ?? json['id'] ?? 0,
+      studentName: json['student_name'] ?? json['name'] ?? '',
+      phone: json['phone']?.toString(),
+      enrollmentId: json['enrollment_id']?.toString(),
+      profileImageUrl: json['profile_image_url']?.toString(),
+      monthlyAbsentCount: absentCount,
+      monthlyAbsentDates: absentDates,
       status: json['status'],
       attendanceId: json['attendance_id'],
     );
