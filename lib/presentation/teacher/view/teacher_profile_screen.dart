@@ -11,7 +11,6 @@ import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_profile_controller.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_profile_model.dart';
-import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_institute_switcher_sheet.dart';
 
 class TeacherProfileScreen extends GetView<TeacherProfileController> {
@@ -21,327 +20,386 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
-      body: SafeArea(
-        child: Column(
+      body: Obx(() {
+        if (controller.isLoading.value && controller.profile.value == null) {
+          return const Center(child: CommonLoading());
+        }
+        final profile = controller.profile.value;
+        if (profile == null) {
+          return const SizedBox.shrink();
+        }
+        final multipleInstitutes =
+            Get.find<AuthService>().currentUser?.hasMultipleInstitutes == true;
+
+        return ListView(
+          padding: EdgeInsets.zero,
           children: [
-            const TeacherAppBar(title: 'My Profile'),
-            Expanded(
-              child: Obx(() {
-                if (controller.isLoading.value && controller.profile.value == null) {
-                  return const Center(child: CommonLoading());
-                }
-                final profile = controller.profile.value;
-                if (profile == null) {
-                  return const SizedBox.shrink();
-                }
-                return ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                  children: [
-                    Center(
-                      child: GestureDetector(
-                        onTap: controller.changeAvatar,
-                        child: Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 44,
-                              backgroundColor: AppColors.fieldBg,
-                              backgroundImage: profile.profileUrl != null
-                                  ? NetworkImage(profile.profileUrl!)
-                                  : null,
-                              child: profile.profileUrl == null
-                                  ? Text(
-                                      profile.fullName.isNotEmpty
-                                          ? profile.fullName[0].toUpperCase()
-                                          : '?',
-                                      style: AppTextStyles.outfit(
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.primaryBrand,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Container(
-                                width: AppSpacing.s28,
-                                height: AppSpacing.s28,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryBrand,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.white, width: 2),
-                                ),
-                                child: controller.isUploadingAvatar.value
-                                    ? const Padding(
-                                        padding: EdgeInsets.all(6),
-                                        child: CommonLoading(color: AppColors.white, size: 14),
-                                      )
-                                    : const Icon(
-                                        Icons.camera_alt_rounded,
-                                        color: AppColors.white,
-                                        size: 14,
-                                      ),
-                              ),
-                            ),
-                          ],
+            _buildHeader(context, profile),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _sectionTitle('Details'),
+                  _card(
+                    children: [
+                      if (profile.employeeId != null)
+                        _detailRow(
+                          Icons.badge_outlined,
+                          'Employee ID',
+                          profile.employeeId,
                         ),
+                      _detailRow(
+                        Icons.mail_outline_rounded,
+                        'Email',
+                        profile.email,
                       ),
-                    ),
-                    AppSpacing.v12,
-                    Center(
-                      child: Text(
-                        profile.fullName,
-                        style: AppTextStyles.outfit(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                      if (profile.phone != null)
+                        _detailRow(
+                          Icons.phone_outlined,
+                          'Phone',
+                          profile.phone,
                         ),
-                      ),
-                    ),
-                    if (profile.role != null)
-                      Center(
-                        child: Text(
-                          [profile.role, profile.department]
-                              .where((e) => e != null && e.isNotEmpty)
-                              .join(' · '),
-                          style: AppTextStyles.outfit(
-                            fontSize: 13,
-                            color: AppColors.textTertiary,
-                          ),
+                      if (profile.employmentType != null)
+                        _detailRow(
+                          Icons.work_outline_rounded,
+                          'Employment',
+                          _titleCase(profile.employmentType!),
                         ),
-                      ),
-                    AppSpacing.v24,
-                    _infoCard(profile),
-                    AppSpacing.v16,
-                    _buildMyBatchesCard(),
-                    AppSpacing.v16,
-                    if (Get.find<AuthService>().currentUser?.hasMultipleInstitutes == true) ...[
-                      _actionTile(
-                        icon: Icons.apartment_rounded,
-                        label: 'Switch Institute',
-                        onTap: () => TeacherInstituteSwitcherSheet.show(context),
-                      ),
-                      AppSpacing.v8,
+                      if (profile.instituteName != null)
+                        _detailRow(
+                          Icons.apartment_rounded,
+                          'Institute',
+                          profile.instituteName,
+                        ),
                     ],
-                    _actionTile(
-                      icon: Icons.lock_reset_rounded,
-                      label: 'Change Password',
-                      onTap: () => Get.toNamed(
-                        AppRoutes.teacherChangePassword,
-                        arguments: false,
+                  ),
+                  AppSpacing.v20,
+                  _sectionTitle('Account'),
+                  _card(
+                    children: [
+                      if (multipleInstitutes)
+                        _actionRow(
+                          icon: Icons.swap_horiz_rounded,
+                          label: 'Switch Institute',
+                          onTap: () =>
+                              TeacherInstituteSwitcherSheet.show(context),
+                        ),
+                      _actionRow(
+                        icon: Icons.lock_reset_rounded,
+                        label: 'Change Password',
+                        onTap: () => Get.toNamed(
+                          AppRoutes.teacherChangePassword,
+                          arguments: false,
+                        ),
                       ),
-                    ),
-                    AppSpacing.v24,
-                    _actionTile(
-                      icon: Icons.logout_rounded,
-                      label: 'Logout',
-                      isDestructive: true,
-                      onTap: controller.logout,
-                    ),
-                    AppSpacing.v8,
-                    _actionTile(
-                      icon: Icons.delete_forever_rounded,
-                      label: AppStrings.deleteAccount,
-                      isDestructive: true,
-                      onTap: () => CommonDialog.showDeleteConfirmation(
-                        title: AppStrings.deleteAccountConfirmTitle,
-                        description: AppStrings.deleteAccountConfirmMessage,
-                        confirmText: AppStrings.deleteAccountConfirmButton,
-                        onConfirm: controller.deleteAccount,
+                    ],
+                  ),
+                  AppSpacing.v20,
+                  _card(
+                    children: [
+                      _actionRow(
+                        icon: Icons.logout_rounded,
+                        label: 'Logout',
+                        color: AppColors.bohoRed,
+                        showChevron: false,
+                        onTap: controller.logout,
                       ),
-                    ),
-                  ],
-                );
-              }),
+                      _actionRow(
+                        icon: Icons.delete_forever_rounded,
+                        label: AppStrings.deleteAccount,
+                        color: AppColors.bohoRed,
+                        showChevron: false,
+                        onTap: () => CommonDialog.showDeleteConfirmation(
+                          title: AppStrings.deleteAccountConfirmTitle,
+                          description: AppStrings.deleteAccountConfirmMessage,
+                          confirmText: AppStrings.deleteAccountConfirmButton,
+                          onConfirm: controller.deleteAccount,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
-        ),
-      ),
+        );
+      }),
     );
   }
 
-  Widget _buildMyBatchesCard() {
-    return Obx(() {
-      final batches = controller.batches;
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+  Widget _buildHeader(BuildContext context, TeacherProfile profile) {
+    final hsl = HSLColor.fromColor(AppColors.primaryBrand);
+    final dark = hsl
+        .withLightness((hsl.lightness - 0.14).clamp(0.0, 1.0))
+        .toColor();
+    final subtitle = [
+      profile.role,
+      profile.department,
+    ].where((e) => e != null && e.isNotEmpty).join(' · ');
+    final isActive = profile.status.toLowerCase() == 'active';
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.of(context).padding.top + 10,
+        16,
+        26,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primaryBrand, dark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryBrand.withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: Get.back,
+                child: Container(
+                  width: AppSpacing.s40,
+                  height: AppSpacing.s40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    Icons.groups_rounded,
-                    color: Color(0xFF2563EB),
-                    size: 20,
+                    Icons.arrow_back_ios_new_rounded,
+                    color: AppColors.white,
+                    size: 18,
                   ),
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  'My Batches',
+              ),
+              Expanded(
+                child: Text(
+                  'My Profile',
+                  textAlign: TextAlign.center,
                   style: AppTextStyles.outfit(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF0F172A),
+                    color: AppColors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s40),
+            ],
+          ),
+          const SizedBox(height: 18),
+          GestureDetector(
+            onTap: controller.changeAvatar,
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    color: AppColors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: CircleAvatar(
+                    radius: 46,
+                    backgroundColor: AppColors.primaryBrandLight,
+                    backgroundImage: profile.profileUrl != null
+                        ? NetworkImage(profile.profileUrl!)
+                        : null,
+                    child: profile.profileUrl == null
+                        ? Text(
+                            profile.fullName.isNotEmpty
+                                ? profile.fullName[0].toUpperCase()
+                                : '?',
+                            style: AppTextStyles.outfit(
+                              fontSize: 34,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primaryBrand,
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  bottom: 2,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: dark, width: 2),
+                    ),
+                    child: controller.isUploadingAvatar.value
+                        ? const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: CommonLoading(size: 14),
+                          )
+                        : const Icon(
+                            Icons.camera_alt_rounded,
+                            color: AppColors.primaryBrand,
+                            size: 15,
+                          ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            profile.fullName,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.outfit(
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
+              color: AppColors.white,
+            ),
+          ),
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 2),
             Text(
-              'Batches assigned to you.',
+              subtitle,
+              textAlign: TextAlign.center,
               style: AppTextStyles.outfit(
-                fontSize: 12,
-                color: const Color(0xFF64748B),
+                fontSize: 13,
+                color: AppColors.white.withValues(alpha: 0.85),
               ),
             ),
-            const SizedBox(height: 14),
-            if (batches.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'No batches assigned yet.',
+          ],
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: isActive ? const Color(0xFF4ADE80) : Colors.amber,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  _titleCase(profile.status),
                   style: AppTextStyles.outfit(
-                    fontSize: 13,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _titleCase(String v) {
+    final cleaned = v.replaceAll('_', ' ').replaceAll('-', ' ').trim();
+    return cleaned
+        .split(RegExp(r'\s+'))
+        .map(
+          (w) => w.isEmpty
+              ? w
+              : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}',
+        )
+        .join(' ');
+  }
+
+  Widget _sectionTitle(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        text,
+        style: AppTextStyles.outfit(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
+      ),
+    );
+  }
+
+  Widget _card({required List<Widget> children}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i != children.length - 1)
+              const Divider(height: 1, indent: 62, color: Color(0xFFF1F5F9)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _iconBadge(IconData icon, Color color) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: Icon(icon, size: 18, color: color),
+    );
+  }
+
+  Widget _detailRow(IconData icon, String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          _iconBadge(icon, AppColors.primaryBrand),
+          AppSpacing.h12,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
                     color: AppColors.textTertiary,
                   ),
                 ),
-              )
-            else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: batches.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final batch = batches[index];
-                  final studentsCount = batch.studentsCount ?? 0;
-                  return InkWell(
-                    onTap: () => Get.toNamed(
-                      AppRoutes.teacherBatchDetails,
-                      arguments: batch,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  batch.name,
-                                  style: AppTextStyles.outfit(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF0F172A),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '$studentsCount student${studentsCount == 1 ? '' : 's'}',
-                                  style: AppTextStyles.outfit(
-                                    fontSize: 12,
-                                    color: const Color(0xFF64748B),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            size: 22,
-                            color: Color(0xFF94A3B8),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _infoCard(TeacherProfile profile) {
-    return Container(
-      padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderGrey),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (profile.employeeId != null)
-            _infoRow('Employee ID', profile.employeeId),
-          _infoRow('Email', profile.email),
-          if (profile.phone != null) _infoRow('Phone', profile.phone),
-          if (profile.employmentType != null)
-            _infoRow('Employment Type', profile.employmentType),
-          if (profile.instituteName != null)
-            _infoRow('Institute', profile.instituteName, isLast: true),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow(String label, String? value, {bool isLast = false}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.s12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value ?? '-',
-              style: AppTextStyles.outfit(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
+                const SizedBox(height: 1),
+                Text(
+                  value == null || value.isEmpty ? '-' : value,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -349,25 +407,22 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
     );
   }
 
-  Widget _actionTile({
+  Widget _actionRow({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
-    bool isDestructive = false,
+    Color color = AppColors.primaryBrand,
+    bool showChevron = true,
   }) {
-    final color = isDestructive ? AppColors.bohoRed : AppColors.textPrimary;
-    return GestureDetector(
+    final isDanger = color == AppColors.bohoRed;
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        padding: AppSpacing.all16,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          border: Border.all(color: AppColors.borderGrey),
-        ),
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
           children: [
-            Icon(icon, color: color, size: 20),
+            _iconBadge(icon, color),
             AppSpacing.h12,
             Expanded(
               child: Text(
@@ -375,12 +430,15 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
                 style: AppTextStyles.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: color,
+                  color: isDanger ? color : AppColors.textPrimary,
                 ),
               ),
             ),
-            if (!isDestructive)
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
+            if (showChevron)
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textTertiary,
+              ),
           ],
         ),
       ),

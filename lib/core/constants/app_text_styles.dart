@@ -14,6 +14,7 @@ class AppTextStyles {
     double? letterSpacing,
     double? height,
     FontStyle? fontStyle,
+    TextDecoration? decoration,
   }) {
     return GoogleFonts.outfit(
       fontSize: fontSize,
@@ -22,6 +23,7 @@ class AppTextStyles {
       letterSpacing: letterSpacing,
       height: height,
       fontStyle: fontStyle,
+      decoration: decoration,
     );
   }
 

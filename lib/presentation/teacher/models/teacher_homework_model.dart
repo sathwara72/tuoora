@@ -7,6 +7,7 @@ class TeacherHomework {
   final String? attachmentUrl;
   final String? batchName;
   final int? submissionsCount;
+  final bool isClosed;
 
   const TeacherHomework({
     required this.id,
@@ -17,6 +18,7 @@ class TeacherHomework {
     this.attachmentUrl,
     this.batchName,
     this.submissionsCount,
+    this.isClosed = false,
   });
 
   bool get isOverdue {
@@ -26,6 +28,12 @@ class TeacherHomework {
     final todayMidnight = DateTime(today.year, today.month, today.day);
     final dueMidnight = DateTime(due.year, due.month, due.day);
     return dueMidnight.isBefore(todayMidnight);
+  }
+
+  /// Due date passed more than a week ago: treated as finished for the teacher.
+  bool get isCompleted {
+    final d = daysLeft;
+    return d != null && d < -7;
   }
 
   int? get daysLeft {
@@ -41,8 +49,9 @@ class TeacherHomework {
     final d = daysLeft;
     if (d == null) return '';
     if (d < 0) {
+      if (isCompleted) return 'Completed';
       final daysAgo = d.abs();
-      return daysAgo == 1 ? 'Overdue by 1 day' : 'Overdue by $daysAgo days';
+      return daysAgo == 1 ? 'Ended 1 day ago' : 'Ended $daysAgo days ago';
     } else if (d == 0) {
       return 'Due Today';
     } else if (d == 1) {
@@ -63,6 +72,7 @@ class TeacherHomework {
       attachmentUrl: json['attachment'],
       batchName: batch is Map ? batch['name'] : null,
       submissionsCount: json['submissions_count'],
+      isClosed: json['is_closed'] == true,
     );
   }
 }
@@ -93,6 +103,7 @@ class TeacherHomeworkSubmission {
   final int studentId;
   final String studentName;
   final String? profileImageUrl;
+  final String? enrollmentId;
   String status;
   double? score;
   final String? note;
@@ -102,6 +113,7 @@ class TeacherHomeworkSubmission {
     required this.studentId,
     required this.studentName,
     this.profileImageUrl,
+    this.enrollmentId,
     required this.status,
     this.score,
     this.note,
@@ -139,6 +151,7 @@ class TeacherHomeworkSubmission {
       studentId: json['student_id'] ?? student['id'] ?? 0,
       studentName: student['name'] ?? json['student_name'] ?? '',
       profileImageUrl: student['profile_image_url'] ?? json['profile_image_url'],
+      enrollmentId: student['enrollment_id']?.toString(),
       status: normalizeStatus(
         json['status'],
         score: rawScore,

@@ -479,30 +479,6 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<Map<String, dynamic>> saveFeePromise({
-    required int studentId,
-    required String promiseDate,
-    double? amount,
-    String? notes,
-  }) async {
-    final body = <String, dynamic>{
-      'student_id': studentId,
-      'promise_date': promiseDate,
-    };
-    if (amount != null) body['amount'] = amount;
-    if (notes != null && notes.isNotEmpty) body['notes'] = notes;
-
-    final response = await _apiClient.post(
-      '/promises',
-      body,
-    );
-    if (response.status.hasError) {
-      _handleError(response, 'Failed to save payment promise');
-    }
-    return response.body is Map ? (response.body as Map).cast<String, dynamic>() : <String, dynamic>{};
-  }
-
-  @override
   Future<FeeReportResponse> getFeeReport() async {
     final response = await _apiClient.get(ApiConstants.instituteReportFee);
     if (response.status.hasError) {
@@ -1309,17 +1285,48 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<ExpenseAnalysis> getExpenseAnalysis(String month, String year) async {
+  Future<bool> getIncludeSalaryInExpenses() async {
     final response = await _apiClient.get(
-      ApiConstants.instituteExpenseAnalysis,
-      query: {'month': month, 'year': year},
+      ApiConstants.instituteExpenseSalaryToggle,
     );
     if (response.status.hasError) {
-      throw Exception(
-        'Failed to fetch expense analysis: ${response.statusText}',
-      );
+      throw Exception('Failed to fetch salary setting: ${response.statusText}');
     }
-    return ExpenseAnalysis.fromJson(response.body);
+    return response.body?['include_salary_in_expenses'] == true;
+  }
+
+  @override
+  Future<bool> setIncludeSalaryInExpenses(bool include) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteExpenseSalaryToggle,
+      {'include_salary_in_expenses': include},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update salary setting');
+    }
+    return response.body?['include_salary_in_expenses'] == true;
+  }
+
+  @override
+  Future<List<ExpenseModel>> listSalaryExpenses({
+    required int month,
+    required int year,
+  }) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteExpenses,
+      query: {
+        'category_id': 'salary',
+        'month': month.toString(),
+        'year': year.toString(),
+      },
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch salary expenses: ${response.statusText}');
+    }
+    final items = (response.body['data']?['items'] as List?) ?? const [];
+    return items
+        .map((e) => ExpenseModel.fromSalaryJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 
   @override

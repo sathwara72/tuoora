@@ -10,9 +10,11 @@ import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/data/models/student_model.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_controller.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
-import 'package:tuoora/presentation/institute/controllers/batch_controller.dart';
+import 'package:tuoora/data/repositories_impl/student_repository_impl.dart';
 import 'package:tuoora/core/widgets/app_search_field.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -24,94 +26,244 @@ class AssignToBatchController extends GetxController {
   final BatchDetailsController batchDetailsController;
   final InstituteRepositoryImpl _repository =
       Get.find<InstituteRepositoryImpl>();
+  final StudentRepositoryImpl _studentRepository =
+      Get.find<StudentRepositoryImpl>();
 
   final searchController = TextEditingController();
   final searchResults = <Student>[].obs;
   final selectedStudents = <BatchStudent>[].obs;
   final isLoading = false.obs;
+  final isFetching = false.obs;
+  final isLoadingMore = false.obs;
+  final hasMore = true.obs;
+  int _page = 1;
+  Timer? _debounce;
 
   AssignToBatchController(this.batch, this.batchDetailsController);
 
-  @override
-  void onInit() {
-    super.onInit();
-    _loadUnassignedStudents();
-  }
+  Set<int> get _excludedIds => {
+    ...batchDetailsController.assignedStudents.map((s) => s.student.id),
+    ...selectedStudents.map((s) => s.student.id),
+  };
 
-  void _loadUnassignedStudents() {
-    final existingIds = batchDetailsController.assignedStudents
-        .map((s) => s.student.id)
-        .toSet();
-    final selectedIds = selectedStudents.map((s) => s.student.id).toSet();
+  /// Loads students that are not in any batch, straight from the server so a
+  /// student who was just removed from a batch shows up immediately.
+  Future<void> loadUnassignedStudents({bool loadMore = false}) async {
+    // Nothing is listed until the user searches.
+    if (searchController.text.trim().isEmpty) {
+      searchResults.clear();
+      hasMore.value = false;
+      return;
+    }
+    if (loadMore) {
+      if (isLoadingMore.value || isFetching.value || !hasMore.value) return;
+      isLoadingMore.value = true;
+    } else {
+      _page = 1;
+      hasMore.value = true;
+      isFetching.value = true;
+    }
 
-    searchResults.assignAll(
-      instituteController.students
-          .where(
-            (s) =>
-                s.batchId == null &&
-                !existingIds.contains(s.id) &&
-                !selectedIds.contains(s.id),
-          )
-          .toList(),
-    );
+    try {
+      final query = searchController.text.trim();
+      final result = await _studentRepository.listStudents(
+        search: query,
+        page: _page,
+        unassigned: true,
+      );
+      // The box was cleared or changed while this was loading: drop it.
+      if (searchController.text.trim() != query) return;
+      final excluded = _excludedIds;
+      final fresh = result.where((s) => !excluded.contains(s.id)).toList();
+      if (loadMore) {
+        searchResults.addAll(fresh);
+      } else {
+        searchResults.assignAll(fresh);
+      }
+      if (result.length < 10) {
+        hasMore.value = false;
+      } else {
+        _page++;
+      }
+    } catch (e) {
+      AppSnackBar.error(AppStrings.failedToLoadStudents);
+    } finally {
+      isFetching.value = false;
+      isLoadingMore.value = false;
+    }
   }
 
   void searchStudents(String query) {
-    final trimmed = query.trim();
-    if (trimmed.isEmpty) {
-      _loadUnassignedStudents();
+    _debounce?.cancel();
+    if (query.trim().isEmpty) {
+      searchResults.clear();
+      hasMore.value = false;
       return;
     }
-
-    final existingIds = batchDetailsController.assignedStudents
-        .map((s) => s.student.id)
-        .toSet();
-    final selectedIds = selectedStudents.map((s) => s.student.id).toSet();
-
-    searchResults.assignAll(
-      instituteController.students
-          .where(
-            (s) =>
-                (s.name.toLowerCase().contains(trimmed.toLowerCase()) ||
-                    s.id.toString().toLowerCase().contains(
-                      trimmed.toLowerCase(),
-                    ) ||
-                    (s.enrollmentId.toLowerCase().contains(
-                      trimmed.toLowerCase(),
-                    ))) &&
-                s.batchId == null &&
-                !existingIds.contains(s.id) &&
-                !selectedIds.contains(s.id),
-          )
-          .toList(),
+    _debounce = Timer(
+      const Duration(milliseconds: 400),
+      () => loadUnassignedStudents(),
     );
   }
 
-  void addStudentToSelection(Student student) {
-    selectedStudents.add(
-      BatchStudent(student: student, assignedFee: batch.baseFee),
-    );
+  Future<void> refreshAll() async {
+    await Future.wait([
+      loadUnassignedStudents(),
+      instituteController.fetchStudents(reset: true),
+    ]);
+  }
+
+  void _clearSearch() {
+    _debounce?.cancel();
     searchController.clear();
-    // Re-show the default unassigned roster (now excluding the just-picked
-    // student) so the picker stays usable for the next selection.
-    _loadUnassignedStudents();
+    searchResults.clear();
+    hasMore.value = false;
+  }
+
+  void addStudentToSelection(Student student) {
+    final today = DateTime.now();
+    selectedStudents.add(
+      BatchStudent(
+        student: student,
+        assignedFee: batch.baseFee,
+        milestones: [
+          MilestoneDraft(
+            title: 'Installment 1',
+            amount: batch.baseFee,
+            dueDate: DateTime(today.year, today.month, today.day),
+          ),
+        ],
+      ),
+    );
+    // Back to an empty picker for the next search.
+    _clearSearch();
   }
 
   void removeStudentFromSelection(int studentId) {
     selectedStudents.removeWhere((s) => s.student.id == studentId);
-    // If the user is currently on the default (no-search) view, refresh so
-    // the un-selected student reappears in the available list.
-    if (searchController.text.trim().isEmpty) {
-      _loadUnassignedStudents();
+  }
+
+  BatchStudent? _find(int studentId) =>
+      selectedStudents.firstWhereOrNull((s) => s.student.id == studentId);
+
+  /// Milestones always add up to the fee. Everything except [fixedIndex] (the
+  /// one the user is typing in) shares what is left, in whole rupees, with any
+  /// odd rupee going to the first of them.
+  void _redistribute(BatchStudent bs, {int? fixedIndex}) {
+    final n = bs.milestones.length;
+    if (n == 0) return;
+    final total = bs.assignedFee.floorToDouble();
+
+    if (n == 1) {
+      bs.milestones.first
+        ..amount = total
+        ..stamp += 1;
+      return;
+    }
+
+    var fixedAmount = 0.0;
+    if (fixedIndex != null) {
+      final m = bs.milestones[fixedIndex];
+      final clamped = m.amount.clamp(0, total).toDouble();
+      if (clamped != m.amount) {
+        m.amount = clamped;
+        m.stamp++;
+      }
+      fixedAmount = clamped;
+    }
+
+    final others = [
+      for (int i = 0; i < n; i++)
+        if (i != fixedIndex) i,
+    ];
+    final remaining = total - fixedAmount;
+    final base = (remaining / others.length).floorToDouble();
+    final extra = remaining - base * others.length;
+    for (int k = 0; k < others.length; k++) {
+      bs.milestones[others[k]]
+        ..amount = k == 0 ? base + extra : base
+        ..stamp += 1;
     }
   }
 
-  void updateStudentFee(int studentId, String feeStr) {
-    final index = selectedStudents.indexWhere((s) => s.student.id == studentId);
-    if (index != -1) {
-      double fee = double.tryParse(feeStr) ?? batch.baseFee;
-      selectedStudents[index].assignedFee = fee;
+  void _retitle(BatchStudent bs) {
+    for (int i = 0; i < bs.milestones.length; i++) {
+      bs.milestones[i].title = 'Installment ${i + 1}';
     }
+  }
+
+  DateTime _dateForNext(BatchStudent bs) {
+    final last = bs.milestones.isNotEmpty
+        ? bs.milestones.last.dueDate
+        : DateTime.now();
+    return DateTime(last.year, last.month + 1, last.day);
+  }
+
+  /// Changing the fee re-splits it evenly across the milestones.
+  void updateStudentFee(int studentId, String feeStr) {
+    final bs = _find(studentId);
+    if (bs == null) return;
+    bs.assignedFee = double.tryParse(feeStr) ?? 0;
+    _redistribute(bs);
+    selectedStudents.refresh();
+  }
+
+  void splitMilestones(int studentId, int count) {
+    final bs = _find(studentId);
+    if (bs == null || count < 1) return;
+    final now = DateTime.now();
+    bs.milestones
+      ..clear()
+      ..addAll(
+        List.generate(
+          count,
+          (i) => MilestoneDraft(
+            title: 'Installment ${i + 1}',
+            amount: 0,
+            dueDate: DateTime(now.year, now.month + i, now.day),
+          ),
+        ),
+      );
+    _redistribute(bs);
+    selectedStudents.refresh();
+  }
+
+  void addMilestone(int studentId) {
+    final bs = _find(studentId);
+    if (bs == null) return;
+    bs.milestones.add(
+      MilestoneDraft(title: '', amount: 0, dueDate: _dateForNext(bs)),
+    );
+    _retitle(bs);
+    _redistribute(bs);
+    selectedStudents.refresh();
+  }
+
+  /// Removing a milestone never lowers the fee: what it held is shared out
+  /// across the ones that remain.
+  void removeMilestone(int studentId, int index) {
+    final bs = _find(studentId);
+    if (bs == null || index < 0 || index >= bs.milestones.length) return;
+    if (bs.milestones.length == 1) return; // a fee needs at least one milestone
+    bs.milestones.removeAt(index);
+    _retitle(bs);
+    _redistribute(bs);
+    selectedStudents.refresh();
+  }
+
+  void updateMilestoneAmount(int studentId, int index, String value) {
+    final bs = _find(studentId);
+    if (bs == null || index >= bs.milestones.length) return;
+    bs.milestones[index].amount = double.tryParse(value) ?? 0;
+    _redistribute(bs, fixedIndex: index);
+    selectedStudents.refresh();
+  }
+
+  void updateMilestoneDate(int studentId, int index, DateTime date) {
+    final bs = _find(studentId);
+    if (bs == null || index >= bs.milestones.length) return;
+    bs.milestones[index].dueDate = date;
+    selectedStudents.refresh();
   }
 
   Future<void> confirmAssignment() async {
@@ -121,7 +273,16 @@ class AssignToBatchController extends GetxController {
       isLoading.value = true;
 
       final List<Map<String, dynamic>> studentsData = selectedStudents
-          .map((bs) => {'id': bs.student.id, 'fee': bs.assignedFee.toInt()})
+          .map(
+            (bs) => {
+              'id': bs.student.id,
+              'fee': bs.assignedFee.toInt(),
+              'installments': bs.milestones
+                  .where((m) => m.amount > 0)
+                  .map((m) => m.toJson())
+                  .toList(),
+            },
+          )
           .toList();
 
       await _repository.assignStudentsToBatch(
@@ -129,19 +290,14 @@ class AssignToBatchController extends GetxController {
         studentsData,
       );
 
-      // Refresh the batches list in BatchController
-      if (Get.isRegistered<BatchController>()) {
-        Get.find<BatchController>().loadBatches(isRefresh: true);
-      }
-
-      batchDetailsController.assignedStudents.addAll(selectedStudents);
+      final assigned = List<BatchStudent>.from(selectedStudents);
+      batchDetailsController.assignedStudents.addAll(assigned);
 
       // Update global students list to reflect new batch assignment
-      for (var bs in selectedStudents) {
-        final updatedStudent = bs.student.copyWith(
-          batchId: int.parse(batch.id),
+      for (var bs in assigned) {
+        instituteController.updateStudent(
+          bs.student.copyWith(batchId: int.parse(batch.id)),
         );
-        instituteController.updateStudent(updatedStudent);
       }
 
       batchDetailsController.studentCount.value =
@@ -149,6 +305,9 @@ class AssignToBatchController extends GetxController {
       batchDetailsController.assignedStudents.refresh();
       Get.back();
       AppSnackBar.success(AppStrings.studentsAssigned);
+
+      // Pull the authoritative batch (and fees) in the background.
+      batchDetailsController.refreshStudents();
     } catch (e) {
       AppSnackBar.error(AppStrings.failedToAssignStudents);
     } finally {
@@ -158,6 +317,7 @@ class AssignToBatchController extends GetxController {
 
   @override
   void onClose() {
+    _debounce?.cancel();
     searchController.dispose();
     super.onClose();
   }
@@ -187,7 +347,11 @@ class AssignToBatchScreen extends StatelessWidget {
             Expanded(
               child: Stack(
                 children: [
-                  SingleChildScrollView(
+                  RefreshIndicator(
+                    color: AppColors.primaryBrand,
+                    onRefresh: controller.refreshAll,
+                    child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: AppSpacing.x16.add(AppSpacing.y16),
                     child: Column(
                       children: [
@@ -197,6 +361,7 @@ class AssignToBatchScreen extends StatelessWidget {
                         const SizedBox(height: 120),
                       ],
                     ),
+                  ),
                   ),
                   Positioned(
                     bottom: 0,
@@ -241,14 +406,37 @@ class AssignToBatchScreen extends StatelessWidget {
           onChanged: controller.searchStudents,
         ),
         Obx(() {
+          if (controller.isFetching.value && controller.searchResults.isEmpty) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
           if (controller.searchResults.isEmpty) return const SizedBox.shrink();
           return Padding(
             padding: const EdgeInsets.only(top: 10),
             child: ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: controller.searchResults.length,
+              itemCount:
+                  controller.searchResults.length +
+                  (controller.hasMore.value ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index >= controller.searchResults.length) {
+                  return Center(
+                    child: controller.isLoadingMore.value
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : TextButton(
+                            onPressed: () => controller.loadUnassignedStudents(
+                              loadMore: true,
+                            ),
+                            child: const Text('Show more'),
+                          ),
+                  );
+                }
                 final student = controller.searchResults[index];
                 return Container(
                   padding: AppSpacing.cardPadding,
@@ -285,7 +473,7 @@ class AssignToBatchScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Enrollment ID: ${student.enrollmentID}',
+                              'Enrollment ID: ${student.enrollmentId}',
                               style: AppTextStyles.outfit(
                                 fontSize: 12,
                                 color: AppColors.textMuted,
@@ -418,6 +606,9 @@ class AssignToBatchScreen extends StatelessWidget {
                           AppSpacing.h12,
                           Expanded(
                             child: TextFormField(
+                              key: ValueKey(
+                                'fee-${bs.student.id}-${bs.version}',
+                              ),
                               initialValue: bs.assignedFee.toStringAsFixed(0),
                               onChanged: (val) => controller.updateStudentFee(
                                 bs.student.id,
@@ -441,10 +632,118 @@ class AssignToBatchScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              AppSpacing.v12,
+              _buildMilestones(controller, bs),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMilestones(AssignToBatchController controller, BatchStudent bs) {
+    final id = bs.student.id;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Fee milestones',
+                style: AppTextStyles.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            for (final n in const [1, 2, 3, 4])
+              Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: ChoiceChip(
+                  label: Text('$n'),
+                  selected: bs.milestones.length == n,
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  selectedColor: AppColors.primaryBrandLight,
+                  onSelected: (_) => controller.splitMilestones(id, n),
+                ),
+              ),
+          ],
+        ),
+        AppSpacing.v8,
+        for (int i = 0; i < bs.milestones.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              key: ValueKey('ms-$id-$i-${bs.milestones[i].stamp}-${bs.version}'),
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: TextFormField(
+                    initialValue: bs.milestones[i].amount.toStringAsFixed(0),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [LengthLimitingTextInputFormatter(6)],
+                    onChanged: (v) =>
+                        controller.updateMilestoneAmount(id, i, v),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      prefixText: '₹ ',
+                      labelText: bs.milestones[i].title,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  flex: 3,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: Get.context!,
+                        initialDate: bs.milestones[i].dueDate,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        controller.updateMilestoneDate(id, i, picked);
+                      }
+                    },
+                    icon: const Icon(Icons.event_rounded, size: 16),
+                    label: Text(
+                      '${bs.milestones[i].dueDate.day.toString().padLeft(2, '0')}/'
+                      '${bs.milestones[i].dueDate.month.toString().padLeft(2, '0')}/'
+                      '${bs.milestones[i].dueDate.year}',
+                      style: AppTextStyles.outfit(fontSize: 12),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  onPressed: bs.milestones.length > 1
+                      ? () => controller.removeMilestone(id, i)
+                      : null,
+                  icon: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 20,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => controller.addMilestone(id),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add milestone'),
+          ),
+        ),
+      ],
     );
   }
 

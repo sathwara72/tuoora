@@ -25,6 +25,14 @@ class Student {
   final dynamic selectedBatchId;
   final dynamic selectedBatch;
   final List<dynamic> allBatches;
+  final bool isLoginBlocked;
+  final bool doNotSendFeeReminders;
+  final String? addressLine1;
+  final String? addressLine2;
+  final String? city;
+  final String? state;
+  final String? country;
+  final String? pincode;
 
   const Student({
     required this.id,
@@ -53,7 +61,17 @@ class Student {
     this.selectedBatchId,
     this.selectedBatch,
     this.allBatches = const [],
+    this.isLoginBlocked = false,
+    this.doNotSendFeeReminders = false,
+    this.addressLine1,
+    this.addressLine2,
+    this.city,
+    this.state,
+    this.country,
+    this.pincode,
   });
+
+  static bool _asBool(dynamic v) => v == true || v == 1 || v == '1';
 
   factory Student.fromJson(Map<String, dynamic> json) {
     int safeInt(dynamic value, {int fallback = 0}) {
@@ -103,6 +121,14 @@ class Student {
       selectedBatchId: json['selected_batch_id'],
       selectedBatch: json['selected_batch'],
       allBatches: (json['all_batches'] as List?) ?? const [],
+      isLoginBlocked: _asBool(json['is_login_blocked']),
+      doNotSendFeeReminders: _asBool(json['do_not_send_fee_reminders']),
+      addressLine1: json['address_line_1']?.toString(),
+      addressLine2: json['address_line_2']?.toString(),
+      city: json['city']?.toString(),
+      state: json['state']?.toString(),
+      country: json['country']?.toString(),
+      pincode: json['pincode']?.toString(),
     );
   }
 
@@ -134,6 +160,14 @@ class Student {
       'selected_batch_id': selectedBatchId,
       'selected_batch': selectedBatch,
       'all_batches': allBatches,
+      'is_login_blocked': isLoginBlocked,
+      'do_not_send_fee_reminders': doNotSendFeeReminders,
+      'address_line_1': addressLine1,
+      'address_line_2': addressLine2,
+      'city': city,
+      'state': state,
+      'country': country,
+      'pincode': pincode,
     };
   }
 
@@ -163,6 +197,17 @@ class Student {
     dynamic selectedBatchId,
     dynamic selectedBatch,
     List<dynamic>? allBatches,
+    bool? isLoginBlocked,
+    bool? doNotSendFeeReminders,
+    String? addressLine1,
+    String? addressLine2,
+    String? city,
+    String? state,
+    String? country,
+    String? pincode,
+    // copyWith cannot set a field back to null, so removing a student from a
+    // batch has to clear the batch explicitly.
+    bool clearBatch = false,
   }) {
     return Student(
       id: id ?? this.id,
@@ -171,7 +216,7 @@ class Student {
       phone: phone ?? this.phone,
       instituteId: instituteId ?? this.instituteId,
       parentId: parentId ?? this.parentId,
-      batchId: batchId ?? this.batchId,
+      batchId: clearBatch ? null : (batchId ?? this.batchId),
       standard: standard ?? this.standard,
       dob: dob ?? this.dob,
       guardianName: guardianName ?? this.guardianName,
@@ -182,7 +227,7 @@ class Student {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
-      batch: batch ?? this.batch,
+      batch: clearBatch ? null : (batch ?? this.batch),
       totalDue: totalDue ?? this.totalDue,
       totalPaid: totalPaid ?? this.totalPaid,
       fees: fees ?? this.fees,
@@ -190,7 +235,25 @@ class Student {
       selectedBatchId: selectedBatchId ?? this.selectedBatchId,
       selectedBatch: selectedBatch ?? this.selectedBatch,
       allBatches: allBatches ?? this.allBatches,
+      isLoginBlocked: isLoginBlocked ?? this.isLoginBlocked,
+      doNotSendFeeReminders:
+          doNotSendFeeReminders ?? this.doNotSendFeeReminders,
+      addressLine1: addressLine1 ?? this.addressLine1,
+      addressLine2: addressLine2 ?? this.addressLine2,
+      city: city ?? this.city,
+      state: state ?? this.state,
+      country: country ?? this.country,
+      pincode: pincode ?? this.pincode,
     );
+  }
+
+  /// Address as one readable string, or empty when none was entered.
+  String get fullAddress {
+    final parts = [addressLine1, addressLine2, city, state, pincode, country]
+        .map((e) => (e ?? '').trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    return parts.join(', ');
   }
 
   // Helper getters for UI compatibility
@@ -203,7 +266,12 @@ class Student {
     return 'Not Assigned';
   }
 
-  String get enrollmentId => idHash.isNotEmpty ? idHash : id.toString();
+  /// One stable ID for display: the real enrollment ID first, then the hash, then the row id.
+  String get enrollmentId {
+    final e = enrollmentID;
+    if (e != null && e.isNotEmpty) return e;
+    return idHash.isNotEmpty ? idHash : id.toString();
+  }
 
   List<FeeInstallmentModel> get allInstallments {
     final list = <FeeInstallmentModel>[];

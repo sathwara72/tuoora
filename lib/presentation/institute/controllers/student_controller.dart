@@ -26,6 +26,7 @@ class InstituteStudentController extends GetxController {
   final triedToSave = false.obs;
   final currentStudent = Rxn<Student>();
   final isSendingFeeReminder = false.obs;
+  final isUpdatingAccess = false.obs;
 
   final nameController = TextEditingController();
   final parentNameController = TextEditingController();
@@ -430,6 +431,48 @@ class InstituteStudentController extends GetxController {
       AppSnackBar.error('Failed to send fee reminder: $e');
     } finally {
       isSendingFeeReminder.value = false;
+    }
+  }
+
+  Future<void> toggleBlockLogin() async {
+    final student = currentStudent.value;
+    if (student == null) return;
+    final block = !student.isLoginBlocked;
+    try {
+      isUpdatingAccess.value = true;
+      final blocked = await _studentRepository.toggleBlock(student.id, block);
+      currentStudent.value = student.copyWith(isLoginBlocked: blocked);
+      AppSnackBar.success(
+        blocked
+            ? '${student.name} can no longer log in to the app'
+            : '${student.name} can log in again',
+      );
+    } catch (e) {
+      AppSnackBar.error('Failed to update login access: $e');
+    } finally {
+      isUpdatingAccess.value = false;
+    }
+  }
+
+  Future<void> toggleFeeReminderMute(bool muted) async {
+    final student = currentStudent.value;
+    if (student == null) return;
+    try {
+      isUpdatingAccess.value = true;
+      final result = await _studentRepository.toggleFeeReminderMute(
+        student.id,
+        muted,
+      );
+      currentStudent.value = student.copyWith(doNotSendFeeReminders: result);
+      AppSnackBar.success(
+        result
+            ? 'Bulk fee reminders muted for ${student.name}'
+            : 'Bulk fee reminders enabled for ${student.name}',
+      );
+    } catch (e) {
+      AppSnackBar.error('Failed to update fee reminder setting: $e');
+    } finally {
+      isUpdatingAccess.value = false;
     }
   }
 

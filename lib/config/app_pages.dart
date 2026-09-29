@@ -29,7 +29,6 @@ import 'package:tuoora/presentation/institute/view/attendance_report_screen.dart
 import 'package:tuoora/presentation/institute/view/performance_report_screen.dart';
 import 'package:tuoora/presentation/institute/view/analytics_screen.dart';
 import 'package:tuoora/presentation/institute/view/reports_screen.dart';
-import 'package:tuoora/presentation/institute/view/student_wise_report_screen.dart';
 import 'package:tuoora/presentation/institute/view/institute_updates_screen.dart';
 import 'package:tuoora/presentation/institute/view/create_update_screen.dart';
 import 'package:tuoora/presentation/institute/view/batch_report_detail_screen.dart';
@@ -59,7 +58,6 @@ import 'package:tuoora/presentation/teacher/view/teacher_change_password_screen.
 import 'package:tuoora/presentation/teacher/view/teacher_batches_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_batch_details_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_batch_students_screen.dart';
-import 'package:tuoora/presentation/teacher/view/teacher_assign_students_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_profile_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_mark_attendance_screen.dart';
 import 'package:tuoora/presentation/teacher/view/teacher_qr_scan_screen.dart';
@@ -139,7 +137,6 @@ import 'package:tuoora/presentation/institute/view/log_attendance_screen.dart';
 import 'package:tuoora/presentation/institute/view/add_salary_screen.dart';
 import 'package:tuoora/presentation/institute/view/expenses_screen.dart';
 import 'package:tuoora/presentation/institute/view/add_expense_screen.dart';
-import 'package:tuoora/presentation/institute/view/expense_analysis_screen.dart';
 import 'package:get/get.dart';
 
 class AppPages {
@@ -346,11 +343,6 @@ class AppPages {
     GetPage(
       name: AppRoutes.teacherBatchStudents,
       page: () => const TeacherBatchStudentsScreen(),
-      binding: TeacherBinding(),
-    ),
-    GetPage(
-      name: AppRoutes.teacherAssignStudents,
-      page: () => const TeacherAssignStudentsScreen(),
       binding: TeacherBinding(),
     ),
     GetPage(
@@ -569,11 +561,6 @@ class AppPages {
       binding: InstituteBinding(),
     ),
     GetPage(
-      name: AppRoutes.instituteStudentWiseReport,
-      page: () => const StudentWiseReportScreen(),
-      binding: InstituteBinding(),
-    ),
-    GetPage(
       name: AppRoutes.instituteUpdates,
       page: () => const InstituteUpdatesScreen(),
       binding: InstituteBinding(),
@@ -776,11 +763,6 @@ class AppPages {
     GetPage(
       name: AppRoutes.instituteAddExpense,
       page: () => const AddExpenseScreen(),
-      binding: InstituteBinding(),
-    ),
-    GetPage(
-      name: AppRoutes.instituteExpenseAnalysis,
-      page: () => const ExpenseAnalysisScreen(),
       binding: InstituteBinding(),
     ),
   ];

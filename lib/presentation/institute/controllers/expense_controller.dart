@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
-import 'package:intl/intl.dart';
 
 class ExpenseController extends GetxController {
   final InstituteRepositoryImpl _repository;
@@ -17,6 +16,8 @@ class ExpenseController extends GetxController {
   final expenses = <ExpenseModel>[].obs;
   final isLoading = false.obs;
   final isCategoriesLoading = false.obs;
+  final includeSalary = false.obs;
+  final isTogglingSalary = false.obs;
   final categories = <ExpenseCategory>[].obs;
 
   // Filter States
@@ -46,11 +47,6 @@ class ExpenseController extends GetxController {
   final selectedExpensesMonth = DateTime.now().obs;
   final expandedCategoryIds = <int>{}.obs;
 
-  // Analysis State
-  final expenseAnalysis = Rxn<ExpenseAnalysis>();
-  final isAnalysisLoading = false.obs;
-  final selectedAnalysisMonth = DateTime.now().obs;
-
   // Pagination
   final currentPage = 1.obs;
   final lastPage = 1.obs;
@@ -73,9 +69,7 @@ class ExpenseController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadExpenses();
-    loadCategories();
-    loadExpenseAnalysis();
+    _init();
 
     // Listeners to clear errors as user types
     amountController.addListener(() {
@@ -88,11 +82,15 @@ class ExpenseController extends GetxController {
       if (triedToSave.value) validateForm();
     });
 
-    // Auto-refresh analysis when month changes
-    ever(selectedAnalysisMonth, (_) => loadExpenseAnalysis());
-
     // Auto-refresh expenses when month changes
     ever(selectedExpensesMonth, (_) => loadExpenses());
+  }
+
+  /// The salary setting decides whether salary rows are part of the list, so
+  /// it has to be known before the first load.
+  Future<void> _init() async {
+    await loadSalaryToggle();
+    await Future.wait([loadExpenses(), loadCategories()]);
   }
 
   bool validateForm() {
@@ -106,13 +104,8 @@ class ExpenseController extends GetxController {
     amountError.value = amountVal;
     if (amountVal != null) isValid = false;
 
-    // Description validation
-    final descVal = ValidationUtils.validateRequired(
-      descriptionController.text,
-      'Description',
-    );
-    descriptionError.value = descVal;
-    if (descVal != null) isValid = false;
+    // Description is optional.
+    descriptionError.value = null;
 
     // Category validation
     final categoryVal = ValidationUtils.validateCategorySelection(
@@ -137,7 +130,22 @@ class ExpenseController extends GetxController {
       );
 
       if (page == 1) {
-        expenses.assignAll(response.items);
+        final items = [...response.items];
+        // Paid staff salaries live in their own table; show them as
+        // "Staff Salary" expenses when the institute has that turned on.
+        if (includeSalary.value) {
+          try {
+            items.addAll(
+              await _repository.listSalaryExpenses(
+                month: selectedExpensesMonth.value.month,
+                year: selectedExpensesMonth.value.year,
+              ),
+            );
+          } catch (e) {
+            debugPrint('Error loading salary expenses: $e');
+          }
+        }
+        expenses.assignAll(items);
       } else {
         expenses.addAll(response.items);
       }
@@ -155,6 +163,36 @@ class ExpenseController extends GetxController {
   Future<void> loadMoreExpenses() async {
     if (currentPage.value < lastPage.value) {
       await loadExpenses(page: currentPage.value + 1);
+    }
+  }
+
+  Future<void> loadSalaryToggle() async {
+    try {
+      includeSalary.value = await _repository.getIncludeSalaryInExpenses();
+    } catch (e) {
+      debugPrint('Error loading salary toggle: $e');
+    }
+  }
+
+  Future<void> toggleIncludeSalary(bool include) async {
+    final previous = includeSalary.value;
+    includeSalary.value = include;
+    try {
+      isTogglingSalary.value = true;
+      includeSalary.value = await _repository.setIncludeSalaryInExpenses(
+        include,
+      );
+      AppSnackBar.success(
+        includeSalary.value
+            ? 'Staff salary included in expenses'
+            : 'Staff salary excluded from expenses',
+      );
+      await Future.wait([loadCategories(), loadExpenses()]);
+    } catch (e) {
+      includeSalary.value = previous;
+      AppSnackBar.error('Failed to update salary setting: $e');
+    } finally {
+      isTogglingSalary.value = false;
     }
   }
 
@@ -216,58 +254,6 @@ class ExpenseController extends GetxController {
       AppSnackBar.error('Failed to delete category.');
     }
   }
-
-  Future<void> loadExpenseAnalysis() async {
-    try {
-      isAnalysisLoading.value = true;
-      final month = DateFormat('MM').format(selectedAnalysisMonth.value);
-      final year = DateFormat('yyyy').format(selectedAnalysisMonth.value);
-
-      final analysis = await _repository.getExpenseAnalysis(month, year);
-
-      // Sort categories by percentage descending (high first)
-      analysis.categories.sort((a, b) => b.percentage.compareTo(a.percentage));
-
-      expenseAnalysis.value = analysis;
-    } catch (e) {
-      debugPrint('Error loading analysis: $e');
-      expenseAnalysis.value = null;
-    } finally {
-      isAnalysisLoading.value = false;
-    }
-  }
-
-  bool get canGoToNextMonth {
-    final now = DateTime.now();
-    final currentView = selectedAnalysisMonth.value;
-    // Cannot go beyond current month
-    if (currentView.year < now.year) return true;
-    if (currentView.year == now.year && currentView.month < now.month) {
-      return true;
-    }
-    return false;
-  }
-
-  void nextAnalysisMonth() {
-    if (!canGoToNextMonth) return;
-
-    selectedAnalysisMonth.value = DateTime(
-      selectedAnalysisMonth.value.year,
-      selectedAnalysisMonth.value.month + 1,
-    );
-  }
-
-  void prevAnalysisMonth() {
-    selectedAnalysisMonth.value = DateTime(
-      selectedAnalysisMonth.value.year,
-      selectedAnalysisMonth.value.month - 1,
-    );
-  }
-
-  void setAnalysisMonth(DateTime date) {
-    selectedAnalysisMonth.value = DateTime(date.year, date.month);
-  }
-
 
   bool get canGoToNextExpensesMonth {
     final now = DateTime.now();
@@ -410,7 +396,7 @@ class ExpenseController extends GetxController {
         'expense_category_id': selectedCategory.value!.id.toString(),
         'amount': amountController.text,
         'date': selectedDate.value.toIso8601String().split('T')[0],
-        'description': descriptionController.text,
+        'description': descriptionController.text.trim(),
         'payment_method': isOnlinePayment.value ? 'Online' : 'Cash',
       };
 
@@ -420,7 +406,6 @@ class ExpenseController extends GetxController {
       AppSnackBar.success(AppStrings.expenseAdded);
       resetForm();
       loadExpenses(page: 1);
-      loadExpenseAnalysis();
     } catch (e) {
       if (e is ValidationException) {
         _handleValidationErrors(e.errors);

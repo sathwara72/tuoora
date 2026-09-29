@@ -115,6 +115,51 @@ class TeacherExam {
     return false;
   }
 
+  DateTime? get _examDay {
+    final parsed = DateTime.tryParse(examDate);
+    return parsed == null ? null : DateTime(parsed.year, parsed.month, parsed.day);
+  }
+
+  bool get isToday {
+    final d = _examDay;
+    if (d == null) return false;
+    final now = DateTime.now();
+    return d == DateTime(now.year, now.month, now.day);
+  }
+
+  /// Scheduled for a day after today: marks entry stays locked until then.
+  bool get isFutureScheduled {
+    final d = _examDay;
+    if (d == null || status.toLowerCase() != 'scheduled') return false;
+    final now = DateTime.now();
+    return d.isAfter(DateTime(now.year, now.month, now.day));
+  }
+
+  /// Exam date has passed but no marks were entered yet.
+  bool get isPendingMarks {
+    final d = _examDay;
+    if (d == null || status.toLowerCase() != 'scheduled') return false;
+    final now = DateTime.now();
+    return d.isBefore(DateTime(now.year, now.month, now.day)) &&
+        (stats?.marksEnteredCount ?? 0) == 0;
+  }
+
+  static String _formatTime(String raw) {
+    final m = RegExp(r'^(\d{1,2}):(\d{2})').firstMatch(raw);
+    if (m == null) return raw;
+    var h = int.parse(m.group(1)!);
+    final period = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 == 0 ? 12 : h % 12;
+    return '$h:${m.group(2)} $period';
+  }
+
+  String? get timeRangeText {
+    if (startTime == null || startTime!.isEmpty) return null;
+    final start = _formatTime(startTime!);
+    if (endTime == null || endTime!.isEmpty) return start;
+    return '$start - ${_formatTime(endTime!)}';
+  }
+
   String get opensOnText {
     if (formattedDate != null && formattedDate!.isNotEmpty) {
       return 'Opens on $formattedDate';
@@ -135,11 +180,13 @@ class TeacherExamListPage {
   final List<TeacherExam> items;
   final int currentPage;
   final int lastPage;
+  final int total;
 
   const TeacherExamListPage({
     required this.items,
     required this.currentPage,
     required this.lastPage,
+    this.total = 0,
   });
 
   factory TeacherExamListPage.fromJson(Map<String, dynamic> json) {
@@ -149,6 +196,7 @@ class TeacherExamListPage {
           .toList(),
       currentPage: json['current_page'] ?? 1,
       lastPage: json['last_page'] ?? 1,
+      total: json['total'] ?? 0,
     );
   }
 }

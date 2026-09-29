@@ -6,6 +6,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/institute/controllers/expense_controller.dart';
 import 'package:tuoora/presentation/institute/models/expense_model.dart';
+import 'package:tuoora/presentation/institute/widgets/expense_widgets.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/presentation/institute/widgets/month_selector_widget.dart';
 import 'package:tuoora/core/widgets/app_empty_view.dart';
@@ -24,30 +25,8 @@ class ExpensesScreen extends GetView<ExpenseController> {
       body: SafeArea(
         child: Column(
           children: [
-            InstituteAppBar(
-              title: AppStrings.expensesOverview,
-              actions: [
-                GestureDetector(
-                  onTap: () => Get.toNamed(AppRoutes.instituteExpenseAnalysis),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.borderGrey),
-                    ),
-                    child: const Icon(
-                      Icons.insights_rounded,
-                      color: AppColors.primaryBrand,
-                      size: 18,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            const InstituteAppBar(title: AppStrings.expensesOverview),
             _buildMonthSelector(context),
-            _buildTotalSpendingCard(),
-            _buildCategoryFilterChips(),
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value && controller.expenses.isEmpty) {
@@ -55,25 +34,74 @@ class ExpensesScreen extends GetView<ExpenseController> {
                 }
 
                 final groups = controller.categoryGroups;
-                if (groups.isEmpty) {
-                  return const AppEmptyView(
-                    icon: Icons.receipt_long_outlined,
-                    title: AppStrings.noExpensesFound,
-                  );
-                }
 
                 return RefreshIndicator(
                   onRefresh: () => controller.loadExpenses(),
                   color: AppColors.primaryBrand,
-                  child: ListView.separated(
+                  child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
-                    itemCount: groups.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 6),
-                    itemBuilder: (context, index) {
-                      final group = groups[index];
-                      return _buildCategoryCard(context, group);
-                    },
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 90),
+                    children: [
+                      ExpenseHeroCard(
+                        title: 'Total Spend',
+                        total: controller.totalMonthlySpending,
+                        monthLabel: DateFormat('MMMM yyyy').format(
+                          controller.selectedExpensesMonth.value,
+                        ),
+                        stats: [
+                          MapEntry('Categories', '${groups.length}'),
+                          MapEntry(
+                            'Transactions',
+                            '${controller.expenses.length}',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildIncludeSalaryToggle(),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Categories',
+                        style: AppTextStyles.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      if (groups.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 40),
+                          child: AppEmptyView(
+                            icon: Icons.receipt_long_outlined,
+                            title: AppStrings.noExpensesFound,
+                          ),
+                        )
+                      else
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: groups.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                mainAxisSpacing: 10,
+                                crossAxisSpacing: 10,
+                                mainAxisExtent: 128,
+                              ),
+                          itemBuilder: (context, index) {
+                            final group = groups[index];
+                            return ExpenseCategoryGridTile(
+                              icon: group.icon,
+                              name: group.categoryName,
+                              subtitle:
+                                  '${group.count} ${group.count == 1 ? 'txn' : 'txns'}',
+                              amount: group.totalAmount,
+                              onTap: () =>
+                                  _showTransactionsPopUp(context, group),
+                            );
+                          },
+                        ),
+                    ],
                   ),
                 );
               }),
@@ -119,253 +147,35 @@ class ExpensesScreen extends GetView<ExpenseController> {
     );
   }
 
-  Widget _buildCategoryFilterChips() {
-    return Obx(() {
-      final allCategories = controller.categories;
-      if (allCategories.isEmpty) return const SizedBox.shrink();
-
-      final selectedId = controller.selectedCategoryFilter.value;
-
-      return Container(
-        height: 34,
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          children: [
-            // "All" chip
-            Padding(
-              padding: const EdgeInsets.only(right: 6),
-              child: ChoiceChip(
-                label: Text(
-                  'All',
-                  style: AppTextStyles.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: selectedId == null ? AppColors.white : AppColors.textSecondary,
-                  ),
-                ),
-                selected: selectedId == null,
-                selectedColor: AppColors.primaryBrand,
-                backgroundColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(
-                    color: selectedId == null ? AppColors.primaryBrand : AppColors.borderGrey,
-                  ),
-                ),
-                showCheckmark: false,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                onSelected: (_) => controller.setCategoryFilter(null),
-              ),
-            ),
-            // Dynamic category chips
-            ...allCategories.map((cat) {
-              final isSelected = selectedId == cat.id;
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: ChoiceChip(
-                  label: Text(
-                    cat.name,
-                    style: AppTextStyles.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? AppColors.white : AppColors.textSecondary,
-                    ),
-                  ),
-                  selected: isSelected,
-                  selectedColor: AppColors.primaryBrand,
-                  backgroundColor: AppColors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(
-                      color: isSelected ? AppColors.primaryBrand : AppColors.borderGrey,
-                    ),
-                  ),
-                  showCheckmark: false,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  onSelected: (selected) {
-                    controller.setCategoryFilter(selected ? cat.id : null);
-                  },
-                ),
-              );
-            }),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _buildTotalSpendingCard() {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 2,
-    );
-
-    return Obx(() {
-      final total = controller.totalMonthlySpending;
-      final categoryCount = controller.categoryGroups.length;
-      final totalTransactions = controller.expenses.length;
-
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Total Spend',
-                  style: AppTextStyles.outfit(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textTertiary,
-                  ),
-                ),
-                Text(
-                  currencyFormat.format(total),
-                  style: AppTextStyles.outfit(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.primaryBrand,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.primaryBrand.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '$categoryCount ${categoryCount == 1 ? 'Category' : 'Categories'} • $totalTransactions ${totalTransactions == 1 ? 'Txn' : 'Txns'}',
-                style: AppTextStyles.outfit(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryBrand,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  Widget _buildCategoryCard(BuildContext context, ExpenseCategoryGroup group) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 2,
-    );
-
+  Widget _buildIncludeSalaryToggle() {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.borderGrey),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      // The tile paints its ink on the nearest Material; the coloured
+      // container above would hide it, so give the tile its own.
       child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showTransactionsPopUp(context, group),
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: group.iconBgColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    group.icon,
-                    color: group.color,
-                    size: 20,
-                  ),
-                ),
-                AppSpacing.h10,
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        group.categoryName,
-                        style: AppTextStyles.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      Text(
-                        '${group.count} ${group.count == 1 ? 'transaction' : 'transactions'}',
-                        style: AppTextStyles.outfit(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w400,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      currencyFormat.format(group.totalAmount),
-                      style: AppTextStyles.outfit(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'View all',
-                          style: AppTextStyles.outfit(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryBrand,
-                          ),
-                        ),
-                        const Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          size: 9,
-                          color: AppColors.primaryBrand,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+        type: MaterialType.transparency,
+        child: Obx(
+          () => SwitchListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            activeThumbColor: AppColors.primaryBrand,
+            title: Text(
+              'Include staff salary in expenses',
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
+            value: controller.includeSalary.value,
+            onChanged: controller.isTogglingSalary.value
+                ? null
+                : (value) => controller.toggleIncludeSalary(value),
           ),
         ),
       ),
@@ -382,12 +192,11 @@ class ExpensesScreen extends GetView<ExpenseController> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.75,
-          ),
+          height: double.infinity,
           decoration: const BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.only(
@@ -396,7 +205,6 @@ class ExpensesScreen extends GetView<ExpenseController> {
             ),
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
               // Drag handle
               Center(
@@ -482,15 +290,11 @@ class ExpensesScreen extends GetView<ExpenseController> {
               const Divider(height: 1, thickness: 1, color: AppColors.borderGrey),
 
               // Transactions list
-              Flexible(
+              Expanded(
                 child: group.transactions.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('No transactions found'),
-                      )
+                    ? const Center(child: Text('No transactions found'))
                     : ListView.separated(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        shrinkWrap: true,
                         itemCount: group.transactions.length,
                         separatorBuilder: (context, index) => const Divider(
                           height: 10,

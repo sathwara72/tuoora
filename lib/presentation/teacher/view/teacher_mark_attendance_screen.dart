@@ -24,31 +24,7 @@ class TeacherMarkAttendanceScreen
       body: SafeArea(
         child: Column(
           children: [
-            TeacherAppBar(
-              title: 'Attendance • ${controller.batch.name}',
-              actions: [
-                Obx(
-                  () => controller.isEditable
-                      ? GestureDetector(
-                          onTap: () => _scanQr(context),
-                          child: Container(
-                            width: AppSpacing.s40,
-                            height: AppSpacing.s40,
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryBrand.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.qr_code_scanner_rounded,
-                              color: AppColors.primaryBrand,
-                              size: AppSpacing.s20,
-                            ),
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
-            ),
+            TeacherAppBar(title: 'Attendance • ${controller.batch.name}'),
             _buildDateBar(context),
             Obx(() {
               if (controller.isLoading.value || controller.rows.isEmpty) {
@@ -108,7 +84,10 @@ class TeacherMarkAttendanceScreen
                 }
                 return ListView.separated(
                   padding: AppSpacing.x16.add(
-                    const EdgeInsets.only(top: AppSpacing.s8, bottom: AppSpacing.s16),
+                    const EdgeInsets.only(
+                      top: AppSpacing.s8,
+                      bottom: AppSpacing.s16,
+                    ),
                   ),
                   itemCount: displayedRows.length,
                   separatorBuilder: (_, _) => AppSpacing.v12,
@@ -123,8 +102,7 @@ class TeacherMarkAttendanceScreen
               if (!controller.isEditable || controller.rows.isEmpty) {
                 return const SizedBox.shrink();
               }
-              final marked =
-                  controller.totalCount - controller.unmarkedCount;
+              final marked = controller.totalCount - controller.unmarkedCount;
               return Container(
                 padding: AppSpacing.all16,
                 decoration: BoxDecoration(
@@ -138,8 +116,7 @@ class TeacherMarkAttendanceScreen
                   ],
                 ),
                 child: AppButton(
-                  label:
-                      'Save Attendance ($marked/${controller.totalCount})',
+                  label: 'Save Attendance ($marked/${controller.totalCount})',
                   icon: Icons.check_circle_outline_rounded,
                   onPressed: controller.submit,
                   isLoading: controller.isSubmitting.value,
@@ -171,15 +148,18 @@ class TeacherMarkAttendanceScreen
                   final picked = await showDatePicker(
                     context: context,
                     initialDate: controller.selectedDate.value,
-                    firstDate:
-                        DateTime.now().subtract(const Duration(days: 365)),
+                    firstDate: DateTime.now().subtract(
+                      const Duration(days: 365),
+                    ),
                     lastDate: DateTime.now(),
                   );
                   if (picked != null) controller.pickDate(picked);
                 },
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.white,
                     borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
@@ -236,187 +216,167 @@ class TeacherMarkAttendanceScreen
   }
 
   Widget _buildToolbar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-          border: Border.all(color: AppColors.borderGrey),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Filter Counters
-            Obx(
-              () => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _counterBadge(
-                    'All',
-                    '${controller.totalCount}',
-                    AppColors.textSecondary,
-                    isSelected: controller.filterStatus.value == 'all',
-                    onTap: () => controller.filterStatus.value = 'all',
-                  ),
-                  _counterBadge(
-                    'Present',
-                    '${controller.presentCount}',
-                    AppColors.primaryBrand,
-                    isSelected: controller.filterStatus.value == 'present',
-                    onTap: () => controller.filterStatus.value = 'present',
-                  ),
-                  _counterBadge(
-                    'Absent',
-                    '${controller.absentCount}',
-                    AppColors.bohoRed,
-                    isSelected: controller.filterStatus.value == 'absent',
-                    onTap: () => controller.filterStatus.value = 'absent',
-                  ),
-                  if (controller.unmarkedCount > 0)
-                    _counterBadge(
-                      'Unmarked',
-                      '${controller.unmarkedCount}',
-                      Colors.grey.shade600,
-                      isSelected: false,
-                      onTap: null,
-                    ),
-                ],
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Scan sits on top, above the counters card.
+        if (controller.isEditable)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: _scanButton(context),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+              border: Border.all(color: AppColors.borderGrey),
             ),
-            AppSpacing.v12,
-
-            // Search Bar
-            AppSearchField(
-              hintText: 'Search student by name, phone or ID...',
-              onChanged: (val) => controller.searchQuery.value = val,
-            ),
-
-            if (controller.isEditable) ...[
-              AppSpacing.v12,
-              // Prominent QR / Barcode Scanner action button
-              InkWell(
-                onTap: () => _scanQr(context),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryBrand.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: AppColors.primaryBrand.withValues(alpha: 0.35),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Filter Counters
+                Obx(
+                  () => Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(
-                        Icons.qr_code_scanner_rounded,
-                        color: AppColors.primaryBrand,
-                        size: 20,
+                      _counterBadge(
+                        'All',
+                        '${controller.totalCount}',
+                        AppColors.textSecondary,
+                        isSelected: controller.filterStatus.value == 'all',
+                        onTap: () => controller.filterStatus.value = 'all',
+                      ),
+                      _counterBadge(
+                        'Present',
+                        '${controller.presentCount}',
+                        AppColors.successGreen,
+                        isSelected: controller.filterStatus.value == 'present',
+                        onTap: () => controller.filterStatus.value = 'present',
+                      ),
+                      _counterBadge(
+                        'Absent',
+                        '${controller.absentCount}',
+                        AppColors.errorRed,
+                        isSelected: controller.filterStatus.value == 'absent',
+                        onTap: () => controller.filterStatus.value = 'absent',
+                      ),
+                      if (controller.unmarkedCount > 0)
+                        _counterBadge(
+                          'Unmarked',
+                          '${controller.unmarkedCount}',
+                          Colors.grey.shade600,
+                          isSelected: false,
+                          onTap: null,
+                        ),
+                    ],
+                  ),
+                ),
+                if (controller.isEditable) ...[
+                  AppSpacing.v12,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _bulkButton(
+                          label: 'Mark All Present',
+                          color: AppColors.successGreen,
+                          filled: true,
+                          onTap: controller.markAllPresent,
+                        ),
                       ),
                       AppSpacing.h8,
-                      Text(
-                        'Scan Student ID (QR / Barcode)',
-                        style: AppTextStyles.outfit(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryBrand,
+                      Expanded(
+                        child: _bulkButton(
+                          label: 'Mark All Absent',
+                          color: AppColors.errorRed,
+                          filled: false,
+                          onTap: () => controller.markAll('absent'),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-              AppSpacing.v8,
-              Row(
-                children: [
-                  // Single-tap Mark All Present Button
-                  Expanded(
-                    flex: 3,
-                    child: InkWell(
-                      onTap: controller.markAllPresent,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryBrand,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryBrand
-                                  .withValues(alpha: 0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.done_all_rounded,
-                              color: AppColors.white,
-                              size: 18,
-                            ),
-                            AppSpacing.h8,
-                            Text(
-                              'Mark All Present',
-                              style: AppTextStyles.outfit(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  AppSpacing.h8,
-                  // Quick Mark All Absent button
-                  Expanded(
-                    flex: 2,
-                    child: InkWell(
-                      onTap: () => controller.markAll('absent'),
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: AppColors.bohoRed.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: AppColors.bohoRed.withValues(alpha: 0.3),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.close_rounded,
-                              color: AppColors.bohoRed,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'All Absent',
-                              style: AppTextStyles.outfit(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.bohoRed,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
+              ],
+            ),
+          ),
+        ),
+        // Search sits below the card.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: AppSearchField(
+            hintText: 'Search student by name, phone or ID...',
+            onChanged: (val) => controller.searchQuery.value = val,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _scanButton(BuildContext context) {
+    return InkWell(
+      onTap: () => _scanQr(context),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.primaryBrand.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: AppColors.primaryBrand.withValues(alpha: 0.35),
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.qr_code_scanner_rounded,
+              color: AppColors.primaryBrand,
+              size: 20,
+            ),
+            AppSpacing.h8,
+            Text(
+              'Scan Student ID (QR / Barcode)',
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryBrand,
               ),
-            ],
+            ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bulkButton({
+    required String label,
+    required Color color,
+    required bool filled,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: filled ? color : color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: filled ? color : color.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.outfit(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: filled ? AppColors.white : color,
+          ),
         ),
       ),
     );
@@ -483,174 +443,93 @@ class _StudentRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: isAbsent
-            ? AppColors.bohoRed.withValues(alpha: 0.03)
-            : AppColors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(
           color: isPresent
-              ? AppColors.primaryBrand.withValues(alpha: 0.3)
+              ? AppColors.successGreen.withValues(alpha: 0.35)
               : isAbsent
-                  ? AppColors.bohoRed.withValues(alpha: 0.35)
-                  : AppColors.borderGrey,
-          width: isAbsent ? 1.2 : 1,
+              ? AppColors.errorRed.withValues(alpha: 0.4)
+              : AppColors.borderGrey,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         children: [
-          // Student Avatar (with image support or initials)
           _buildAvatar(row),
           AppSpacing.h12,
-
-          // Name, Mobile & Past Absent Dates
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        row.studentName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    if (isAbsent) ...[
-                      AppSpacing.h6,
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: AppColors.bohoRed.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: AppColors.bohoRed.withValues(alpha: 0.3),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Text(
-                          'ABSENT',
-                          style: AppTextStyles.outfit(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.bohoRed,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  row.studentName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 AppSpacing.v2,
-
-                // Phone number or Enrollment ID
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.phone_outlined,
-                      size: 11,
-                      color: AppColors.textTertiary,
-                    ),
-                    AppSpacing.h4,
-                    Text(
-                      row.phone != null && row.phone!.trim().isNotEmpty
-                          ? row.phone!.trim()
-                          : (row.enrollmentId != null && row.enrollmentId!.isNotEmpty
-                              ? row.enrollmentId!
-                              : 'No mobile'),
-                      style: AppTextStyles.outfit(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
-                  ],
+                Text(
+                  row.phone != null && row.phone!.trim().isNotEmpty
+                      ? row.phone!.trim()
+                      : (row.enrollmentId != null &&
+                                row.enrollmentId!.isNotEmpty
+                            ? row.enrollmentId!
+                            : 'No mobile'),
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
-                AppSpacing.v4,
-
-                // Past Absent Dates Chips for this month (as shown in Institute panel)
-                if (row.monthlyAbsentDates.isNotEmpty)
+                if (row.monthlyAbsentDates.isNotEmpty) ...[
+                  AppSpacing.v4,
                   Wrap(
                     spacing: 4,
                     runSpacing: 4,
                     children: row.monthlyAbsentDates
-                        .map((dateStr) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color:
-                                    AppColors.bohoRed.withValues(alpha: 0.08),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(
-                                  color: AppColors.bohoRed
-                                      .withValues(alpha: 0.25),
-                                  width: 0.8,
-                                ),
+                        .map(
+                          (dateStr) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorRed.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              dateStr,
+                              style: AppTextStyles.outfit(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.errorRed,
                               ),
-                              child: Text(
-                                dateStr,
-                                style: AppTextStyles.outfit(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.bohoRed,
-                                ),
-                              ),
-                            ))
+                            ),
+                          ),
+                        )
                         .toList(),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 5, vertical: 1.5),
-                    decoration: BoxDecoration(
-                      color: AppColors.fieldBg,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      '0 Absent',
-                      style: AppTextStyles.outfit(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.textTertiary,
-                      ),
-                    ),
                   ),
+                ],
               ],
             ),
           ),
           AppSpacing.h8,
-
-          // Quick Toggles: Present, Absent
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _quickToggle(
-                statusKey: 'present',
-                label: 'P',
-                icon: Icons.check_rounded,
-                activeColor: AppColors.primaryBrand,
-                currentStatus: status,
-              ),
-              const SizedBox(width: 8),
-              _quickToggle(
-                statusKey: 'absent',
-                label: 'A',
-                icon: Icons.close_rounded,
-                activeColor: AppColors.bohoRed,
-                currentStatus: status,
-              ),
-            ],
+          _quickToggle(
+            statusKey: 'present',
+            label: 'P',
+            activeColor: AppColors.successGreen,
+            currentStatus: status,
+          ),
+          const SizedBox(width: 8),
+          _quickToggle(
+            statusKey: 'absent',
+            label: 'A',
+            activeColor: AppColors.errorRed,
+            currentStatus: status,
           ),
         ],
       ),
@@ -671,12 +550,12 @@ class _StudentRow extends StatelessWidget {
         height: 42,
         decoration: BoxDecoration(
           color: isAbsent
-              ? AppColors.bohoRed.withValues(alpha: 0.1)
+              ? AppColors.errorRed.withValues(alpha: 0.1)
               : AppColors.primaryBrandLight,
           shape: BoxShape.circle,
           border: Border.all(
             color: isAbsent
-                ? AppColors.bohoRed.withValues(alpha: 0.35)
+                ? AppColors.errorRed.withValues(alpha: 0.35)
                 : AppColors.borderGrey,
             width: 1.2,
           ),
@@ -697,14 +576,14 @@ class _StudentRow extends StatelessWidget {
       height: 42,
       decoration: BoxDecoration(
         color: isAbsent
-            ? AppColors.bohoRed.withValues(alpha: 0.1)
+            ? AppColors.errorRed.withValues(alpha: 0.1)
             : (status == 'present'
-                ? AppColors.primaryBrand.withValues(alpha: 0.1)
-                : AppColors.fieldBg),
+                  ? AppColors.successGreen.withValues(alpha: 0.12)
+                  : AppColors.fieldBg),
         shape: BoxShape.circle,
         border: Border.all(
           color: isAbsent
-              ? AppColors.bohoRed.withValues(alpha: 0.35)
+              ? AppColors.errorRed.withValues(alpha: 0.35)
               : AppColors.borderGrey,
           width: 1.2,
         ),
@@ -716,10 +595,10 @@ class _StudentRow extends StatelessWidget {
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: isAbsent
-                ? AppColors.bohoRed
+                ? AppColors.errorRed
                 : (status == 'present'
-                    ? AppColors.primaryBrand
-                    : AppColors.textSecondary),
+                      ? AppColors.successGreen
+                      : AppColors.textSecondary),
           ),
         ),
       ),
@@ -729,7 +608,6 @@ class _StudentRow extends StatelessWidget {
   Widget _quickToggle({
     required String statusKey,
     required String label,
-    required IconData icon,
     required Color activeColor,
     required String? currentStatus,
   }) {
@@ -739,46 +617,28 @@ class _StudentRow extends StatelessWidget {
       onTap: controller.isEditable
           ? () => controller.setStatus(row, statusKey)
           : null,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(10),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        width: 36,
-        height: 36,
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isSelected ? activeColor : AppColors.fieldBg,
-          borderRadius: BorderRadius.circular(8),
+          color: isSelected ? activeColor : activeColor.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? activeColor : AppColors.fieldBorder,
-            width: isSelected ? 1.5 : 1,
+            color: isSelected
+                ? activeColor
+                : activeColor.withValues(alpha: 0.35),
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: activeColor.withValues(alpha: 0.25),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ]
-              : null,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 14,
-              color: isSelected ? AppColors.white : AppColors.textTertiary,
-            ),
-            const SizedBox(height: 1),
-            Text(
-              label,
-              style: AppTextStyles.outfit(
-                fontSize: 9,
-                fontWeight: FontWeight.w700,
-                color: isSelected ? AppColors.white : AppColors.textTertiary,
-              ),
-            ),
-          ],
+        child: Text(
+          label,
+          style: AppTextStyles.outfit(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: isSelected ? AppColors.white : activeColor,
+          ),
         ),
       ),
     );

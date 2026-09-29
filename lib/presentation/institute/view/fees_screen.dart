@@ -428,7 +428,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
     return Column(
       children: controller.feeRecords.map((record) {
         final amount = record.paidAmount > 0 ? record.paidAmount : record.totalAmount;
-        final studentName = record.student?.name?.trim().isNotEmpty == true
+        final studentName = record.student?.name.trim().isNotEmpty == true
             ? record.student!.name
             : 'Student';
         final displayId = (record.student?.enrollmentID?.isNotEmpty == true)
@@ -487,20 +487,12 @@ class InstituteFeesScreen extends GetView<InstituteController> {
         ? student.name.split(' ').where((s) => s.isNotEmpty).map((s) => s[0]).take(2).join('').toUpperCase()
         : '?';
 
-    final hasBroken = student.hasBrokenPromise && student.promise != null;
-    final hasPromise = student.promise != null;
-
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: hasBroken
-              ? const Color(0xFFFCA5A5)
-              : (hasPromise ? const Color(0xFF93C5FD) : const Color(0xFFFDE68A)),
-          width: hasBroken ? 1.5 : 1.0,
-        ),
+        border: Border.all(color: const Color(0xFFFDE68A)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -512,69 +504,6 @@ class InstituteFeesScreen extends GetView<InstituteController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (hasBroken) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFECACA)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '⚠️ Broken Promise',
-                    style: AppTextStyles.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFFDC2626),
-                    ),
-                  ),
-                  Text(
-                    student.promise!.promiseDate,
-                    style: AppTextStyles.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFFDC2626),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ] else if (hasPromise) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBFDBFE)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '📅 Will Pay On',
-                    style: AppTextStyles.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF2563EB),
-                    ),
-                  ),
-                  Text(
-                    student.promise!.promiseDate,
-                    style: AppTextStyles.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF2563EB),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           Row(
             children: [
               CircleAvatar(
@@ -738,26 +667,6 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                   }),
                 ),
               ),
-              const SizedBox(width: 8),
-              SizedBox(
-                height: 36,
-                child: Builder(
-                  builder: (btnCtx) => OutlinedButton.icon(
-                    onPressed: () => _showPromiseModal(btnCtx, student, controller),
-                    icon: const Icon(Icons.event_note_outlined, size: 15),
-                    label: Text(
-                      'Promise',
-                      style: AppTextStyles.outfit(fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF1D4ED8),
-                      side: const BorderSide(color: Color(0xFFBFDBFE)),
-                      backgroundColor: const Color(0xFFEFF6FF),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ],
@@ -855,177 +764,5 @@ class InstituteFeesScreen extends GetView<InstituteController> {
     );
   }
 
-  void _showPromiseModal(
-    BuildContext context,
-    PendingFeeStudent student,
-    InstituteController controller,
-  ) {
-    DateTime selectedDate = DateTime.now().add(const Duration(days: 3));
-    final amountController = TextEditingController(text: student.pendingAmount.toStringAsFixed(0));
-    final notesController = TextEditingController();
-
-    Get.bottomSheet(
-      StatefulBuilder(
-        builder: (ctx, setState) {
-          return Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(Icons.calendar_month_outlined, color: Color(0xFF2563EB), size: 20),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Promise to Pay',
-                                style: AppTextStyles.outfit(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                student.name,
-                                style: AppTextStyles.outfit(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textTertiary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 20),
-                        onPressed: () => Get.back(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Promised Payment Date',
-                    style: AppTextStyles.outfit(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 6),
-                  GestureDetector(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                      );
-                      if (picked != null) {
-                        setState(() => selectedDate = picked);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.scaffoldBg,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.background),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            DateFormat('dd MMM, yyyy').format(selectedDate),
-                            style: AppTextStyles.outfit(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                          ),
-                          const Icon(Icons.edit_calendar_outlined, size: 18, color: AppColors.primaryBrand),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Promised Amount (₹)',
-                    style: AppTextStyles.outfit(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    style: AppTextStyles.outfit(fontSize: 13, fontWeight: FontWeight.w700),
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: AppColors.scaffoldBg,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Notes (Optional)',
-                    style: AppTextStyles.outfit(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-                  ),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: notesController,
-                    maxLines: 2,
-                    style: AppTextStyles.outfit(fontSize: 13),
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Guardian will transfer via UPI',
-                      hintStyle: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
-                      filled: true,
-                      fillColor: AppColors.scaffoldBg,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final amt = double.tryParse(amountController.text) ?? student.pendingAmount;
-                        final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
-                        Get.back();
-                        await controller.saveFeePromise(
-                          studentId: student.id,
-                          promiseDate: dateStr,
-                          amount: amt,
-                          notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: Text('Save Promise', style: AppTextStyles.outfit(fontSize: 14, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-      isScrollControlled: true,
-    );
-  }
 
 }

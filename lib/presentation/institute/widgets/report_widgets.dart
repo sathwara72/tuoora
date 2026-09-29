@@ -284,7 +284,9 @@ class TrendBarChart extends StatelessWidget {
                       top: Radius.circular(4),
                     ),
                     child: Container(
-                      height: (height - 40) * ratio + (value != null ? 4 : 0),
+                      // 44 = value text + label text + the two gaps, with slack
+                      // (40 overflowed the column by 1px).
+                      height: (height - 44) * ratio + (value != null ? 4 : 0),
                       color: value != null
                           ? barColor
                           : AppColors.background,

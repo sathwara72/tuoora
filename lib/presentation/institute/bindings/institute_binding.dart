@@ -129,6 +129,9 @@ class InstituteBinding extends Bindings {
     Get.lazyPut<NotificationPreferencesController>(
       () => NotificationPreferencesController(
         Get.find<InstituteRepositoryImpl>(),
+      ),
+      fenix: true,
+    );
     Get.lazyPut<ComposeNotificationController>(
       () => ComposeNotificationController(
         Get.find<InstituteRepositoryImpl>() as InstituteRepository,

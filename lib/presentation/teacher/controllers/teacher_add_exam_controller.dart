@@ -34,6 +34,9 @@ class TeacherAddExamController extends GetxController {
   final passingMarksController = TextEditingController();
   final descriptionController = TextEditingController();
 
+  static const statuses = ['scheduled', 'completed', 'cancelled'];
+  final status = 'scheduled'.obs;
+
   final examDate = Rxn<DateTime>();
   final startTime = Rxn<TimeOfDay>();
   final endTime = Rxn<TimeOfDay>();
@@ -68,6 +71,8 @@ class TeacherAddExamController extends GetxController {
               ? args.passingMarks.toInt().toString()
               : args.passingMarks.toString();
       descriptionController.text = args.description ?? '';
+      final current = args.status.toLowerCase();
+      if (statuses.contains(current)) status.value = current;
       examDate.value = DateTime.tryParse(args.examDate);
       if (args.startTime != null && args.startTime!.isNotEmpty) {
         startTime.value = _parseTimeString(args.startTime!);
@@ -77,6 +82,7 @@ class TeacherAddExamController extends GetxController {
       }
     } else {
       batch = args as TeacherBatch;
+      subjectController.text = batch.subject ?? '';
     }
   }
 
@@ -191,6 +197,7 @@ class TeacherAddExamController extends GetxController {
         data['exam_type'] = editingExam!.examType;
       }
       if (isEditing) {
+        data['status'] = status.value;
         await _repository.updateExam(editingExam!.id, data);
         AppSnackBar.success('Exam updated');
       } else {

@@ -95,21 +95,25 @@ class AuthRepository implements AuthRepositoryImpl {
   Future<({String accessToken, String refreshToken})?> refreshAccessToken(
     String refreshToken,
   ) async {
-    try {
-      final response = await _apiClient.post(ApiConstants.authRefresh, {
-        'refresh_token': refreshToken,
-      });
-      if (response.status.hasError) return null;
-      final data = response.body?['data'];
-      if (data is! Map) return null;
-      final newAccess =
-          data['access_token']?.toString() ?? data['token']?.toString();
-      final newRefresh = data['refresh_token']?.toString();
-      if (newAccess == null || newAccess.isEmpty) return null;
-      return (accessToken: newAccess, refreshToken: newRefresh ?? refreshToken);
-    } catch (_) {
+    final response = await _apiClient.post(ApiConstants.authRefresh, {
+      'refresh_token': refreshToken,
+    });
+    if (response.status.hasError) {
+      final code = response.statusCode;
+      // No answer or a server error: not a verdict on the token, so throw
+      // and let the caller keep the session. 4xx means the token is rejected.
+      if (code == null || code >= 500) {
+        throw Exception('Token refresh unavailable ($code)');
+      }
       return null;
     }
+    final data = response.body?['data'];
+    if (data is! Map) return null;
+    final newAccess =
+        data['access_token']?.toString() ?? data['token']?.toString();
+    final newRefresh = data['refresh_token']?.toString();
+    if (newAccess == null || newAccess.isEmpty) return null;
+    return (accessToken: newAccess, refreshToken: newRefresh ?? refreshToken);
   }
 
   @override

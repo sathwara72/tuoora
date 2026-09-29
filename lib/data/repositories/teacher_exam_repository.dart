@@ -13,6 +13,7 @@ class TeacherExamRepository implements TeacherExamRepositoryImpl {
   Future<TeacherExamListPage> getExams({
     required int batchId,
     String? status,
+    String? search,
     int page = 1,
   }) async {
     final query = <String, String>{
@@ -20,6 +21,7 @@ class TeacherExamRepository implements TeacherExamRepositoryImpl {
       'page': page.toString(),
     };
     if (status != null) query['status'] = status;
+    if (search != null && search.isNotEmpty) query['search'] = search;
     final response = await _apiClient.get(ApiConstants.teacherExams, query: query);
     if (response.status.hasError) {
       throw Exception('Failed to load exams: ${response.statusText}');

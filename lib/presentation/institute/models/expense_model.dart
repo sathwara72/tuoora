@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 
+/// Virtual category id used for staff salary rows.
+const int kSalaryCategoryId = -1;
+
 class ExpenseCategory {
   final int id;
   final int instituteId;
@@ -35,6 +38,9 @@ class ExpenseModel {
   final String paymentMethod;
   final ExpenseCategory? category;
 
+  /// A paid staff salary shown as an expense: read-only.
+  final bool isSalary;
+
   ExpenseModel({
     required this.id,
     required this.instituteId,
@@ -45,7 +51,30 @@ class ExpenseModel {
     this.receiptImage,
     required this.paymentMethod,
     this.category,
+    this.isSalary = false,
   });
+
+  /// A row from `expenses?category_id=salary` (id is `sal_<id>`, category is virtual).
+  factory ExpenseModel.fromSalaryJson(Map<String, dynamic> json) {
+    return ExpenseModel(
+      id: json['salary_id'] is int
+          ? json['salary_id']
+          : int.tryParse('${json['salary_id']}') ?? 0,
+      instituteId: 0,
+      expenseCategoryId: kSalaryCategoryId,
+      amount: (json['amount'] as num).toDouble(),
+      date: DateTime.parse(json['date']),
+      description: json['description'] ?? '',
+      paymentMethod: json['payment_method'] ?? 'Cash',
+      category: ExpenseCategory(
+        id: kSalaryCategoryId,
+        instituteId: 0,
+        name: 'Staff Salary',
+        isSalary: true,
+      ),
+      isSalary: true,
+    );
+  }
 
   factory ExpenseModel.fromJson(Map<String, dynamic> json) {
     return ExpenseModel(
@@ -130,51 +159,6 @@ class ExpenseListResponse {
   }
 }
 
-class CategoryAnalysis {
-  final String categoryName;
-  final double amount;
-  final double percentage;
-
-  CategoryAnalysis({
-    required this.categoryName,
-    required this.amount,
-    required this.percentage,
-  });
-
-  factory CategoryAnalysis.fromJson(Map<String, dynamic> json) {
-    return CategoryAnalysis(
-      categoryName: json['category_name'] ?? 'Unknown',
-      amount: (json['amount'] as num).toDouble(),
-      percentage: (json['percentage'] as num).toDouble(),
-    );
-  }
-}
-
-class ExpenseAnalysis {
-  final double totalSpending;
-  final String monthName;
-  final List<CategoryAnalysis> categories;
-
-  ExpenseAnalysis({
-    required this.totalSpending,
-    required this.monthName,
-    required this.categories,
-  });
-
-  factory ExpenseAnalysis.fromJson(Map<String, dynamic> json) {
-    final data = json['data'] ?? {};
-    return ExpenseAnalysis(
-      totalSpending: (data['total_spending'] as num).toDouble(),
-      monthName: data['month_name'] ?? '',
-      categories: (data['categories'] as List? ?? [])
-          .map((c) => CategoryAnalysis.fromJson(c))
-          .toList(),
-    );
-  }
-}
-
-
-
 class ExpenseCategoryGroup {
   final int categoryId;
   final String categoryName;
@@ -194,40 +178,31 @@ class ExpenseCategoryGroup {
 
   int get count => transactions.length;
 
-  IconData get icon {
-    switch (categoryName) {
-      case 'Bills':
-        return Icons.bolt_rounded;
-      case 'Shopping':
-        return Icons.shopping_bag_rounded;
-      case 'Entertainment':
-        return Icons.movie_rounded;
-      case 'Food & Drink':
-        return Icons.local_cafe_rounded;
-      case 'Transport':
-        return Icons.directions_car_rounded;
-      default:
-        return Icons.category_rounded;
-    }
-  }
+  IconData get icon => expenseCategoryIcon(categoryName);
 
-  Color get color {
-    switch (categoryName) {
-      case 'Bills':
-        return AppColors.studentProgressBlue;
-      case 'Shopping':
-        return AppColors.warningAmber;
-      case 'Entertainment':
-        return AppColors.warningAmber;
-      case 'Food & Drink':
-        return AppColors.successGreen;
-      case 'Transport':
-        return AppColors.subjectPhysics;
-      default:
-        return AppColors.primaryBrand;
-    }
-  }
+  Color get color => AppColors.primaryBrand;
 
   Color get iconBgColor => color.withValues(alpha: 0.1);
 }
 
+IconData expenseCategoryIcon(String name) {
+  final n = name.toLowerCase();
+  if (n.contains('salary') || n.contains('staff')) return Icons.badge_rounded;
+  if (n.contains('bill') || n.contains('electric') || n.contains('utilit')) {
+    return Icons.bolt_rounded;
+  }
+  if (n.contains('rent')) return Icons.home_work_rounded;
+  if (n.contains('shop') || n.contains('suppl') || n.contains('stationer')) {
+    return Icons.shopping_bag_rounded;
+  }
+  if (n.contains('food') || n.contains('drink') || n.contains('tea')) {
+    return Icons.local_cafe_rounded;
+  }
+  if (n.contains('transport') || n.contains('travel') || n.contains('fuel')) {
+    return Icons.directions_car_rounded;
+  }
+  if (n.contains('entertain') || n.contains('event')) return Icons.movie_rounded;
+  if (n.contains('market') || n.contains('advert')) return Icons.campaign_rounded;
+  if (n.contains('repair') || n.contains('maint')) return Icons.build_rounded;
+  return Icons.category_rounded;
+}

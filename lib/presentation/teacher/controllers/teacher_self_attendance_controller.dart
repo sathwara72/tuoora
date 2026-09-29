@@ -16,11 +16,11 @@ class TeacherSelfAttendanceController extends GetxController {
   final RxBool isLoadingLeaves = false.obs;
   final RxBool isSubmittingLeave = false.obs;
 
-  final RxInt selectedTab = 0.obs; // 0: Attendance Calendar, 1: Leaves
-
   final Rxn<TeacherStaffAttendance> today = Rxn<TeacherStaffAttendance>();
-  final Rxn<TeacherSelfAttendanceHistory> history = Rxn<TeacherSelfAttendanceHistory>();
-  final Rxn<TeacherAttendanceCalendarData> calendarData = Rxn<TeacherAttendanceCalendarData>();
+  final Rxn<TeacherSelfAttendanceHistory> history =
+      Rxn<TeacherSelfAttendanceHistory>();
+  final Rxn<TeacherAttendanceCalendarData> calendarData =
+      Rxn<TeacherAttendanceCalendarData>();
   final Rxn<TeacherCalendarDay> selectedDay = Rxn<TeacherCalendarDay>();
   final RxList<TeacherLeaveItem> leaves = <TeacherLeaveItem>[].obs;
 
@@ -28,12 +28,6 @@ class TeacherSelfAttendanceController extends GetxController {
   final RxInt currentYear = DateTime.now().year.obs;
 
   static const statuses = ['Present', 'Absent', 'Half Day', 'Late', 'Leave'];
-
-  void switchTab(int index) {
-    if (selectedTab.value != index) {
-      selectedTab.value = index;
-    }
-  }
 
   @override
   void onInit() {
@@ -70,7 +64,10 @@ class TeacherSelfAttendanceController extends GetxController {
 
     isLoadingCalendar.value = true;
     try {
-      final res = await _repository.getSelfAttendanceCalendar(month: m, year: y);
+      final res = await _repository.getSelfAttendanceCalendar(
+        month: m,
+        year: y,
+      );
       calendarData.value = res;
 
       // Select today if in current month/year, else first day of month
@@ -104,7 +101,8 @@ class TeacherSelfAttendanceController extends GetxController {
   }
 
   void onDaySelected(String dateKey) {
-    selectedDay.value = _resolveDay(dateKey) ??
+    selectedDay.value =
+        _resolveDay(dateKey) ??
         TeacherCalendarDay(date: dateKey, status: 'Not Marked');
   }
 
@@ -122,10 +120,12 @@ class TeacherSelfAttendanceController extends GetxController {
     final parsed = DateTime.tryParse(isoDateStr);
     if (parsed == null) return null;
     final byDayNumber =
-        days[parsed.day.toString()] ?? days[parsed.day.toString().padLeft(2, '0')];
+        days[parsed.day.toString()] ??
+        days[parsed.day.toString().padLeft(2, '0')];
     if (byDayNumber == null) return null;
 
     return TeacherCalendarDay(
+      id: byDayNumber.id,
       date: isoDateStr,
       status: byDayNumber.status,
       note: byDayNumber.note,
@@ -137,7 +137,10 @@ class TeacherSelfAttendanceController extends GetxController {
   Future<void> markToday(String status, {String? note}) async {
     try {
       isMarking.value = true;
-      final res = await _repository.markSelfAttendance(status: status, note: note);
+      final res = await _repository.markSelfAttendance(
+        status: status,
+        note: note,
+      );
       today.value = res;
       AppSnackBar.success('Attendance marked as $status');
       // Refresh calendar
@@ -167,6 +170,14 @@ class TeacherSelfAttendanceController extends GetxController {
     required String reason,
     bool skipSundays = true,
   }) async {
+    final start = DateTime.tryParse(startDate);
+    final now = DateTime.now();
+    if (start != null &&
+        DateTime(start.year, start.month, start.day)
+            .isBefore(DateTime(now.year, now.month, now.day))) {
+      AppSnackBar.error('Leave can only be taken for today or upcoming days.');
+      return false;
+    }
     isSubmittingLeave.value = true;
     try {
       await _repository.applyLeave(
@@ -176,8 +187,13 @@ class TeacherSelfAttendanceController extends GetxController {
         skipSundays: skipSundays,
       );
       AppSnackBar.success('Leave application submitted successfully.');
+      final keepSelected = selectedDay.value?.date;
       await fetchLeaves();
       await fetchCalendar(month: currentMonth.value, year: currentYear.value);
+      await fetchToday();
+      if (keepSelected != null && keepSelected.isNotEmpty) {
+        onDaySelected(keepSelected);
+      }
       return true;
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
@@ -188,11 +204,17 @@ class TeacherSelfAttendanceController extends GetxController {
   }
 
   Future<bool> cancelLeave(int leaveId) async {
+    final keepSelected = selectedDay.value?.date;
     try {
       await _repository.cancelLeave(leaveId);
       leaves.removeWhere((l) => l.id == leaveId);
       AppSnackBar.success('Leave cancelled successfully.');
       await fetchCalendar(month: currentMonth.value, year: currentYear.value);
+      await fetchToday();
+      // Stay on the day the teacher was looking at.
+      if (keepSelected != null && keepSelected.isNotEmpty) {
+        onDaySelected(keepSelected);
+      }
       return true;
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));

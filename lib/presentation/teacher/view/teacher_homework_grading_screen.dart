@@ -27,36 +27,194 @@ class TeacherHomeworkGradingScreen extends GetView<TeacherHomeworkGradingControl
                 if (controller.isLoading.value) {
                   return const Center(child: CommonLoading());
                 }
-                final list = controller.submissions;
-                if (list.isEmpty) {
+                if (controller.submissions.isEmpty) {
                   return Center(
                     child: Text(
-                      'No submissions yet.',
+                      'No students in this batch.',
                       style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
                     ),
                   );
                 }
-                return ListView.separated(
-                  padding: AppSpacing.x16,
-                  itemCount: list.length,
-                  separatorBuilder: (_, _) => AppSpacing.v12,
-                  itemBuilder: (context, index) =>
-                      _SubmissionRow(submission: list[index], controller: controller),
+                final list = controller.filteredSubmissions;
+                return ListView(
+                  padding: AppSpacing.x16.add(const EdgeInsets.only(bottom: AppSpacing.s16)),
+                  children: [
+                    _ProgressCard(controller: controller),
+                    AppSpacing.v12,
+                    if (controller.homeworkClosed) ...[
+                      const _ClosedBanner(),
+                      AppSpacing.v12,
+                    ],
+                    if (list.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        child: Center(
+                          child: Text(
+                            'No students match this status.',
+                            style: AppTextStyles.outfit(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      for (final s in list) ...[
+                        _SubmissionRow(submission: s, controller: controller),
+                        AppSpacing.v12,
+                      ],
+                  ],
                 );
               }),
             ),
-            Padding(
-              padding: AppSpacing.x16.add(const EdgeInsets.only(bottom: AppSpacing.s16)),
-              child: Obx(
-                () => AppButton(
-                  label: 'Save Grades',
+            Obx(() {
+              if (controller.isLoading.value || controller.homeworkClosed) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: AppSpacing.x16.add(const EdgeInsets.only(bottom: AppSpacing.s16)),
+                child: AppButton(
+                  label: 'Publish Grades',
                   onPressed: controller.submitGrades,
                   isLoading: controller.isSaving.value,
                 ),
-              ),
-            ),
+              );
+            }),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ProgressCard extends StatelessWidget {
+  final TeacherHomeworkGradingController controller;
+
+  const _ProgressCard({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = (controller.completion * 100).toStringAsFixed(0);
+    return Container(
+      padding: AppSpacing.all16,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(color: AppColors.borderGrey),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '${controller.submittedCount}',
+                        style: AppTextStyles.outfit(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryBrand,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' / ${controller.totalCount} submitted',
+                        style: AppTextStyles.outfit(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Text(
+                '$pct% complete',
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryBrand,
+                ),
+              ),
+            ],
+          ),
+          AppSpacing.v8,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: controller.completion,
+              minHeight: 6,
+              backgroundColor: AppColors.borderGrey,
+              valueColor: const AlwaysStoppedAnimation(AppColors.primaryBrand),
+            ),
+          ),
+          AppSpacing.v12,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _chip('All', controller.totalCount, 'all'),
+              _chip('Submitted', controller.awaitingReviewCount, 'submitted'),
+              _chip('Pending', controller.pendingCount, 'pending'),
+              _chip('Reviewed', controller.reviewedCount, 'reviewed'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String label, int count, String key) {
+    final selected = controller.filter.value == key;
+    return GestureDetector(
+      onTap: () => controller.filter.value = key,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryBrand : AppColors.fieldBg,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: selected ? AppColors.primaryBrand : AppColors.fieldBorder,
+          ),
+        ),
+        child: Text(
+          '$label ($count)',
+          style: AppTextStyles.outfit(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: selected ? AppColors.white : AppColors.textPrimary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ClosedBanner extends StatelessWidget {
+  const _ClosedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lock_outline_rounded, size: 18, color: Colors.amber.shade900),
+          AppSpacing.h8,
+          Expanded(
+            child: Text(
+              'This homework is closed. Grades can no longer be changed.',
+              style: AppTextStyles.outfit(fontSize: 12, color: Colors.amber.shade900),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -70,7 +228,12 @@ class _SubmissionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPending = submission.status.toLowerCase() == 'pending';
+    final canGrade = controller.canGrade(submission);
+    final hasAttachment =
+        submission.attachmentUrl != null && submission.attachmentUrl!.isNotEmpty;
+    final subtitle = submission.enrollmentId?.isNotEmpty == true
+        ? submission.enrollmentId!
+        : 'ID: #ST-${submission.studentId.toString().padLeft(4, '0')}';
 
     return Container(
       padding: AppSpacing.all16,
@@ -83,44 +246,42 @@ class _SubmissionRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  submission.studentName,
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      submission.studentName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              if (isPending)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    'Pending Submission',
-                    style: AppTextStyles.outfit(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.amber.shade900,
-                    ),
-                  ),
-                ),
+              _StatusBadge(status: submission.status),
             ],
           ),
           if (submission.note != null && submission.note!.isNotEmpty) ...[
-            AppSpacing.v4,
+            AppSpacing.v8,
             Text(
               submission.note!,
               style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
-          if (submission.attachmentUrl != null && submission.attachmentUrl!.isNotEmpty) ...[
+          if (hasAttachment) ...[
             AppSpacing.v8,
             Align(
               alignment: Alignment.centerLeft,
@@ -139,25 +300,15 @@ class _SubmissionRow extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.attach_file_rounded,
-                        size: 15,
-                        color: AppColors.primaryBrand,
-                      ),
+                      const Icon(Icons.attach_file_rounded, size: 15, color: AppColors.primaryBrand),
                       AppSpacing.h6,
                       Text(
-                        'View Attachment',
+                        'View File',
                         style: AppTextStyles.outfit(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: AppColors.primaryBrand,
                         ),
-                      ),
-                      AppSpacing.h4,
-                      const Icon(
-                        Icons.open_in_new_rounded,
-                        size: 13,
-                        color: AppColors.primaryBrand,
                       ),
                     ],
                   ),
@@ -168,86 +319,35 @@ class _SubmissionRow extends StatelessWidget {
           AppSpacing.v12,
           Row(
             children: [
+              Text(
+                'Rating (out of ${TeacherHomeworkGradingController.maxScore})',
+                style: AppTextStyles.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.fieldLabel,
+                ),
+              ),
+              const Spacer(),
+              _stepButton(Icons.remove_rounded, canGrade, () => controller.changeScore(submission, -1)),
               SizedBox(
-                width: 90,
-                child: TextFormField(
-                  key: ValueKey('${submission.studentId}_${submission.status}'),
-                  initialValue: isPending ? '' : (submission.score?.toString() ?? ''),
-                  enabled: !isPending,
-                  keyboardType: TextInputType.number,
+                width: 44,
+                child: Text(
+                  '${(submission.score ?? 0).round()}',
+                  textAlign: TextAlign.center,
                   style: AppTextStyles.outfit(
-                    fontSize: 13,
-                    color: isPending ? AppColors.textTertiary : AppColors.textPrimary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: isPending ? 'N/A' : 'Score',
-                    hintStyle: AppTextStyles.outfit(
-                      fontSize: 12,
-                      color: isPending ? AppColors.textTertiary : AppColors.fieldLabel,
-                    ),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    filled: true,
-                    fillColor: isPending ? AppColors.borderGrey.withValues(alpha: 0.25) : AppColors.fieldBg,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.fieldBorder),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: AppColors.fieldBorder),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: AppColors.borderGrey.withValues(alpha: 0.5)),
-                    ),
-                  ),
-                  onChanged: (value) => controller.updateScore(submission, value),
-                ),
-              ),
-              AppSpacing.h12,
-              Expanded(
-                child: SizedBox(
-                  height: AppSpacing.s36,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: TeacherHomeworkGradingController.statuses.map((status) {
-                      final isSelected = submission.status.toLowerCase() == status.toLowerCase();
-                      return Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.s8),
-                        child: GestureDetector(
-                          onTap: () => controller.updateStatus(submission, status),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primaryBrand : AppColors.fieldBg,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: isSelected ? AppColors.primaryBrand : AppColors.fieldBorder,
-                              ),
-                            ),
-                            child: Text(
-                              status,
-                              style: AppTextStyles.outfit(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: isSelected ? AppColors.white : AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: canGrade ? AppColors.textPrimary : AppColors.textTertiary,
                   ),
                 ),
               ),
+              _stepButton(Icons.add_rounded, canGrade, () => controller.changeScore(submission, 1)),
             ],
           ),
-          if (isPending) ...[
-            const SizedBox(height: 6),
+          if (!canGrade && !controller.homeworkClosed) ...[
+            AppSpacing.v8,
             Text(
-              'Grades cannot be given to pending homework',
+              'Rating is available once the student submits.',
               style: AppTextStyles.outfit(
                 fontSize: 11,
                 color: AppColors.textTertiary,
@@ -256,6 +356,65 @@ class _SubmissionRow extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _stepButton(IconData icon, bool enabled, VoidCallback onTap) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: enabled ? AppColors.primaryBrand.withValues(alpha: 0.1) : AppColors.fieldBg,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.fieldBorder),
+        ),
+        child: Icon(
+          icon,
+          size: 18,
+          color: enabled ? AppColors.primaryBrand : AppColors.textTertiary,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+
+  const _StatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = status.toLowerCase();
+    final Color color;
+    final String label;
+    switch (s) {
+      case 'reviewed':
+        color = AppColors.successGreen;
+        label = 'Reviewed';
+      case 'submitted':
+        color = AppColors.primaryBrand;
+        label = 'Submitted';
+      case 'late':
+        color = Colors.amber.shade800;
+        label = 'Late';
+      default:
+        color = AppColors.textTertiary;
+        label = 'Pending';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.outfit(fontSize: 10, fontWeight: FontWeight.w700, color: color),
       ),
     );
   }

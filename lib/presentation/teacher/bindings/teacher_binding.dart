@@ -23,7 +23,6 @@ import 'package:tuoora/data/repositories_impl/teacher_timetable_repository_impl.
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_exam_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_homework_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_timetable_slot_controller.dart';
-import 'package:tuoora/presentation/teacher/controllers/teacher_assign_students_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_details_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_resources_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_students_controller.dart';
@@ -37,6 +36,7 @@ import 'package:tuoora/presentation/teacher/controllers/teacher_fees_controller.
 import 'package:tuoora/presentation/teacher/controllers/teacher_homework_grading_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_mark_attendance_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_profile_controller.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_dashboard_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_salary_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_timetable_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_self_attendance_controller.dart';
@@ -91,9 +91,6 @@ class TeacherBinding extends Bindings {
     );
     Get.lazyPut(
       () => TeacherBatchStudentsController(Get.find<TeacherBatchRepositoryImpl>()),
-    );
-    Get.lazyPut(
-      () => TeacherAssignStudentsController(Get.find<TeacherBatchRepositoryImpl>()),
     );
     Get.lazyPut(
       () => TeacherBatchResourcesController(
@@ -158,6 +155,9 @@ class TeacherBinding extends Bindings {
     );
     Get.lazyPut(
       () => TeacherSalaryController(Get.find<TeacherSalaryRepositoryImpl>()),
+    );
+    Get.lazyPut(
+      () => TeacherDashboardController(Get.find<TeacherTimetableRepositoryImpl>()),
     );
   }
 }

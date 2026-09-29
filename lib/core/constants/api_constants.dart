@@ -101,7 +101,8 @@ class ApiConstants {
   static const String instituteExpenses = '/institute/expenses';
   static const String instituteExpenseCategories =
       '/institute/expenses/categories';
-  static const String instituteExpenseAnalysis = '/institute/expenses/analysis';
+  static const String instituteExpenseSalaryToggle =
+      '/institute/expenses/salary-toggle';
   static const String instituteLeads = '/institute/leads';
   static const String instituteNotes = '/institute/notes';
   static const String instituteNoteCategories = '/institute/note-categories';
@@ -166,10 +167,6 @@ class ApiConstants {
   static String teacherBatchDetail(int batchId) => '/teacher/batches/$batchId';
   static String teacherBatchStudents(int batchId) =>
       '/teacher/batches/$batchId/students';
-  static String teacherBatchStudentDetail(int batchId, int studentId) =>
-      '/teacher/batches/$batchId/students/$studentId';
-  static String teacherBatchStudentRemove(int batchId, int studentId) =>
-      '/teacher/batches/$batchId/students/$studentId/remove';
   static const String teacherAttendance = '/teacher/attendance';
   static const String teacherAttendanceQrScan = '/teacher/attendance/qr-scan';
   static const String teacherSelfAttendanceToday =

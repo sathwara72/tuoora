@@ -1,14 +1,28 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/services/bug_report_service.dart';
+import 'package:tuoora/core/services/server_error_handler.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
+import 'package:tuoora/core/widgets/app_snack_bar.dart';
 
 class ServerErrorView extends StatelessWidget {
-  final VoidCallback onRetry;
+  final ServerErrorHandler handler;
   final String? message;
 
-  const ServerErrorView({super.key, required this.onRetry, this.message});
+  const ServerErrorView({super.key, required this.handler, this.message});
+
+  Future<void> _emailSupport() async {
+    final opened = await BugReportService.to.emailSupport();
+    if (!opened) {
+      AppSnackBar.error(
+        'No email app found. Please write to ${BugReportService.supportEmail}.',
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,20 +70,67 @@ class ServerErrorView extends StatelessWidget {
                   ),
                 ),
                 AppSpacing.v32,
-                SizedBox(
-                  width: double.infinity,
-                  child: AppButton(
-                    label: 'Try Again',
-                    icon: Icons.refresh_rounded,
-                    onPressed: onRetry,
+                Obx(
+                  () => SizedBox(
+                    width: double.infinity,
+                    child: AppButton(
+                      label: handler.isRetrying.value
+                          ? 'Checking...'
+                          : 'Try Again',
+                      icon: Icons.refresh_rounded,
+                      isLoading: handler.isRetrying.value,
+                      onPressed: handler.isRetrying.value
+                          ? null
+                          : handler.retry,
+                    ),
                   ),
                 ),
+                Obx(
+                  () => handler.retryFailed.value
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(
+                            'Still unable to reach the server. Please try again shortly.',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.outfit(
+                              fontSize: 12.5,
+                              color: AppColors.errorRed,
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
                 AppSpacing.v16,
+                Text.rich(
+                  TextSpan(
+                    style: AppTextStyles.outfit(
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                    ),
+                    children: [
+                      const TextSpan(
+                        text: 'If the problem persists, contact ',
+                      ),
+                      TextSpan(
+                        text: BugReportService.supportEmail,
+                        style: AppTextStyles.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryBrand,
+                        ).copyWith(decoration: TextDecoration.underline),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = _emailSupport,
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                AppSpacing.v8,
                 Text(
-                  'If the problem persists, contact support@tuoora.com',
+                  'Tap the address to send us the error details.',
                   textAlign: TextAlign.center,
                   style: AppTextStyles.outfit(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: AppColors.textMuted,
                   ),
                 ),

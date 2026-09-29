@@ -18,6 +18,7 @@ import 'package:tuoora/core/services/app_update_service.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/services/branding_service.dart';
 import 'package:tuoora/core/services/institute_account_status_handler.dart';
+import 'package:tuoora/core/services/bug_report_service.dart';
 import 'package:tuoora/core/services/server_error_handler.dart';
 import 'package:tuoora/core/services/media_cache_service.dart';
 import 'package:tuoora/core/services/notifications/notification_router.dart';
@@ -46,6 +47,7 @@ void main() async {
   Get.put(ApiClient());
   Get.put(MediaCacheService());
   Get.put(InstituteAccountStatusHandler());
+  Get.put(BugReportService());
   Get.put(ServerErrorHandler());
   Get.put(AppUpdateService());
   await Get.putAsync(() => AuthService().init());

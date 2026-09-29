@@ -11,13 +11,20 @@ class StudentRepository implements StudentRepositoryImpl {
   StudentRepository(this._apiClient);
 
   @override
-  Future<List<Student>> listStudents({String? search, int? page}) async {
+  Future<List<Student>> listStudents({
+    String? search,
+    int? page,
+    bool unassigned = false,
+  }) async {
     final Map<String, dynamic> query = {};
     if (search != null && search.isNotEmpty) {
       query['search'] = search;
     }
     if (page != null) {
       query['page'] = page.toString();
+    }
+    if (unassigned) {
+      query['unassigned'] = '1';
     }
 
     final response = await _apiClient.get(
@@ -152,6 +159,30 @@ class StudentRepository implements StudentRepositoryImpl {
     if (response.status.hasError) {
       _handleError(response, 'Failed to reset password');
     }
+  }
+
+  @override
+  Future<bool> toggleBlock(dynamic id, bool blocked) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStudents}/$id/toggle-block',
+      {'blocked': blocked},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update student login access');
+    }
+    return response.body?['is_login_blocked'] == true;
+  }
+
+  @override
+  Future<bool> toggleFeeReminderMute(dynamic id, bool muted) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStudents}/$id/toggle-fee-reminder-mute',
+      {'muted': muted},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update fee reminder setting');
+    }
+    return response.body?['do_not_send_fee_reminders'] == true;
   }
 
   @override

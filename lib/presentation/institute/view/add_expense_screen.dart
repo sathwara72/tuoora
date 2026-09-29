@@ -73,7 +73,7 @@ class AddExpenseScreen extends GetView<ExpenseController> {
         AppSpacing.v20,
         Obx(
           () => AppInputField(
-            label: AppStrings.instBatchDescLabel,
+            label: 'Description (Optional)',
             hint: AppStrings.hintEnterDescription,
             icon: Icons.description_rounded,
             controller: controller.descriptionController,
