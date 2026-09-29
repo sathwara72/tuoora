@@ -124,118 +124,120 @@ class StudentTimetableScreen extends GetView<StudentTimetableController> {
 
   Widget _buildSlotCard(StudentTimetableSlot slot) {
     return Container(
-      padding: AppSpacing.all12,
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 4,
-            height: 56,
-            decoration: BoxDecoration(
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 5,
               color: AppColors.primaryBrand,
-              borderRadius: BorderRadius.circular(2),
             ),
-          ),
-          AppSpacing.h16,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  slot.subject,
-                  style: AppTextStyles.outfit(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                AppSpacing.v6,
-                Row(
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.access_time_rounded,
-                      size: 14,
-                      color: AppColors.textTertiary,
-                    ),
-                    AppSpacing.h6,
                     Text(
-                      slot.timeSlot ?? '',
+                      slot.subject,
                       style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        color: AppColors.textTertiary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
+                    AppSpacing.v6,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time_rounded,
+                          size: 14,
+                          color: AppColors.textTertiary,
+                        ),
+                        AppSpacing.h6,
+                        Text(
+                          slot.timeSlot ?? '',
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (slot.batchName != null &&
+                        slot.batchName!.isNotEmpty) ...[
+                      AppSpacing.v4,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.class_outlined,
+                            size: 14,
+                            color: AppColors.textTertiary,
+                          ),
+                          AppSpacing.h6,
+                          Text(
+                            slot.batchName!,
+                            style: AppTextStyles.outfit(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (slot.staffName != null &&
+                        slot.staffName!.isNotEmpty) ...[
+                      AppSpacing.v4,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline_rounded,
+                            size: 14,
+                            color: AppColors.textTertiary,
+                          ),
+                          AppSpacing.h6,
+                          Text(
+                            slot.staffName!,
+                            style: AppTextStyles.outfit(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (slot.roomNo != null && slot.roomNo!.isNotEmpty) ...[
+                      AppSpacing.v4,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: AppColors.textTertiary,
+                          ),
+                          AppSpacing.h6,
+                          Text(
+                            slot.roomNo!,
+                            style: AppTextStyles.outfit(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-                if (slot.batchName != null && slot.batchName!.isNotEmpty) ...[
-                  AppSpacing.v4,
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.class_outlined,
-                        size: 14,
-                        color: AppColors.textTertiary,
-                      ),
-                      AppSpacing.h6,
-                      Text(
-                        slot.batchName!,
-                        style: AppTextStyles.outfit(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (slot.staffName != null && slot.staffName!.isNotEmpty) ...[
-                  AppSpacing.v4,
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.person_outline_rounded,
-                        size: 14,
-                        color: AppColors.textTertiary,
-                      ),
-                      AppSpacing.h6,
-                      Text(
-                        slot.staffName!,
-                        style: AppTextStyles.outfit(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (slot.roomNo != null && slot.roomNo!.isNotEmpty) ...[
-                  AppSpacing.v4,
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 14,
-                        color: AppColors.textTertiary,
-                      ),
-                      AppSpacing.h6,
-                      Text(
-                        slot.roomNo!,
-                        style: AppTextStyles.outfit(
-                          fontSize: 12,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

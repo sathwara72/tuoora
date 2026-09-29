@@ -74,14 +74,27 @@ class StudentIdCardScreen extends GetView<StudentIdCardController> {
 
   Widget _buildActions() {
     return Obx(() {
-      final busy = controller.isCapturing.value;
+      final sharing = controller.isSharing.value;
+      final downloading = controller.isDownloading.value;
+      final anyBusy = sharing || downloading;
+
       return Row(
         children: [
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: busy ? null : controller.shareIdCard,
-              icon: const Icon(Icons.ios_share_rounded, size: 18),
-              label: const Text('Share'),
+              onPressed: anyBusy ? null : controller.shareIdCard,
+              icon: sharing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation(AppColors.primaryBrand),
+                      ),
+                    )
+                  : const Icon(Icons.ios_share_rounded, size: 18),
+              label: Text(sharing ? 'Sharing...' : 'Share'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.primaryBrand,
                 side: const BorderSide(color: AppColors.primaryBrand),
@@ -95,8 +108,8 @@ class StudentIdCardScreen extends GetView<StudentIdCardController> {
           AppSpacing.h12,
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: busy ? null : controller.downloadIdCard,
-              icon: busy
+              onPressed: anyBusy ? null : controller.downloadIdCard,
+              icon: downloading
                   ? const SizedBox(
                       width: 16,
                       height: 16,
@@ -106,7 +119,7 @@ class StudentIdCardScreen extends GetView<StudentIdCardController> {
                       ),
                     )
                   : const Icon(Icons.download_rounded, size: 18),
-              label: Text(busy ? 'Preparing...' : 'Download'),
+              label: Text(downloading ? 'Preparing...' : 'Download'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryBrand,
                 foregroundColor: AppColors.white,

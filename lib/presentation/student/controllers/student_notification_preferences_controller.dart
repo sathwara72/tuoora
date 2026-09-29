@@ -75,6 +75,13 @@ class StudentNotificationPreferencesController extends GetxController {
     });
   }
 
+  bool get _areAllCategoriesOff =>
+      !feeReminders.value &&
+      !assignmentAlerts.value &&
+      !attendance.value &&
+      !dailyUpdates.value &&
+      !eventsHolidays.value;
+
   void toggleMuteEverything(bool value) {
     muteEverything.value = value;
     if (value) {
@@ -83,43 +90,49 @@ class StudentNotificationPreferencesController extends GetxController {
       attendance.value = false;
       dailyUpdates.value = false;
       eventsHolidays.value = false;
+    } else {
+      if (_areAllCategoriesOff) {
+        feeReminders.value = true;
+        assignmentAlerts.value = true;
+        attendance.value = true;
+        dailyUpdates.value = true;
+        eventsHolidays.value = true;
+      }
     }
     _syncSettings();
   }
 
-  void _unmuteIfAllMuted() {
-    if (muteEverything.value) {
+  void _onCategoryToggled() {
+    if (_areAllCategoriesOff) {
+      muteEverything.value = true;
+    } else if (muteEverything.value) {
       muteEverything.value = false;
     }
+    _syncSettings();
   }
 
   void toggleFeeReminders(bool value) {
     feeReminders.value = value;
-    if (value) _unmuteIfAllMuted();
-    _syncSettings();
+    _onCategoryToggled();
   }
 
   void toggleAssignmentAlerts(bool value) {
     assignmentAlerts.value = value;
-    if (value) _unmuteIfAllMuted();
-    _syncSettings();
+    _onCategoryToggled();
   }
 
   void toggleAttendance(bool value) {
     attendance.value = value;
-    if (value) _unmuteIfAllMuted();
-    _syncSettings();
+    _onCategoryToggled();
   }
 
   void toggleDailyUpdates(bool value) {
     dailyUpdates.value = value;
-    if (value) _unmuteIfAllMuted();
-    _syncSettings();
+    _onCategoryToggled();
   }
 
   void toggleEventsHolidays(bool value) {
     eventsHolidays.value = value;
-    if (value) _unmuteIfAllMuted();
-    _syncSettings();
+    _onCategoryToggled();
   }
 }

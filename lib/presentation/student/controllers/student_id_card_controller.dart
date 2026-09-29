@@ -15,7 +15,10 @@ import 'package:tuoora/presentation/student/models/student_id_card_model.dart';
 class StudentIdCardController extends GetxController {
   final Rxn<StudentIdCard> idCard = Rxn<StudentIdCard>();
   final RxBool isLoading = true.obs;
-  final RxBool isCapturing = false.obs;
+  final RxBool isSharing = false.obs;
+  final RxBool isDownloading = false.obs;
+
+  bool get isCapturing => isSharing.value || isDownloading.value;
 
   /// The card widget wraps itself in a RepaintBoundary keyed with this, so
   /// share/download can capture exactly what's on screen as a PNG.
@@ -52,9 +55,9 @@ class StudentIdCardController extends GetxController {
   }
 
   Future<void> shareIdCard() async {
-    if (isCapturing.value) return;
+    if (isSharing.value || isDownloading.value) return;
     try {
-      isCapturing.value = true;
+      isSharing.value = true;
       final bytes = await _captureCard();
       if (bytes == null) {
         AppSnackBar.error('Could not prepare ID card for sharing');
@@ -69,14 +72,14 @@ class StudentIdCardController extends GetxController {
     } catch (e) {
       AppSnackBar.error('Failed to share ID card');
     } finally {
-      isCapturing.value = false;
+      isSharing.value = false;
     }
   }
 
   Future<void> downloadIdCard() async {
-    if (isCapturing.value) return;
+    if (isSharing.value || isDownloading.value) return;
     try {
-      isCapturing.value = true;
+      isDownloading.value = true;
       final bytes = await _captureCard();
       if (bytes == null) {
         AppSnackBar.error('Could not prepare ID card for download');
@@ -87,7 +90,7 @@ class StudentIdCardController extends GetxController {
     } catch (e) {
       AppSnackBar.error('Failed to save ID card. Check photo library permission.');
     } finally {
-      isCapturing.value = false;
+      isDownloading.value = false;
     }
   }
 }

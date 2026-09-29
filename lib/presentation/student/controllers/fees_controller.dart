@@ -102,6 +102,20 @@ class FeesController extends GetxController {
     await _fetchReceipt(feeId);
   }
 
+  Future<void> openReceiptDirect(StudentReceipt receipt) async {
+    selectedStatement.value = null;
+    currentReceipt.value = receipt;
+    Get.toNamed(AppRoutes.studentFeeReceipt);
+    if (receipt.id > 0) {
+      try {
+        final updated = await _repository.getReceipt(receipt.id);
+        currentReceipt.value = updated;
+      } catch (_) {
+        // Keep existing receipt data in currentReceipt
+      }
+    }
+  }
+
   Future<void> _fetchReceipt(int feeId) async {
     try {
       isReceiptLoading.value = true;
@@ -115,8 +129,25 @@ class FeesController extends GetxController {
 
   Future<void> downloadCurrentReceipt() async {
     final receipt = currentReceipt.value;
-    if (receipt == null) return;
-    await _downloadReceipt(receipt);
+    if (receipt != null) {
+      await _downloadReceipt(receipt);
+      return;
+    }
+    final statement = selectedStatement.value;
+    if (statement != null) {
+      final fallbackReceipt = StudentReceipt(
+        id: statement.feeId,
+        receiptNumber: statement.id,
+        amount: statement.amountInRupees.toString(),
+        paymentMethod: '',
+        date: statement.dateLabel,
+        studentName: '',
+        rollNo: '',
+        instituteName: '',
+        feeId: statement.feeId,
+      );
+      await _downloadReceipt(fallbackReceipt);
+    }
   }
 
   Future<void> _downloadReceipt(StudentReceipt receipt) async {
@@ -131,8 +162,8 @@ class FeesController extends GetxController {
         label: AppStrings.pleaseWaitYourReceiptIsBeing,
         fileName: fileName,
         fetch: () async => Uint8List.fromList(
-          await _repository.downloadFeeReceipt(
-            receipt.id,
+          await _repository.downloadReceipt(
+            receipt,
             onProgress: (p) => downloadProgress.value = p,
           ),
         ),

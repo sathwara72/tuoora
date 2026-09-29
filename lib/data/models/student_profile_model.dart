@@ -12,10 +12,19 @@ class StudentProfileModel {
   });
 
   factory StudentProfileModel.fromJson(Map<String, dynamic> json) {
+    final qr = StudentProfileQr.fromJson(json['student_qr'] ?? {});
+    final fallbackEnrollment = json['enrollment_id']?.toString() ??
+        json['enrollment_no']?.toString() ??
+        json['enrollment']?.toString() ??
+        qr.displayId;
+
     return StudentProfileModel(
-      header: StudentProfileHeader.fromJson(json['header'] ?? {}),
+      header: StudentProfileHeader.fromJson(
+        json['header'] ?? {},
+        fallbackEnrollment: fallbackEnrollment,
+      ),
       stats: StudentProfileStats.fromJson(json['stats'] ?? {}),
-      studentQr: StudentProfileQr.fromJson(json['student_qr'] ?? {}),
+      studentQr: qr,
       info: StudentProfileInfo.fromJson(json['info'] ?? {}),
     );
   }
@@ -48,6 +57,7 @@ class StudentProfileHeader {
   final String subject;
   final String rollNo;
   final String memberSince;
+  final String enrollment;
 
   StudentProfileHeader({
     required this.name,
@@ -58,9 +68,22 @@ class StudentProfileHeader {
     required this.subject,
     required this.rollNo,
     required this.memberSince,
+    this.enrollment = '',
   });
 
-  factory StudentProfileHeader.fromJson(Map<String, dynamic> json) {
+  factory StudentProfileHeader.fromJson(
+    Map<String, dynamic> json, {
+    String? fallbackEnrollment,
+  }) {
+    final parsedEnrollment = json['enrollment']?.toString() ??
+        json['enrollment_id']?.toString() ??
+        json['enrollment_no']?.toString() ??
+        (fallbackEnrollment != null && fallbackEnrollment.isNotEmpty
+            ? fallbackEnrollment
+            : null) ??
+        json['roll_no']?.toString() ??
+        '';
+
     return StudentProfileHeader(
       name: json['name'] ?? '',
       initials: json['initials'] ?? '',
@@ -70,6 +93,7 @@ class StudentProfileHeader {
       subject: json['subject'] ?? '',
       rollNo: json['roll_no'] ?? '',
       memberSince: json['member_since'] ?? '',
+      enrollment: parsedEnrollment,
     );
   }
 
@@ -83,6 +107,7 @@ class StudentProfileHeader {
       subject: subject,
       rollNo: rollNo,
       memberSince: memberSince,
+      enrollment: enrollment,
     );
   }
 }

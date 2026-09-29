@@ -141,7 +141,10 @@ class StudentReceipt {
   final String date;
   final String studentName;
   final String rollNo;
+  final String enrollmentId;
   final String instituteName;
+  final int? feeId;
+  final String? downloadUrl;
 
   const StudentReceipt({
     required this.id,
@@ -151,10 +154,22 @@ class StudentReceipt {
     required this.date,
     required this.studentName,
     required this.rollNo,
+    this.enrollmentId = '',
     required this.instituteName,
+    this.feeId,
+    this.downloadUrl,
   });
 
+  String get displayEnrollment =>
+      enrollmentId.trim().isNotEmpty ? enrollmentId.trim() : rollNo.trim();
+
   factory StudentReceipt.fromJson(Map<String, dynamic> json) {
+    final parsedEnrollment = json['enrollment_id']?.toString() ??
+        json['enrollment_no']?.toString() ??
+        json['enrollment']?.toString() ??
+        '';
+    final parsedRollNo = json['roll_no']?.toString() ?? '';
+
     return StudentReceipt(
       id: (json['id'] as num?)?.toInt() ?? 0,
       receiptNumber: json['receipt_number']?.toString() ?? '',
@@ -162,8 +177,15 @@ class StudentReceipt {
       paymentMethod: json['payment_method']?.toString() ?? '',
       date: json['date']?.toString() ?? '',
       studentName: json['student_name']?.toString() ?? '',
-      rollNo: json['roll_no']?.toString() ?? '',
+      rollNo: parsedRollNo,
+      enrollmentId:
+          parsedEnrollment.isNotEmpty ? parsedEnrollment : parsedRollNo,
       instituteName: json['institute_name']?.toString() ?? '',
+      feeId: (json['fee_id'] as num?)?.toInt(),
+      downloadUrl: json['download_url']?.toString() ??
+          json['receipt_url']?.toString() ??
+          json['pdf_url']?.toString() ??
+          json['file_url']?.toString(),
     );
   }
 }

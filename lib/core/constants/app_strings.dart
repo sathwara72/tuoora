@@ -266,7 +266,8 @@ class AppStrings {
   // Student — Receipt screen.
   static const String studentReceiptTitle = 'Receipt';
   static const String studentReceiptStudent = 'Student';
-  static const String studentReceiptRollNo = 'Roll no.';
+  static const String studentReceiptEnrollmentId = 'Enrollment ID';
+  static const String studentReceiptRollNo = 'Enrollment ID';
   static const String studentReceiptInstitute = 'Institute';
   static const String studentReceiptInvoiceNo = 'Invoice no.';
   static const String studentReceiptContact = 'Contact';

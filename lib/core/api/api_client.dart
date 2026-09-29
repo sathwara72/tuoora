@@ -97,16 +97,23 @@ class ApiClient extends GetConnect {
 
         if (response.statusCode == 403 &&
             Get.isRegistered<InstituteAccountStatusHandler>()) {
-          final body = response.body;
-          if (body is Map) {
-            final status = body['status']?.toString().toLowerCase() ?? '';
-            final message = body['message']?.toString() ?? '';
-            if (status.isNotEmpty) {
-              InstituteAccountStatusHandler.to.handleForbidden(
-                status: status,
-                message: message,
-              );
+          final urlStr = request.url.toString();
+          if (!urlStr.contains(ApiConstants.instituteLogin) &&
+              !urlStr.contains(ApiConstants.studentLogin) &&
+              !urlStr.contains(ApiConstants.teacherLogin)) {
+            final body = response.body;
+            String status = '';
+            String message = '';
+            if (body is Map) {
+              status = body['status']?.toString().toLowerCase() ?? '';
+              message = body['message']?.toString() ?? '';
+            } else if (body is String) {
+              message = body;
             }
+            InstituteAccountStatusHandler.to.handleForbidden(
+              status: status,
+              message: message,
+            );
           }
         }
 
@@ -174,16 +181,22 @@ class ApiClient extends GetConnect {
     _loggingOut = true;
     try {
       final auth = Get.find<AuthService>();
-      final role = auth.currentUser?.role ?? 'INSTITUTE';
+      final role = auth.currentUser?.role ?? 'STUDENT';
       await auth.clearSession();
-      Get.offAllNamed(AppRoutes.login, arguments: role);
-      AppSnackBar.warning(
-        AppStrings.errSessionExpired,
-        title: AppStrings.sessionExpiredTitle,
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Get.currentRoute != AppRoutes.login) {
+          Get.offAllNamed(AppRoutes.login, arguments: role);
+          AppSnackBar.warning(
+            AppStrings.errSessionExpired,
+            title: AppStrings.sessionExpiredTitle,
+          );
+        }
+      });
     } catch (_) {
       try {
-        Get.offAllNamed(AppRoutes.login);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Get.offAllNamed(AppRoutes.login);
+        });
       } catch (_) {}
     } finally {
       Future<void>.delayed(const Duration(seconds: 3), () {

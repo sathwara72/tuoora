@@ -30,24 +30,50 @@ class InstituteAccountStatusHandler extends GetxService {
 
   void handleForbidden({required String status, required String message}) {
     final authService = Get.find<AuthService>();
-    if (authService.currentUser?.role != 'INSTITUTE') return;
+    final role = authService.currentUser?.role ?? 'STUDENT';
 
-    if (status == AccountStatus.blocked) {
-      _showBlockedDialog(message);
+    final normalizedStatus = status.toLowerCase();
+    final normalizedMessage = message.toLowerCase();
+
+    final isBlocked = normalizedStatus == AccountStatus.blocked ||
+        normalizedStatus == 'inactive' ||
+        normalizedStatus == 'disabled' ||
+        normalizedMessage.contains('block') ||
+        normalizedMessage.contains('disable') ||
+        normalizedMessage.contains('deactivat') ||
+        status.isEmpty;
+
+    if (isBlocked) {
+      _showBlockedDialog(message, role: role);
     }
   }
 
-  void _showBlockedDialog(String message) {
+  void _showBlockedDialog(String message, {String role = 'STUDENT'}) {
     if (_dialogShowing) return;
     _dialogShowing = true;
+
+    String dialogMessage = message.trim();
+    if (dialogMessage.isEmpty) {
+      if (role == 'STUDENT') {
+        dialogMessage =
+            'Your student account has been blocked by your institute. Please contact your institute administrator.';
+      } else if (role == 'TEACHER') {
+        dialogMessage =
+            'Your teacher account has been blocked by your institute. Please contact your administrator.';
+      } else {
+        dialogMessage =
+            'Your institute account has been blocked. Please contact support.';
+      }
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Get.dialog(
         _BlockedAccountDialog(
-          message: message,
+          message: dialogMessage,
+          role: role,
           onLogout: () async {
             _dialogShowing = false;
-            await _clearAndGoToLogin();
+            await _clearAndGoToLogin(role: role);
           },
         ),
         barrierDismissible: false,
@@ -55,23 +81,35 @@ class InstituteAccountStatusHandler extends GetxService {
     });
   }
 
-  Future<void> _clearAndGoToLogin() async {
+  Future<void> _clearAndGoToLogin({String role = 'STUDENT'}) async {
     try {
       await Get.find<AuthService>().clearSession();
     } catch (_) {}
     if (Get.isDialogOpen ?? false) Get.back();
-    Get.offAllNamed(AppRoutes.login, arguments: 'INSTITUTE');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.offAllNamed(AppRoutes.login, arguments: role);
+    });
   }
 }
 
 class _BlockedAccountDialog extends StatelessWidget {
   final String message;
+  final String role;
   final Future<void> Function() onLogout;
 
-  const _BlockedAccountDialog({required this.message, required this.onLogout});
+  const _BlockedAccountDialog({
+    required this.message,
+    this.role = 'STUDENT',
+    required this.onLogout,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final title = role == 'STUDENT'
+        ? 'Account Blocked'
+        : (role == 'TEACHER'
+            ? 'Teacher Account Blocked'
+            : AppStrings.instituteAccountBlocked);
     final blockedIndex = message.toUpperCase().indexOf('BLOCKED');
 
     return PopScope(
@@ -100,7 +138,7 @@ class _BlockedAccountDialog extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                AppStrings.instituteAccountBlocked,
+                title,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.outfit(
                   fontSize: 18,

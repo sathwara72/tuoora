@@ -118,17 +118,45 @@ class StudentStudyMaterialDetailScreen
   }
 
   Widget _buildHeaderCard(StudentResourceModel item) {
-    final hash = item.subject.hashCode;
-    final isDark = hash % 2 == 0;
-    final bgColor = isDark ? AppColors.primaryBrandLight : AppColors.successBg;
-    final textColor = isDark ? AppColors.error : AppColors.errorRed;
+    final hasSubject = item.subject.trim().isNotEmpty;
+    final isYoutube = item.isYoutube;
+    final isLink = item.isLink;
+
+    Color tagColor = const Color(0xFF334155);
+    Color tagBg = const Color(0xFFF1F5F9);
+    String tagLabel = item.subject.trim();
+
+    if (!hasSubject) {
+      if (isYoutube) {
+        tagColor = const Color(0xFFDC2626);
+        tagBg = const Color(0xFFFEF2F2);
+        tagLabel = 'YouTube';
+      } else if (isLink) {
+        tagColor = const Color(0xFF2563EB);
+        tagBg = const Color(0xFFEFF6FF);
+        tagLabel = 'Link';
+      } else {
+        tagColor = AppColors.primaryBrand;
+        tagBg = AppColors.primaryBrandLight;
+        tagLabel = item.fileType.isNotEmpty
+            ? item.fileType.toUpperCase()
+            : 'Document';
+      }
+    }
 
     return Container(
       padding: AppSpacing.cardPadding,
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,22 +166,26 @@ class StudentStudyMaterialDetailScreen
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                  color: tagBg,
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  item.subject,
+                  tagLabel,
                   style: AppTextStyles.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: textColor,
+                    color: tagColor,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${item.batchName} • ${item.date}',
+                  item.batchName.isNotEmpty && item.date.isNotEmpty
+                      ? '${item.batchName} • ${item.date}'
+                      : (item.batchName.isNotEmpty
+                          ? item.batchName
+                          : item.date),
                   style: AppTextStyles.outfit(
                     fontSize: 11,
                     color: AppColors.textTertiary,
@@ -164,15 +196,17 @@ class StudentStudyMaterialDetailScreen
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            item.description,
-            style: AppTextStyles.outfit(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-              height: 1.4,
+          if (item.description.trim().isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              item.description.trim(),
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

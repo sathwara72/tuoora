@@ -127,21 +127,23 @@ class AuthService extends GetxService {
     _refreshToken.value = '';
     _subscription.value = null;
 
+    await _storage.remove('user');
+    await _storage.remove('token');
+    await _storage.remove('refresh_token');
+    await _storage.remove('logged_in');
+    await _storage.remove('subscription');
+
     try {
       if (Get.isRegistered<PushNotificationService>()) {
-        await Get.find<PushNotificationService>().deleteToken();
+        await Get.find<PushNotificationService>()
+            .deleteToken()
+            .timeout(const Duration(seconds: 2), onTimeout: () {});
       }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('AuthService: Failed to delete FCM token: $e');
       }
     }
-
-    await _storage.remove('user');
-    await _storage.remove('token');
-    await _storage.remove('refresh_token');
-    await _storage.remove('logged_in');
-    await _storage.remove('subscription');
 
     if (kDebugMode) {
       debugPrint(

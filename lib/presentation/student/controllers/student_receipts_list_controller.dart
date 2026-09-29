@@ -39,6 +39,6 @@ class StudentReceiptsListController extends GetxController {
     if (!Get.isRegistered<FeesController>()) {
       Get.put(FeesController());
     }
-    Get.find<FeesController>().openReceiptById(receipt.id);
+    Get.find<FeesController>().openReceiptDirect(receipt);
   }
 }

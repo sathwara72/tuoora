@@ -39,11 +39,82 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
           }
           final profile = controller.profileData.value;
           if (profile == null) {
-            return const AppEmptyView(
-              icon: Icons.person_off_outlined,
-              title: AppStrings.profileUnavailable,
-              message:
-                  'We couldn\'t load your profile right now. Please try again later.',
+            return Center(
+              child: Padding(
+                padding: AppSpacing.all24,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.person_off_outlined,
+                      size: 44,
+                      color: AppColors.primaryBrand,
+                    ),
+                    AppSpacing.v16,
+                    Text(
+                      AppStrings.profileUnavailable,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    AppSpacing.v8,
+                    Text(
+                      'We couldn\'t load your profile right now. Please try again later.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    AppSpacing.v20,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: controller.fetchProfile,
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text('Retry'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryBrand,
+                            side: const BorderSide(
+                              color: AppColors.primaryBrand,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        AppSpacing.h12,
+                        TextButton.icon(
+                          onPressed: () async {
+                            await Get.find<AuthService>().clearSession();
+                            Get.offAllNamed(
+                              AppRoutes.login,
+                              arguments: 'STUDENT',
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.logout_rounded,
+                            size: 16,
+                            color: AppColors.bohoRed,
+                          ),
+                          label: Text(
+                            AppStrings.logout,
+                            style: AppTextStyles.outfit(
+                              fontSize: 13,
+                              color: AppColors.bohoRed,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 
@@ -171,13 +242,38 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Class ${header.standard} • ${header.subject} • Roll ${header.rollNo}',
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final enrollmentVal = header.enrollment.isNotEmpty
+                            ? header.enrollment
+                            : header.rollNo;
+                        final List<String> details = [];
+                        final subjectOrBatch = header.subject.trim().isNotEmpty
+                            ? header.subject.trim()
+                            : header.batchName.trim();
+                        if (subjectOrBatch.isNotEmpty) {
+                          details.add(subjectOrBatch);
+                        }
+                        if (enrollmentVal.trim().isNotEmpty) {
+                          details.add('Enrollment: ${enrollmentVal.trim()}');
+                        }
+                        final subtitleText = details.isNotEmpty
+                            ? details.join(' • ')
+                            : (enrollmentVal.trim().isNotEmpty
+                                ? 'Enrollment: ${enrollmentVal.trim()}'
+                                : '');
+                        if (subtitleText.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Text(
+                          subtitleText,
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 8),
                     Row(

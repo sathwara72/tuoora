@@ -82,40 +82,124 @@ class StudentFeesRepository {
     return (response.body['data'] as Map<String, dynamic>?) ?? {};
   }
 
+  Future<List<int>> downloadReceipt(
+    StudentReceipt receipt, {
+    void Function(double)? onProgress,
+  }) async {
+    // 1. If receipt has a direct download/pdf URL, try it
+    if (receipt.downloadUrl != null &&
+        receipt.downloadUrl!.trim().startsWith('http')) {
+      try {
+        return await _downloadFromUri(
+          Uri.parse(receipt.downloadUrl!.trim()),
+          onProgress: onProgress,
+        );
+      } catch (_) {}
+    }
+
+    // 2. Try the receipt download endpoint: /student/receipts/$id/download
+    try {
+      final endpoint = ApiConstants.studentReceiptDownload(receipt.id);
+      return await _downloadFromUri(
+        Uri.parse('${ApiConstants.baseUrl}$endpoint'),
+        onProgress: onProgress,
+      );
+    } catch (e) {
+      // 3. Fallback: if receipt has a distinct feeId or fallback
+      if (receipt.feeId != null &&
+          receipt.feeId != 0 &&
+          receipt.feeId != receipt.id) {
+        try {
+          final fallbackEndpoint =
+              ApiConstants.studentFeeDownload(receipt.feeId!);
+          return await _downloadFromUri(
+            Uri.parse('${ApiConstants.baseUrl}$fallbackEndpoint'),
+            onProgress: onProgress,
+          );
+        } catch (_) {}
+      }
+      rethrow;
+    }
+  }
+
   Future<List<int>> downloadFeeReceipt(
     int feeId, {
     void Function(double)? onProgress,
   }) async {
     final endpoint = ApiConstants.studentFeeDownload(feeId);
-    final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+    return _downloadFromUri(
+      Uri.parse('${ApiConstants.baseUrl}$endpoint'),
+      onProgress: onProgress,
+    );
+  }
 
+  Future<List<int>> _downloadFromUri(
+    Uri initialUri, {
+    void Function(double)? onProgress,
+  }) async {
     final client = HttpClient();
-    final request = await client.getUrl(uri);
-    request.headers.set(HttpHeaders.acceptHeader, '*/*');
+    Uri currentUri = initialUri;
+    HttpClientResponse? response;
+    int redirectCount = 0;
 
-    final authService = Get.find<AuthService>();
-    if (authService.isAuthenticated) {
-      request.headers.set(
-        HttpHeaders.authorizationHeader,
-        'Bearer ${authService.token}',
-      );
-    }
+    try {
+      while (true) {
+        final request = await client.getUrl(currentUri);
+        request.followRedirects = false;
+        request.headers.set(
+          HttpHeaders.acceptHeader,
+          'application/pdf, application/json, */*',
+        );
 
-    final response = await request.close();
-    if (response.statusCode != 200) {
-      throw Exception('Failed: ${response.statusCode}');
-    }
+        final authService = Get.find<AuthService>();
+        final baseHost = Uri.parse(ApiConstants.baseUrl).host;
+        // Only attach Bearer authorization token to our API backend domain
+        if (authService.isAuthenticated &&
+            (currentUri.host.contains('tuoora.com') ||
+                currentUri.host == baseHost)) {
+          request.headers.set(
+            HttpHeaders.authorizationHeader,
+            'Bearer ${authService.token}',
+          );
+        }
 
-    final contentLength = response.contentLength;
-    final bytes = <int>[];
-    int downloaded = 0;
-    await for (final chunk in response) {
-      bytes.addAll(chunk);
-      downloaded += chunk.length;
-      if (contentLength > 0 && onProgress != null) {
-        onProgress(downloaded / contentLength);
+        response = await request.close();
+
+        if (response.isRedirect ||
+            response.statusCode == 301 ||
+            response.statusCode == 302 ||
+            response.statusCode == 303 ||
+            response.statusCode == 307 ||
+            response.statusCode == 308) {
+          final location = response.headers.value(HttpHeaders.locationHeader);
+          if (location != null && redirectCount < 5) {
+            redirectCount++;
+            currentUri = currentUri.resolve(location);
+            continue;
+          }
+        }
+        break;
       }
+
+      if (response == null || response.statusCode != 200) {
+        throw Exception(
+          'Download failed (${response?.statusCode ?? 'No response'})',
+        );
+      }
+
+      final contentLength = response.contentLength;
+      final bytes = <int>[];
+      int downloaded = 0;
+      await for (final chunk in response) {
+        bytes.addAll(chunk);
+        downloaded += chunk.length;
+        if (contentLength > 0 && onProgress != null) {
+          onProgress(downloaded / contentLength);
+        }
+      }
+      return bytes;
+    } finally {
+      client.close();
     }
-    return bytes;
   }
 }
