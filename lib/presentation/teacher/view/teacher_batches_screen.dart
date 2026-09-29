@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -22,7 +23,7 @@ class TeacherBatchesScreen extends GetView<TeacherBatchesController> {
             const TeacherAppBar(title: 'My Batches'),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const Center(child: CommonLoading());
                 }
                 if (controller.batches.isEmpty) {
@@ -37,13 +38,16 @@ class TeacherBatchesScreen extends GetView<TeacherBatchesController> {
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: controller.fetchBatches,
+                  onRefresh: () => PullRefresh.run(controller.fetchBatches),
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: controller.batches.length,
                     separatorBuilder: (_, _) => AppSpacing.v12,
-                    itemBuilder: (context, index) =>
-                        _BatchCard(batch: controller.batches[index], onTap: () => controller.openBatch(controller.batches[index])),
+                    itemBuilder: (context, index) => _BatchCard(
+                      batch: controller.batches[index],
+                      onTap: () =>
+                          controller.openBatch(controller.batches[index]),
+                    ),
                   ),
                 );
               }),
@@ -82,7 +86,10 @@ class _BatchCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Center(
-                child: Icon(Icons.groups_rounded, color: AppColors.primaryBrand),
+                child: Icon(
+                  Icons.groups_rounded,
+                  color: AppColors.primaryBrand,
+                ),
               ),
             ),
             AppSpacing.h16,
@@ -92,6 +99,8 @@ class _BatchCard extends StatelessWidget {
                 children: [
                   Text(
                     batch.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -101,6 +110,8 @@ class _BatchCard extends StatelessWidget {
                   if (batch.subject != null && batch.subject!.isNotEmpty)
                     Text(
                       batch.subject!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.outfit(
                         fontSize: 12,
                         color: AppColors.textTertiary,
@@ -110,6 +121,8 @@ class _BatchCard extends StatelessWidget {
                   Text(
                     '${batch.studentsCount ?? 0} students'
                     '${batch.startTime != null ? ' · ${batch.startTime} - ${batch.endTime ?? ''}' : ''}',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.outfit(
                       fontSize: 11,
                       color: AppColors.textTertiary,
@@ -118,7 +131,10 @@ class _BatchCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textTertiary,
+            ),
           ],
         ),
       ),

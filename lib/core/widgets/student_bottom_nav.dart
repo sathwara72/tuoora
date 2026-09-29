@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 
 class StudentBottomNav extends StatelessWidget {
@@ -10,18 +11,29 @@ class StudentBottomNav extends StatelessWidget {
   const StudentBottomNav({super.key, required this.currentIndex, this.onTap});
 
   static const _items = <_NavItem>[
-    _NavItem(icon: Icons.home_rounded, route: AppRoutes.studentDashboard),
-    _NavItem(icon: Icons.assignment_outlined, route: AppRoutes.studentHomework),
+    _NavItem(
+      icon: Icons.home_rounded,
+      label: 'Home',
+      route: AppRoutes.studentDashboard,
+    ),
+    _NavItem(
+      icon: Icons.assignment_outlined,
+      label: 'Tasks',
+      route: AppRoutes.studentHomework,
+    ),
     _NavItem(
       icon: Icons.currency_rupee_rounded,
+      label: 'Fees',
       route: AppRoutes.studentFeeHistory,
     ),
     _NavItem(
       icon: Icons.calendar_month_outlined,
+      label: 'Attendance',
       route: AppRoutes.studentAttendance,
     ),
     _NavItem(
-      icon: Icons.person_outline_rounded,
+      icon: Icons.grid_view_rounded,
+      label: 'More',
       route: AppRoutes.studentSettings,
     ),
   ];
@@ -41,7 +53,7 @@ class StudentBottomNav extends StatelessWidget {
       ),
       child: SafeArea(
         child: SizedBox(
-          height: AppSpacing.s64,
+          height: AppSpacing.s64 + AppSpacing.s10,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(
@@ -68,7 +80,33 @@ class StudentBottomNav extends StatelessWidget {
             Get.offAllNamed(item.route);
           }
         },
-        child: Icon(item.icon, color: color, size: 28),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(item.icon, color: color, size: 23),
+            const SizedBox(height: 3),
+            Text(
+              item.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.outfit(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: isSelected ? 18 : 0,
+              height: 3,
+              decoration: BoxDecoration(
+                color: AppColors.primaryBrand,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -76,6 +114,11 @@ class StudentBottomNav extends StatelessWidget {
 
 class _NavItem {
   final IconData icon;
+  final String label;
   final String route;
-  const _NavItem({required this.icon, required this.route});
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.route,
+  });
 }

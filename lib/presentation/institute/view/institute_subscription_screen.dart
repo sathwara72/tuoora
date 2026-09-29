@@ -11,6 +11,7 @@ import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/subscription_manage_on_web_view.dart';
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -50,7 +51,8 @@ class InstituteSubscriptionScreen
                 ),
                 Expanded(
                   child: Obx(() {
-                    if (controller.isLoading.value) {
+                    if (controller.isLoading.value &&
+                        !PullRefresh.active.value) {
                       return const CommonLoading();
                     }
 
@@ -68,7 +70,9 @@ class InstituteSubscriptionScreen
                     }
 
                     return RefreshIndicator(
-                      onRefresh: () => controller.fetchSubscriptionData(),
+                      onRefresh: () => PullRefresh.run(
+                        () => controller.fetchSubscriptionData(),
+                      ),
                       color: AppColors.primaryBrand,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),

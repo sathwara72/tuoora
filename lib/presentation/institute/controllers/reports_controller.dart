@@ -158,7 +158,8 @@ class ReportsController extends GetxController {
       await batchController.loadBatches(isRefresh: true);
     }
     if (batchController.batchesList.isNotEmpty) {
-      final initialBatch = selectedBatchForStudentReport.value ??
+      final initialBatch =
+          selectedBatchForStudentReport.value ??
           batchController.batchesList.first;
       await selectBatchForStudentReport(initialBatch);
     }
@@ -224,10 +225,7 @@ class ReportsController extends GetxController {
     }
   }
 
-  Future<void> loadReportForStudentId(
-    int studentId, {
-    int? batchId,
-  }) async {
+  Future<void> loadReportForStudentId(int studentId, {int? batchId}) async {
     try {
       isStudentReportLoading.value = true;
       final data = await _repository.getStudentWiseReport(
@@ -243,13 +241,13 @@ class ReportsController extends GetxController {
         name: data.student.name,
         enrollmentId: data.student.enrollmentId,
         batchId: data.student.batchId,
-        standard: data.student.standard,
         phone: data.student.phone,
         email: data.student.email,
       );
       selectedStudentForReport.value = studentItem;
 
-      if (data.student.batchId != null && batchController.batchesList.isNotEmpty) {
+      if (data.student.batchId != null &&
+          batchController.batchesList.isNotEmpty) {
         final matchedBatch = batchController.batchesList.firstWhereOrNull(
           (b) => b.id == data.student.batchId.toString(),
         );
@@ -337,4 +335,3 @@ class ReportsController extends GetxController {
     return batchPerformances.firstWhereOrNull((b) => b.batchId == batchId);
   }
 }
-

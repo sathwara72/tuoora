@@ -70,6 +70,7 @@ class HomeworkController extends GetxController {
   final descriptionController = TextEditingController();
   final dueDate = Rxn<DateTime>();
   final selectedAttachment = Rxn<String>();
+  final allowLateSubmission = false.obs;
 
   final triedToSave = false.obs;
   final titleError = RxnString();
@@ -126,6 +127,7 @@ class HomeworkController extends GetxController {
         'title': titleController.text.trim(),
         'description': descriptionController.text.trim(),
         'due_date': DateFormat('yyyy-MM-dd').format(dueDate.value!),
+        'allow_late_submission': allowLateSubmission.value,
       };
 
       if (selectedAttachment.value != null) {
@@ -170,6 +172,7 @@ class HomeworkController extends GetxController {
     descriptionController.clear();
     dueDate.value = null;
     selectedAttachment.value = null;
+    allowLateSubmission.value = false;
     triedToSave.value = false;
     titleError.value = null;
     dateError.value = null;

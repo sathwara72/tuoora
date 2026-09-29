@@ -78,6 +78,8 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                       AppSpacing.v24,
                       _buildCourseManagementSection(),
                       AppSpacing.v24,
+                      _buildBatchReportsSection(),
+                      AppSpacing.v24,
                     ],
                   ),
                 ),
@@ -240,6 +242,73 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
   bool _hasSchedule(String time) {
     final cleaned = time.replaceAll('-', '').trim();
     return cleaned.isNotEmpty;
+  }
+
+  Widget _buildBatchReportsSection() {
+    final reports = <(String, String, IconData, Color)>[
+      ('Fee', 'Fee Report', Icons.payments_rounded, const Color(0xFF10B981)),
+      (
+        'Attendance',
+        'Attendance Report',
+        Icons.fact_check_rounded,
+        const Color(0xFFB45309),
+      ),
+      (
+        'Performance',
+        'Performance Report',
+        Icons.trending_up_rounded,
+        const Color(0xFF4F46E5),
+      ),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Batch Reports',
+          style: AppTextStyles.outfit(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        AppSpacing.v12,
+        for (final r in reports) ...[
+          GestureDetector(
+            onTap: () => controller.exportBatchReport(r.$1),
+            child: Container(
+              padding: AppSpacing.cardPadding,
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                border: Border.all(color: AppColors.borderGrey),
+              ),
+              child: Row(
+                children: [
+                  Icon(r.$3, color: r.$4),
+                  AppSpacing.h12,
+                  Expanded(
+                    child: Text(
+                      r.$2,
+                      style: AppTextStyles.outfit(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.file_download_outlined,
+                    color: AppColors.primaryBrand,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AppSpacing.v8,
+        ],
+      ],
+    );
   }
 
   Widget _buildCourseManagementSection() {

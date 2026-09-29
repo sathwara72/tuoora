@@ -12,7 +12,6 @@ class User {
   final String? address;
   final int? instituteId;
   final int? batchId;
-  final String? standard;
   final String? idHash;
   final String? city;
   final String? state;
@@ -47,7 +46,6 @@ class User {
     this.address,
     this.instituteId,
     this.batchId,
-    this.standard,
     this.idHash,
     this.city,
     this.state,
@@ -120,7 +118,6 @@ class User {
       address: json['address'],
       instituteId: instId is int ? instId : int.tryParse(instId?.toString() ?? ''),
       batchId: json['batch_id'],
-      standard: json['standard'],
       idHash: json['id_hash'],
       city: json['city'],
       state: json['state'],
@@ -161,7 +158,6 @@ class User {
       'address': address,
       'institute_id': instituteId,
       'batch_id': batchId,
-      'standard': standard,
       'id_hash': idHash,
       'city': city,
       'state': state,
@@ -201,7 +197,6 @@ class User {
       address: address,
       instituteId: instituteId ?? this.instituteId,
       batchId: batchId,
-      standard: standard,
       idHash: idHash,
       city: city,
       state: state,

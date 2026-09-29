@@ -1,3 +1,4 @@
+import 'package:tuoora/core/services/download_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -149,16 +150,16 @@ class BatchDetailsController extends GetxController {
           }
         } catch (_) {}
 
-        final String? realEnrollment = (matchedStudent?.enrollmentID != null &&
+        final String? realEnrollment =
+            (matchedStudent?.enrollmentID != null &&
                 matchedStudent!.enrollmentID!.isNotEmpty)
             ? matchedStudent.enrollmentID
-            : (matchedStudent?.idHash.isNotEmpty == true
-                ? matchedStudent!.idHash
-                : (s.enrollmentId != null && s.enrollmentId!.isNotEmpty)
-                    ? s.enrollmentId
-                    : null);
+            : (s.enrollmentId != null && s.enrollmentId!.isNotEmpty)
+            ? s.enrollmentId
+            : null;
 
-        final studentModel = matchedStudent ??
+        final studentModel =
+            matchedStudent ??
             Student(
               id: targetId,
               name: s.name,
@@ -166,7 +167,6 @@ class BatchDetailsController extends GetxController {
               phone: matchedStudent?.phone ?? '',
               instituteId: matchedStudent?.instituteId ?? 0,
               enrollmentID: realEnrollment,
-              standard: matchedStudent?.standard ?? '',
               dob: matchedStudent?.dob ?? '',
               status: 'Active',
               idHash: realEnrollment ?? '',
@@ -214,6 +214,27 @@ class BatchDetailsController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// Downloads a PDF report ('Fee', 'Attendance' or 'Performance') for this
+  /// batch only.
+  Future<void> exportBatchReport(String type) async {
+    final batchId = int.tryParse(batch.id);
+    if (batchId == null) return;
+    final safeName = batch.title.replaceAll(RegExp(r'[^A-Za-z0-9_\-]'), '_');
+    await Get.find<DownloadService>().download(
+      label: 'Preparing $type report…',
+      fileName:
+          '${type}_Report_${safeName}_${DateTime.now().millisecondsSinceEpoch}.pdf',
+      successMessage: AppStrings.reportDownloadedSuccess,
+      fetch: () {
+        if (type == 'Fee') return _repository.exportFeeReport(batchId: batchId);
+        if (type == 'Attendance') {
+          return _repository.exportAttendanceReport(batchId: batchId);
+        }
+        return _repository.exportPerformanceReport(batchId: batchId);
+      },
+    );
   }
 
   Future<void> refreshStudents() async {

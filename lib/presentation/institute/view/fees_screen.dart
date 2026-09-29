@@ -431,11 +431,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
         final studentName = record.student?.name.trim().isNotEmpty == true
             ? record.student!.name
             : 'Student';
-        final displayId = (record.student?.enrollmentID?.isNotEmpty == true)
-            ? record.student!.enrollmentID!
-            : (record.student?.id != null && record.student!.id != 0
-                ? record.student!.id.toString()
-                : (record.studentId != 0 ? record.studentId.toString() : 'N/A'));
+        final displayId = record.student?.displayEnrollmentId ?? 'N/A';
 
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.s10),
@@ -535,7 +531,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                     Row(
                       children: [
                         Text(
-                          student.enrollmentId,
+                          student.enrollmentId.trim().isNotEmpty
+                              ? student.enrollmentId
+                              : 'N/A',
                           style: AppTextStyles.outfit(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,

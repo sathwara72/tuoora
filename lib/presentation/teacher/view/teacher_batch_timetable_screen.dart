@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -9,7 +10,8 @@ import 'package:tuoora/presentation/teacher/controllers/teacher_batch_timetable_
 import 'package:tuoora/presentation/teacher/models/teacher_timetable_model.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
 
-class TeacherBatchTimetableScreen extends GetView<TeacherBatchTimetableController> {
+class TeacherBatchTimetableScreen
+    extends GetView<TeacherBatchTimetableController> {
   const TeacherBatchTimetableScreen({super.key});
 
   String _getDayBadgeText(String rawDay) {
@@ -42,12 +44,10 @@ class TeacherBatchTimetableScreen extends GetView<TeacherBatchTimetableControlle
       body: SafeArea(
         child: Column(
           children: [
-            TeacherAppBar(
-              title: 'Timetable · ${controller.batch.name}',
-            ),
+            TeacherAppBar(title: 'Timetable · ${controller.batch.name}'),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const Center(child: CommonLoading());
                 }
                 final slots = controller.allSortedSlots;
@@ -55,13 +55,16 @@ class TeacherBatchTimetableScreen extends GetView<TeacherBatchTimetableControlle
                   return Center(
                     child: Text(
                       'No lecture schedule configured yet.',
-                      style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   );
                 }
                 return RefreshIndicator(
                   color: AppColors.primaryBrand,
-                  onRefresh: controller.fetchTimetable,
+                  onRefresh: () => PullRefresh.run(controller.fetchTimetable),
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                     itemCount: slots.length,
@@ -71,9 +74,13 @@ class TeacherBatchTimetableScreen extends GetView<TeacherBatchTimetableControlle
                       return _SlotCard(
                         slot: slot,
                         dayText: _getDayBadgeText(slot.dayOfWeek),
-                        timeDisplay: slot.timeSlot != null && slot.timeSlot!.isNotEmpty
+                        timeDisplay:
+                            slot.timeSlot != null && slot.timeSlot!.isNotEmpty
                             ? slot.timeSlot!
-                            : controller.formatTimeRange(slot.startTime, slot.endTime),
+                            : controller.formatTimeRange(
+                                slot.startTime,
+                                slot.endTime,
+                              ),
                       );
                     },
                   ),

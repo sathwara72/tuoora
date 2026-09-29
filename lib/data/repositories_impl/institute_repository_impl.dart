@@ -94,17 +94,17 @@ abstract class InstituteRepositoryImpl {
   // Reports
   Future<FeeReportResponse> getFeeReport();
   Future<BatchFeeDetailResponse> getBatchFeeReport(int batchId);
-  Future<List<int>> exportFeeReport();
+  Future<List<int>> exportFeeReport({int? batchId});
 
   // Attendance Reports
   Future<AttendanceReportResponse> getAttendanceReport();
   Future<BatchAttendanceDetailResponse> getBatchAttendanceReport(int batchId);
-  Future<List<int>> exportAttendanceReport();
+  Future<List<int>> exportAttendanceReport({int? batchId});
 
   // Performance Reports
   Future<PerformanceReportResponse> getPerformanceReport();
   Future<BatchPerformanceDetailResponse> getBatchPerformanceReport(int batchId);
-  Future<List<int>> exportPerformanceReport();
+  Future<List<int>> exportPerformanceReport({int? batchId});
 
   // Student Wise Report
   Future<List<StudentBatchItem>> getStudentsForBatchReport(int batchId);

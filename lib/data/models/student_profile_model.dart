@@ -15,8 +15,7 @@ class StudentProfileModel {
     final qr = StudentProfileQr.fromJson(json['student_qr'] ?? {});
     final fallbackEnrollment = json['enrollment_id']?.toString() ??
         json['enrollment_no']?.toString() ??
-        json['enrollment']?.toString() ??
-        qr.displayId;
+        json['enrollment']?.toString();
 
     return StudentProfileModel(
       header: StudentProfileHeader.fromJson(
@@ -52,7 +51,6 @@ class StudentProfileHeader {
   final String name;
   final String initials;
   final String avatarUrl;
-  final String standard;
   final String batchName;
   final String subject;
   final String rollNo;
@@ -63,7 +61,6 @@ class StudentProfileHeader {
     required this.name,
     required this.initials,
     required this.avatarUrl,
-    required this.standard,
     required this.batchName,
     required this.subject,
     required this.rollNo,
@@ -81,14 +78,12 @@ class StudentProfileHeader {
         (fallbackEnrollment != null && fallbackEnrollment.isNotEmpty
             ? fallbackEnrollment
             : null) ??
-        json['roll_no']?.toString() ??
         '';
 
     return StudentProfileHeader(
       name: json['name'] ?? '',
       initials: json['initials'] ?? '',
       avatarUrl: json['avatar_url'] ?? '',
-      standard: json['standard'] ?? '',
       batchName: json['batch_name'] ?? '',
       subject: json['subject'] ?? '',
       rollNo: json['roll_no'] ?? '',
@@ -102,7 +97,6 @@ class StudentProfileHeader {
       name: name,
       initials: initials,
       avatarUrl: newAvatarUrl,
-      standard: standard,
       batchName: batchName,
       subject: subject,
       rollNo: rollNo,

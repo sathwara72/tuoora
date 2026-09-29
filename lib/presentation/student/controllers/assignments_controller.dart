@@ -11,7 +11,13 @@ import 'package:tuoora/data/repositories/student_homework_repository.dart';
 import 'package:tuoora/presentation/student/controllers/attachment_preview_controller.dart';
 
 class AssignmentsController extends GetxController {
-  final RxInt activeTab = 0.obs;
+  /// Top-level tab on the merged Tasks screen: 0 = Homework, 1 = Exams.
+  final RxInt taskTopTab = 0.obs;
+
+  void selectTaskTopTab(int index) {
+    if (index < 0 || index > 1 || taskTopTab.value == index) return;
+    taskTopTab.value = index;
+  }
 
   final RxList<Assignment> pending = <Assignment>[].obs;
   final RxList<Assignment> completed = <Assignment>[].obs;
@@ -28,12 +34,6 @@ class AssignmentsController extends GetxController {
   final RxBool isSubmitting = false.obs;
   final RxDouble downloadProgress = 0.0.obs;
   late StudentHomeworkRepository _repository;
-
-  final RxInt weeklyRemaining = 0.obs;
-  final RxInt weeklyTotal = 0.obs;
-  final RxInt weeklyCompleted = 0.obs;
-  final RxInt weeklyOverdue = 0.obs;
-  final RxString teacherName = 'Institute'.obs;
 
   /// Draft submission state for the currently-open assignment. Cleared and
   /// re-prefilled (from the assignment's existing submission, if any) every
@@ -70,21 +70,11 @@ class AssignmentsController extends GetxController {
 
       pending.assignAll(List.of(data.pending)..sort(byNewest));
       completed.assignAll(List.of(data.completed)..sort(byNewest));
-
-      weeklyTotal.value = data.summary.total;
-      weeklyRemaining.value = data.summary.pending;
-      weeklyCompleted.value = data.summary.completed;
-      weeklyOverdue.value = data.summary.overdue;
     } catch (e) {
       AppSnackBar.error(AppStrings.failedToLoadAssignments);
     } finally {
       isLoading.value = false;
     }
-  }
-
-  void selectTab(int index) {
-    if (index < 0 || index > 1 || activeTab.value == index) return;
-    activeTab.value = index;
   }
 
   void _resetSubmissionDraft(Assignment? assignment) {
@@ -216,7 +206,4 @@ class AssignmentsController extends GetxController {
       isSubmitting.value = false;
     }
   }
-
-  List<Assignment> get activeItems =>
-      activeTab.value == 0 ? pending : completed;
 }

@@ -8,6 +8,7 @@ class TeacherHomework {
   final String? batchName;
   final int? submissionsCount;
   final bool isClosed;
+  final bool allowLateSubmission;
 
   const TeacherHomework({
     required this.id,
@@ -19,6 +20,7 @@ class TeacherHomework {
     this.batchName,
     this.submissionsCount,
     this.isClosed = false,
+    this.allowLateSubmission = false,
   });
 
   bool get isOverdue {
@@ -73,6 +75,7 @@ class TeacherHomework {
       batchName: batch is Map ? batch['name'] : null,
       submissionsCount: json['submissions_count'],
       isClosed: json['is_closed'] == true,
+      allowLateSubmission: json['allow_late_submission'] == true,
     );
   }
 }

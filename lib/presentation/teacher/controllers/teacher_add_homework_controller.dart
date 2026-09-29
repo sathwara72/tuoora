@@ -22,6 +22,7 @@ class TeacherAddHomeworkController extends GetxController {
   final descriptionController = TextEditingController();
   final dueDate = Rxn<DateTime>();
   final selectedAttachment = Rxn<String>();
+  final allowLateSubmission = false.obs;
   final isLoading = false.obs;
 
   final titleError = RxnString();
@@ -37,6 +38,7 @@ class TeacherAddHomeworkController extends GetxController {
       titleController.text = args.title;
       descriptionController.text = args.description;
       dueDate.value = DateTime.tryParse(args.dueDate);
+      allowLateSubmission.value = args.allowLateSubmission;
       batch = TeacherBatch(
         id: args.batchId,
         name: args.batchName ?? '',
@@ -98,6 +100,7 @@ class TeacherAddHomeworkController extends GetxController {
         'title': titleController.text.trim(),
         'description': descriptionController.text.trim(),
         'due_date': DateFormat('yyyy-MM-dd').format(dueDate.value!),
+        'allow_late_submission': allowLateSubmission.value,
       };
       if (isEditing) {
         await _repository.updateHomework(editingHomework!.id, data);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/url_constants.dart';
 import 'package:get/get.dart';
@@ -34,7 +35,7 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
         child: Obx(() {
-          if (controller.isLoading.value) {
+          if (controller.isLoading.value && !PullRefresh.active.value) {
             return const CommonLoading(color: AppColors.primaryBrand);
           }
           final profile = controller.profileData.value;
@@ -124,7 +125,7 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
               Expanded(
                 child: RefreshIndicator(
                   color: AppColors.primaryBrand,
-                  onRefresh: controller.fetchProfile,
+                  onRefresh: () => PullRefresh.run(controller.fetchProfile),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: AppSpacing.screenPaddingTop,
@@ -140,10 +141,6 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                         _buildSectionTitle('YOUR INFO'),
                         const SizedBox(height: 8),
                         _buildYourInfoCard(profile.info),
-                        const SizedBox(height: 16),
-                        _buildSectionTitle('SETTINGS'),
-                        const SizedBox(height: 8),
-                        _buildSettingsCard(),
                         const SizedBox(height: 16),
                         _buildSectionTitle('HELP & INFO'),
                         const SizedBox(height: 8),
@@ -260,8 +257,8 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                         final subtitleText = details.isNotEmpty
                             ? details.join(' • ')
                             : (enrollmentVal.trim().isNotEmpty
-                                ? 'Enrollment: ${enrollmentVal.trim()}'
-                                : '');
+                                  ? 'Enrollment: ${enrollmentVal.trim()}'
+                                  : '');
                         if (subtitleText.isEmpty) {
                           return const SizedBox.shrink();
                         }
@@ -396,7 +393,9 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: AppColors.borderGrey.withValues(alpha: 0.5),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -404,7 +403,10 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
               PerformanceGauge(score: stats.performanceScore, size: 180),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primaryBrandLight,
                   borderRadius: BorderRadius.circular(20),
@@ -537,7 +539,10 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
 
                 // Overall Combined Average Card
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(14),
@@ -549,7 +554,10 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: statusColor,
                           borderRadius: BorderRadius.circular(12),
@@ -627,7 +635,9 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                   decoration: BoxDecoration(
                     color: AppColors.surfaceBg,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.8)),
+                    border: Border.all(
+                      color: AppColors.borderGrey.withValues(alpha: 0.8),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -659,7 +669,9 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                     backgroundColor: AppColors.primaryBrand,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.cardRadius,
+                      ),
                     ),
                   ),
                   child: Text(
@@ -756,7 +768,6 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
       ),
     );
   }
-
 
   Widget _buildGridActions() {
     return Column(
@@ -935,30 +946,6 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSettingsCard() {
-    return _buildCardWrap(
-      children: [
-        ProfileMenuTile(
-          icon: Icons.notifications_none_rounded,
-          title: AppStrings.notificationPreferences,
-          onTap: () => Get.toNamed(AppRoutes.studentNotificationPreferences),
-        ),
-        // Divider(height: 1, color: AppColors.borderGrey.withValues(alpha: 0.5)),
-        // const ProfileMenuTile(
-        //   icon: Icons.article_outlined,
-        //   title: AppStrings.language,
-        //   trailingText: 'English',
-        // ),
-        // Divider(height: 1, color: AppColors.borderGrey.withValues(alpha: 0.5)),
-        // const ProfileMenuTile(
-        //   icon: Icons.brightness_auto_rounded,
-        //   title: AppStrings.theme,
-        //   trailingText: 'Light',
-        // ),
-      ],
     );
   }
 

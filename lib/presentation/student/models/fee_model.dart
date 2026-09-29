@@ -161,7 +161,7 @@ class StudentReceipt {
   });
 
   String get displayEnrollment =>
-      enrollmentId.trim().isNotEmpty ? enrollmentId.trim() : rollNo.trim();
+      enrollmentId.trim().isNotEmpty ? enrollmentId.trim() : 'N/A';
 
   factory StudentReceipt.fromJson(Map<String, dynamic> json) {
     final parsedEnrollment = json['enrollment_id']?.toString() ??
@@ -178,8 +178,7 @@ class StudentReceipt {
       date: json['date']?.toString() ?? '',
       studentName: json['student_name']?.toString() ?? '',
       rollNo: parsedRollNo,
-      enrollmentId:
-          parsedEnrollment.isNotEmpty ? parsedEnrollment : parsedRollNo,
+      enrollmentId: parsedEnrollment,
       instituteName: json['institute_name']?.toString() ?? '',
       feeId: (json['fee_id'] as num?)?.toInt(),
       downloadUrl: json['download_url']?.toString() ??

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -51,16 +52,25 @@ class _DetailBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        StudentAppBar(title: assignment.title, showDefaultActions: false),
+        const StudentAppBar(
+          title: AppStrings.studentAssignmentDetailTitle,
+          showDefaultActions: false,
+        ),
         Expanded(
           child: SingleChildScrollView(
             padding: AppSpacing.screenPaddingTop,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _DueCard(assignment: assignment),
+                _AssignmentHeaderCard(assignment: assignment),
                 const SizedBox(height: AppSpacing.s12),
-                _InstructionsCard(assignment: assignment),
+                _MetaInfoRow(assignment: assignment),
+                const SizedBox(height: AppSpacing.s12),
+                _DescriptionCard(assignment: assignment),
+                if (assignment.instructionLines.length > 1) ...[
+                  const SizedBox(height: AppSpacing.s12),
+                  _InstructionsListCard(assignment: assignment),
+                ],
                 if (assignment.attachments.isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.s20),
                   const StudentSectionHeader(
@@ -80,6 +90,10 @@ class _DetailBody extends StatelessWidget {
                 ],
                 const SizedBox(height: AppSpacing.s16),
                 _StatusBanner(assignment: assignment),
+                if (assignment.isCompleted && assignment.score != null) ...[
+                  const SizedBox(height: AppSpacing.s16),
+                  _ResultCard(score: assignment.score!),
+                ],
                 const SizedBox(height: AppSpacing.s16),
                 _SubmitAssignmentButton(assignment: assignment),
                 const SizedBox(height: AppSpacing.s16),
@@ -103,10 +117,10 @@ class _DetailBody extends StatelessWidget {
   }
 }
 
-class _DueCard extends StatelessWidget {
+class _AssignmentHeaderCard extends StatelessWidget {
   final Assignment assignment;
 
-  const _DueCard({required this.assignment});
+  const _AssignmentHeaderCard({required this.assignment});
 
   @override
   Widget build(BuildContext context) {
@@ -124,19 +138,16 @@ class _DueCard extends StatelessWidget {
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: AppSpacing.s40,
-            height: AppSpacing.s40,
+            width: AppSpacing.s44,
+            height: AppSpacing.s44,
             decoration: BoxDecoration(
-              color: AppColors.primaryBrandLight,
-              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+              color: assignment.iconBg,
+              borderRadius: BorderRadius.circular(AppSpacing.s12),
             ),
-            child: const Icon(
-              Icons.calendar_today_rounded,
-              size: 18,
-              color: AppColors.primaryBrand,
-            ),
+            child: Icon(assignment.icon, color: assignment.iconColor, size: 22),
           ),
           AppSpacing.h12,
           Expanded(
@@ -145,25 +156,180 @@ class _DueCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  AppStrings.studentAssignmentDetailDueLabel,
+                  assignment.title,
                   style: AppTextStyles.outfit(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.orangeTag,
-                    letterSpacing: 1.2,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  assignment.dueDateFullText ?? assignment.dueLabel,
+                  assignment.assignedBy != null
+                      ? '${assignment.subjectLabel} · ${assignment.assignedBy}'
+                      : assignment.subjectLabel,
                   style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
             ),
+          ),
+          AppSpacing.h8,
+          _DetailDuePill(assignment: assignment),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailDuePill extends StatelessWidget {
+  final Assignment assignment;
+
+  const _DetailDuePill({required this.assignment});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = assignment.isCompleted
+        ? AppColors.successBg
+        : assignment.isOverdue
+        ? AppColors.errorBg
+        : AppColors.primaryBrandLight;
+    final fg = assignment.isCompleted
+        ? AppColors.successGreen
+        : assignment.isOverdue
+        ? AppColors.bohoRed
+        : AppColors.primaryBrand;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s10,
+        vertical: AppSpacing.s6,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppSpacing.s8),
+      ),
+      child: Text(
+        assignment.isCompleted
+            ? AppStrings.studentDonePill
+            : (assignment.dueDateFullText ?? assignment.dueLabel),
+        style: AppTextStyles.outfit(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: fg,
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaInfoRow extends StatelessWidget {
+  final Assignment assignment;
+
+  const _MetaInfoRow({required this.assignment});
+
+  @override
+  Widget build(BuildContext context) {
+    String publishedLabel = '—';
+    final createdAt = assignment.createdAt;
+    if (createdAt != null) {
+      publishedLabel = DateFormat('d MMM yyyy').format(createdAt);
+    }
+
+    final statusLabel = assignment.isCompleted
+        ? 'Submitted'
+        : assignment.isOverdue
+        ? 'Overdue'
+        : 'Pending';
+
+    return Row(
+      children: [
+        Expanded(
+          child: _MetaInfoTile(
+            icon: Icons.event_available_outlined,
+            label: 'Published On',
+            value: publishedLabel,
+          ),
+        ),
+        AppSpacing.h10,
+        Expanded(
+          child: _MetaInfoTile(
+            icon: Icons.flag_outlined,
+            label: 'Status',
+            value: statusLabel,
+          ),
+        ),
+        AppSpacing.h10,
+        Expanded(
+          child: _MetaInfoTile(
+            icon: Icons.attach_file_rounded,
+            label: 'Attachments',
+            value: '${assignment.attachments.length}',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetaInfoTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _MetaInfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.s10,
+        vertical: AppSpacing.s12,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.primaryBrand),
+          const SizedBox(height: AppSpacing.s8),
+          Text(
+            label,
+            style: AppTextStyles.outfit(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: AppTextStyles.outfit(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -171,10 +337,10 @@ class _DueCard extends StatelessWidget {
   }
 }
 
-class _InstructionsCard extends StatelessWidget {
+class _DescriptionCard extends StatelessWidget {
   final Assignment assignment;
 
-  const _InstructionsCard({required this.assignment});
+  const _DescriptionCard({required this.assignment});
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +362,7 @@ class _InstructionsCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            AppStrings.studentAssignmentDetailInstructions,
+            AppStrings.studentAssignmentDetailDescription,
             style: AppTextStyles.outfit(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -213,35 +379,87 @@ class _InstructionsCard extends StatelessWidget {
               height: 1.5,
             ),
           ),
-          if (assignment.assignedBy != null) ...[
-            const SizedBox(height: AppSpacing.s12),
-            Divider(
-              height: 1,
-              color: AppColors.borderGrey.withValues(alpha: 0.5),
+        ],
+      ),
+    );
+  }
+}
+
+class _InstructionsListCard extends StatelessWidget {
+  final Assignment assignment;
+
+  const _InstructionsListCard({required this.assignment});
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = assignment.instructionLines;
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '${AppStrings.studentAssignmentDetailInstructions} (${lines.length})',
+            style: AppTextStyles.outfit(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.orangeTag,
+              letterSpacing: 1.2,
             ),
-            const SizedBox(height: AppSpacing.s10),
-            Text.rich(
-              TextSpan(
+          ),
+          const SizedBox(height: AppSpacing.s10),
+          ...List.generate(lines.length, (i) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: i == lines.length - 1 ? 0 : AppSpacing.s10,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextSpan(
-                    text: '${AppStrings.studentAssignmentDetailAssignedBy} ',
-                    style: AppTextStyles.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                  Container(
+                    width: 20,
+                    height: 20,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: AppColors.fieldBg,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${i + 1}',
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
-                  TextSpan(
-                    text: assignment.assignedBy!,
-                    style: AppTextStyles.outfit(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
+                  AppSpacing.h10,
+                  Expanded(
+                    child: Text(
+                      lines[i],
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
+            );
+          }),
         ],
       ),
     );
@@ -303,9 +521,19 @@ class _AttachmentTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.textMuted,
+              Container(
+                width: AppSpacing.s32,
+                height: AppSpacing.s32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.fieldBg,
+                  borderRadius: BorderRadius.circular(AppSpacing.s10),
+                ),
+                child: const Icon(
+                  Icons.download_rounded,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -447,7 +675,10 @@ class _SubmissionForm extends StatelessWidget {
             controller: controller.noteController,
             maxLines: 4,
             minLines: 3,
-            style: AppTextStyles.outfit(fontSize: 13, color: AppColors.textPrimary),
+            style: AppTextStyles.outfit(
+              fontSize: 13,
+              color: AppColors.textPrimary,
+            ),
             decoration: InputDecoration(
               hintText: 'Add a note (optional if you attach a file)',
               hintStyle: AppTextStyles.outfit(
@@ -582,7 +813,9 @@ class _AttachmentPicker extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.outfit(
                   fontSize: 12,
-                  fontWeight: displayName != null ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: displayName != null
+                      ? FontWeight.w600
+                      : FontWeight.w400,
                   color: displayName != null
                       ? AppColors.textPrimary
                       : AppColors.textMuted,
@@ -602,7 +835,9 @@ class _AttachmentPicker extends StatelessWidget {
               )
             else
               Text(
-                existingUrl != null && existingUrl.isNotEmpty ? 'Replace' : 'Add',
+                existingUrl != null && existingUrl.isNotEmpty
+                    ? 'Replace'
+                    : 'Add',
                 style: AppTextStyles.outfit(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -752,18 +987,65 @@ class _CompletedBanner extends StatelessWidget {
                     color: AppColors.successGreen,
                   ),
                 ),
-                if (assignment.gradeNote != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    assignment.gradeNote!,
-                    style: AppTextStyles.outfit(
-                      fontSize: 12,
-                      color: AppColors.successGreen,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultCard extends StatelessWidget {
+  final num score;
+  const _ResultCard({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.s24,
+        horizontal: AppSpacing.s16,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.successBg,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: const BoxDecoration(
+              color: AppColors.warningAmber,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              color: AppColors.white,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          Text(
+            'Well Done!',
+            style: AppTextStyles.outfit(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'You scored $score on this assignment.',
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.outfit(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.successGreen,
             ),
           ),
         ],

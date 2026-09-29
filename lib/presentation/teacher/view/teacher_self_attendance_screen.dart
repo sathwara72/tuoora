@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -26,7 +27,7 @@ class TeacherSelfAttendanceScreen
             const TeacherAppBar(title: 'My Attendance & Leaves'),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const Center(child: CommonLoading());
                 }
 
@@ -45,14 +46,16 @@ class TeacherSelfAttendanceScreen
 
   Widget _buildCalendarAndCheckInTab(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () => Future.wait([
-        controller.fetchToday(),
-        controller.fetchCalendar(
-          month: controller.currentMonth.value,
-          year: controller.currentYear.value,
-        ),
-        controller.fetchLeaves(),
-      ]),
+      onRefresh: () => PullRefresh.run(
+        () => Future.wait([
+          controller.fetchToday(),
+          controller.fetchCalendar(
+            month: controller.currentMonth.value,
+            year: controller.currentYear.value,
+          ),
+          controller.fetchLeaves(),
+        ]),
+      ),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
@@ -556,8 +559,11 @@ class TeacherSelfAttendanceScreen
 
   bool _isPastDay(DateTime d) {
     final now = DateTime.now();
-    return DateTime(d.year, d.month, d.day)
-        .isBefore(DateTime(now.year, now.month, now.day));
+    return DateTime(
+      d.year,
+      d.month,
+      d.day,
+    ).isBefore(DateTime(now.year, now.month, now.day));
   }
 
   Widget _buildSelectedDayDetailCard(BuildContext context) {
@@ -833,8 +839,9 @@ class TeacherSelfAttendanceScreen
   }) {
     final nowDay = DateTime.now();
     final todayOnly = DateTime(nowDay.year, nowDay.month, nowDay.day);
-    final start =
-        (initialDate == null || _isPastDay(initialDate)) ? todayOnly : initialDate;
+    final start = (initialDate == null || _isPastDay(initialDate))
+        ? todayOnly
+        : initialDate;
     final initialText = DateFormat('yyyy-MM-dd').format(start);
     final startCtrl = TextEditingController(text: initialText);
     final endCtrl = TextEditingController(text: initialText);
@@ -877,10 +884,13 @@ class TeacherSelfAttendanceScreen
                     onTap: () async {
                       final now = DateTime.now();
                       final firstDay = DateTime(now.year, now.month, now.day);
-                      final parsed = DateTime.tryParse(startCtrl.text) ?? firstDay;
+                      final parsed =
+                          DateTime.tryParse(startCtrl.text) ?? firstDay;
                       final picked = await showDatePicker(
                         context: context,
-                        initialDate: parsed.isBefore(firstDay) ? firstDay : parsed,
+                        initialDate: parsed.isBefore(firstDay)
+                            ? firstDay
+                            : parsed,
                         firstDate: firstDay,
                         lastDate: now.add(const Duration(days: 365)),
                       );

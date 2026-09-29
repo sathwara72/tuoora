@@ -28,7 +28,9 @@ class StudentIdCardScreen extends GetView<StudentIdCardController> {
               child: Obx(() {
                 if (controller.isLoading.value) {
                   return const Center(
-                    child: CircularProgressIndicator(color: AppColors.primaryBrand),
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryBrand,
+                    ),
                   );
                 }
 
@@ -38,7 +40,11 @@ class StudentIdCardScreen extends GetView<StudentIdCardController> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          size: 48,
+                          color: Colors.redAccent,
+                        ),
                         AppSpacing.v16,
                         const Text('Failed to load ID card'),
                         AppSpacing.v16,
@@ -89,8 +95,9 @@ class StudentIdCardScreen extends GetView<StudentIdCardController> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation(AppColors.primaryBrand),
+                        valueColor: AlwaysStoppedAnimation(
+                          AppColors.primaryBrand,
+                        ),
                       ),
                     )
                   : const Icon(Icons.ios_share_rounded, size: 18),
@@ -187,12 +194,16 @@ class _IdCardVisual extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (card.instituteLogoUrl != null && card.instituteLogoUrl!.isNotEmpty) ...[
+          if (card.instituteLogoUrl != null &&
+              card.instituteLogoUrl!.isNotEmpty) ...[
             ClipOval(
               child: SizedBox(
                 width: 40,
                 height: 40,
-                child: AppNetworkImage(url: card.instituteLogoUrl!, fit: BoxFit.cover),
+                child: AppNetworkImage(
+                  url: card.instituteLogoUrl!,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             AppSpacing.v8,
@@ -241,7 +252,9 @@ class _IdCardVisual extends StatelessWidget {
                 color: AppColors.primaryBrandLight,
                 child: Center(
                   child: Text(
-                    card.studentName.isNotEmpty ? card.studentName[0].toUpperCase() : '?',
+                    card.studentName.isNotEmpty
+                        ? card.studentName[0].toUpperCase()
+                        : '?',
                     style: AppTextStyles.outfit(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
@@ -293,7 +306,6 @@ class _IdCardVisual extends StatelessWidget {
 
   Widget _buildInfoTable() {
     final rows = <(String, String)>[
-      ('Standard', card.studentStandard ?? 'Not Specified'),
       ('DOB', card.studentDob ?? 'Not Specified'),
       ('Phone', card.studentPhone ?? 'Not Available'),
     ];

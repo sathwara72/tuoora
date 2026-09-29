@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -20,10 +21,13 @@ class StudentReceiptsListScreen extends GetView<StudentReceiptsListController> {
       body: SafeArea(
         child: Column(
           children: [
-            const StudentAppBar(title: AppStrings.labelReceipts, showDefaultActions: false),
+            const StudentAppBar(
+              title: AppStrings.labelReceipts,
+              showDefaultActions: false,
+            ),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const CommonLoading(color: AppColors.primaryBrand);
                 }
                 final items = controller.receipts;
@@ -35,7 +39,7 @@ class StudentReceiptsListScreen extends GetView<StudentReceiptsListController> {
                 }
                 return RefreshIndicator(
                   color: AppColors.primaryBrand,
-                  onRefresh: controller.loadReceipts,
+                  onRefresh: () => PullRefresh.run(controller.loadReceipts),
                   child: ListView.separated(
                     padding: AppSpacing.screenPaddingTop,
                     itemCount: items.length,

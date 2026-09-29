@@ -7,7 +7,6 @@ class Student {
   final String? enrollmentID;
   final int? parentId;
   final int? batchId;
-  final String standard;
   final String dob;
   final String? guardianName;
   final String? monthlyFee;
@@ -43,7 +42,6 @@ class Student {
     this.enrollmentID,
     this.parentId,
     this.batchId,
-    required this.standard,
     required this.dob,
     this.guardianName,
     this.monthlyFee,
@@ -95,7 +93,6 @@ class Student {
       enrollmentID: json['enrollment_id'],
       parentId: safeNullableInt(json['parent_id']),
       batchId: safeNullableInt(json['batch_id']),
-      standard: json['standard']?.toString() ?? '',
       dob: json['dob']?.toString() ?? '',
       guardianName: json['guardian_name']?.toString(),
       monthlyFee: json['monthly_fee']?.toString(),
@@ -142,7 +139,6 @@ class Student {
       'enrollment_id': enrollmentID,
       'parent_id': parentId,
       'batch_id': batchId,
-      'standard': standard,
       'dob': dob,
       'guardian_name': guardianName,
       'monthly_fee': monthlyFee,
@@ -179,7 +175,6 @@ class Student {
     int? instituteId,
     int? parentId,
     int? batchId,
-    String? standard,
     String? dob,
     String? guardianName,
     String? monthlyFee,
@@ -217,7 +212,6 @@ class Student {
       instituteId: instituteId ?? this.instituteId,
       parentId: parentId ?? this.parentId,
       batchId: clearBatch ? null : (batchId ?? this.batchId),
-      standard: standard ?? this.standard,
       dob: dob ?? this.dob,
       guardianName: guardianName ?? this.guardianName,
       monthlyFee: monthlyFee ?? this.monthlyFee,
@@ -257,7 +251,6 @@ class Student {
   }
 
   // Helper getters for UI compatibility
-  String get grade => standard;
   String get imageUrl => profileImageUrl;
   String get currentBatchName {
     if (batch != null && batch is Map) {
@@ -266,7 +259,15 @@ class Student {
     return 'Not Assigned';
   }
 
-  /// One stable ID for display: the real enrollment ID first, then the hash, then the row id.
+  /// The enrollment ID exactly as stored in the database, for display. Never
+  /// built from the hash or row id.
+  String get displayEnrollmentId {
+    final e = enrollmentID?.trim() ?? '';
+    return e.isNotEmpty ? e : 'N/A';
+  }
+
+  /// Stable key for routing/lookup only (falls back to hash, then row id).
+  /// Do not show this to users; use [displayEnrollmentId].
   String get enrollmentId {
     final e = enrollmentID;
     if (e != null && e.isNotEmpty) return e;

@@ -47,16 +47,24 @@ class Assignment {
   final List<AssignmentAttachment> attachments;
   final String? pendingNote;
   final String? completedNote;
-  final String? gradeNote;
+
+  /// Raw grading score, if the teacher has entered one. There is no
+  /// total-marks/max-score field for homework in the backend, so this is
+  /// shown as a bare number — never as "x / y" or a percentage.
+  final num? score;
   final bool isOverdue;
   final DateTime? createdAt;
   final String? submissionNote;
   final String? submissionAttachmentUrl;
 
-  /// True once the due date has passed, regardless of submission status —
-  /// unlike [isOverdue] (display-only, forced false once completed), this
-  /// is what gates whether a (re)submission is still allowed.
+  /// True once the due date has passed AND late submission isn't allowed
+  /// for this assignment — unlike [isOverdue] (display-only, forced false
+  /// once completed), this is what gates whether a (re)submission is still
+  /// allowed.
   final bool dueDatePassed;
+
+  /// Whether the teacher/institute allowed submissions after the due date.
+  final bool allowLateSubmission;
 
   const Assignment({
     required this.id,
@@ -74,15 +82,25 @@ class Assignment {
     this.attachments = const [],
     this.pendingNote,
     this.completedNote,
-    this.gradeNote,
+    this.score,
     this.isOverdue = false,
     this.createdAt,
     this.submissionNote,
     this.submissionAttachmentUrl,
     this.dueDatePassed = false,
+    this.allowLateSubmission = false,
   });
 
   bool get isCompleted => badge == AssignmentBadge.done;
+
+  /// Individual instruction lines derived from the raw description text
+  /// (split on newlines). Falls back to a single-item list containing the
+  /// whole description when it has no line breaks.
+  List<String> get instructionLines => (instructions ?? '')
+      .split('\n')
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toList();
 
   factory Assignment.fromJson(
     Map<String, dynamic> json, {
@@ -169,6 +187,8 @@ class Assignment {
     final bool duePassed =
         json['is_overdue'] == true || (dueDiffDays != null && dueDiffDays < 0);
 
+    final bool allowLate = json['allow_late_submission'] == true;
+
     final bool overdue = !isCompleted && duePassed;
 
     AssignmentBadge badge = AssignmentBadge.today;
@@ -183,14 +203,16 @@ class Assignment {
     }
 
     String? completedNoteStr;
-    String? gradeNoteStr;
+    num? scoreVal;
     String? submissionNoteStr;
     String? submissionAttachmentUrlStr;
     if (json['submission'] != null) {
       final sub = json['submission'];
       completedNoteStr = 'Status: ${sub['status'] ?? 'Submitted'}';
       if (sub['score'] != null) {
-        gradeNoteStr = 'Score: ${sub['score']}';
+        scoreVal = sub['score'] is num
+            ? sub['score'] as num
+            : num.tryParse(sub['score'].toString());
       }
       submissionNoteStr = sub['note'];
       submissionAttachmentUrlStr = sub['attachment_url'];
@@ -220,10 +242,11 @@ class Assignment {
       attachments: attachments,
       pendingNote: overdue ? 'Overdue' : null,
       completedNote: completedNoteStr,
-      gradeNote: gradeNoteStr,
+      score: scoreVal,
       submissionNote: submissionNoteStr,
       submissionAttachmentUrl: submissionAttachmentUrlStr,
-      dueDatePassed: duePassed,
+      dueDatePassed: duePassed && !allowLate,
+      allowLateSubmission: allowLate,
       isOverdue: overdue,
       createdAt: createdAtDt,
     );

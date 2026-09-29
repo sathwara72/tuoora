@@ -9,6 +9,7 @@ class HomeworkModel {
   final int submissionsCount;
   final List<HomeworkSubmission> submissions;
   final List<String> resourcePaths;
+  final bool allowLateSubmission;
 
   HomeworkModel({
     required this.id,
@@ -21,10 +22,11 @@ class HomeworkModel {
     this.submissionsCount = 0,
     this.submissions = const [],
     this.resourcePaths = const [],
+    this.allowLateSubmission = false,
   });
 
   String get subject => batchName ?? 'General';
-  bool get isActive => dueDate.isAfter(DateTime.now());
+  bool get isActive => dueDate.isAfter(DateTime.now()) || allowLateSubmission;
   int get submittedCount => submissionsCount;
 
   factory HomeworkModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class HomeworkModel {
                 .map((s) => HomeworkSubmission.fromJson(s))
                 .toList()
           : [],
+      allowLateSubmission: json['allow_late_submission'] == true,
     );
   }
 }

@@ -473,7 +473,7 @@ class AssignToBatchScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Enrollment ID: ${student.enrollmentId}',
+                              'Enrollment ID: ${student.displayEnrollmentId}',
                               style: AppTextStyles.outfit(
                                 fontSize: 12,
                                 color: AppColors.textMuted,
@@ -562,7 +562,7 @@ class AssignToBatchScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Enrollment ID: ${bs.student.enrollmentId}',
+                          'Enrollment ID: ${bs.student.displayEnrollmentId}',
                           style: AppTextStyles.outfit(
                             fontSize: 12,
                             color: AppColors.textMuted,

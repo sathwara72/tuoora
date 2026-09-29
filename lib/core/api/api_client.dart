@@ -1,4 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:get/get.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -8,11 +11,11 @@ import 'package:tuoora/core/services/institute_account_status_handler.dart';
 import 'package:tuoora/core/services/server_error_handler.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/data/repositories_impl/auth_repository_impl.dart';
-import 'package:get/get.dart';
 
 class ApiClient extends GetConnect {
   Future<_RefreshOutcome>? _refreshFuture;
   bool _loggingOut = false;
+  static const _retryHeader = 'X-Auth-Retry';
 
   bool get isLoggingOut => _loggingOut;
 
@@ -67,6 +70,10 @@ class ApiClient extends GetConnect {
         return request;
       }
 
+      // Mark this as the post-refresh retry: a 401 on it means the session is
+      // really dead, and the response modifier logs the user out.
+      request.headers[_retryHeader] = '1';
+
       final outcome = await _tryRefresh();
       if (outcome == _RefreshOutcome.rejected) {
         // The refresh token itself is invalid or expired: sign in again.
@@ -74,8 +81,6 @@ class ApiClient extends GetConnect {
         return request;
       }
       if (outcome == _RefreshOutcome.unavailable) {
-        // Server or network trouble while refreshing: keep the session and
-        // let this request fail normally instead of logging the user out.
         return request;
       }
       request.headers['Authorization'] = 'Bearer ${authService.token}';
@@ -100,7 +105,9 @@ class ApiClient extends GetConnect {
           method: request.method,
           url: request.url,
           status: response.statusCode ?? 0,
-          message: response.hasError ? (serverMessage ?? response.statusText) : null,
+          message: response.hasError
+              ? (serverMessage ?? response.statusText)
+              : null,
           isError: response.hasError && (response.statusCode ?? 0) >= 500,
         );
       }
@@ -139,10 +146,20 @@ class ApiClient extends GetConnect {
           }
         }
 
-        // A 401 is NOT handled here. GetConnect runs this modifier before the
-        // authenticator above, which refreshes the access token and retries
-        // the request. Logging out here would wipe the session before the
-        // refresh token could ever be used.
+        // A first 401 is NOT handled here: GetConnect runs this modifier
+        // before the authenticator above, which refreshes the access token
+        // and retries the request. Only a 401 on that retried request (still
+        // unauthorised after a refresh) means the session is dead.
+        if (response.statusCode == 401 &&
+            request.headers.containsKey(_retryHeader)) {
+          final p = request.url.path;
+          final isAuthCall =
+              p.endsWith(ApiConstants.instituteLogin) ||
+              p.endsWith(ApiConstants.studentLogin) ||
+              p.endsWith(ApiConstants.teacherLogin) ||
+              p.endsWith(ApiConstants.authRefresh);
+          if (!isAuthCall) _forceLogout();
+        }
 
         final code = response.statusCode ?? 0;
         if (code >= 500 && code < 600) {
@@ -199,11 +216,24 @@ class ApiClient extends GetConnect {
   Future<void> _forceLogout() async {
     if (_loggingOut) return;
     _loggingOut = true;
+    var role = 'STUDENT';
     try {
       final auth = Get.find<AuthService>();
-      final role = auth.currentUser?.role ?? 'STUDENT';
+      role = auth.currentUser?.role ?? role;
       await auth.clearSession();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    } catch (_) {}
+    _goToLogin(role);
+    Future<void>.delayed(const Duration(seconds: 3), () {
+      _loggingOut = false;
+    });
+  }
+
+  /// Navigates straight to login. A post-frame callback alone is not enough:
+  /// it only fires when a frame is scheduled, which an idle dashboard never
+  /// does, so the user would stay on the page.
+  void _goToLogin(String role) {
+    void go() {
+      try {
         if (Get.currentRoute != AppRoutes.login) {
           Get.offAllNamed(AppRoutes.login, arguments: role);
           AppSnackBar.warning(
@@ -211,17 +241,17 @@ class ApiClient extends GetConnect {
             title: AppStrings.sessionExpiredTitle,
           );
         }
-      });
-    } catch (_) {
-      try {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Get.offAllNamed(AppRoutes.login);
-        });
-      } catch (_) {}
-    } finally {
-      Future<void>.delayed(const Duration(seconds: 3), () {
-        _loggingOut = false;
-      });
+      } catch (e) {
+        if (kDebugMode) debugPrint('ApiClient: login redirect failed: $e');
+      }
+    }
+
+    final binding = WidgetsBinding.instance;
+    if (binding.schedulerPhase == SchedulerPhase.idle) {
+      go();
+    } else {
+      binding.addPostFrameCallback((_) => go());
+      binding.scheduleFrame();
     }
   }
 }

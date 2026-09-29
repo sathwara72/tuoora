@@ -62,4 +62,6 @@ class AppColors {
   static const Color studentProgressBlue = Color(0xFF3B82F6);
   static const Color subjectPhysicsSoft = Color(0xFFCFFAFE);
   static const Color turquoiseBlue = Color(0xFF5EEAD4);
+  static const Color violet = Color(0xFF7C3AED);
+  static const Color violetSoft = Color(0xFFEDE9FE);
 }

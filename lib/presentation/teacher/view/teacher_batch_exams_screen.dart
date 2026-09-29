@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -32,7 +33,10 @@ class TeacherBatchExamsScreen extends GetView<TeacherBatchExamsController> {
                       color: AppColors.primaryBrand,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.add_rounded, color: AppColors.white),
+                    child: const Icon(
+                      Icons.add_rounded,
+                      color: AppColors.white,
+                    ),
                   ),
                 ),
               ],
@@ -57,7 +61,10 @@ class TeacherBatchExamsScreen extends GetView<TeacherBatchExamsController> {
                     const Spacer(),
                     Text(
                       '${controller.total.value} total',
-                      style: AppTextStyles.outfit(fontSize: 11, color: AppColors.textTertiary),
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
                     ),
                   ],
                 ),
@@ -65,20 +72,23 @@ class TeacherBatchExamsScreen extends GetView<TeacherBatchExamsController> {
             ),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const Center(child: CommonLoading());
                 }
                 if (controller.exams.isEmpty) {
                   return Center(
                     child: Text(
                       'No exams found.',
-                      style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   );
                 }
                 final count = controller.exams.length;
                 return RefreshIndicator(
-                  onRefresh: controller.fetchExams,
+                  onRefresh: () => PullRefresh.run(controller.fetchExams),
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                     itemCount: count + (controller.hasMore ? 1 : 0),
@@ -87,12 +97,16 @@ class TeacherBatchExamsScreen extends GetView<TeacherBatchExamsController> {
                       if (index == count) {
                         return Center(
                           child: TextButton(
-                            onPressed: controller.isLoadingMore.value ? null : controller.loadMore,
+                            onPressed: controller.isLoadingMore.value
+                                ? null
+                                : controller.loadMore,
                             child: controller.isLoadingMore.value
                                 ? const SizedBox(
                                     width: 18,
                                     height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Text('Load more'),
                           ),
@@ -125,7 +139,9 @@ class TeacherBatchExamsScreen extends GetView<TeacherBatchExamsController> {
         decoration: BoxDecoration(
           color: selected ? AppColors.primaryBrand : AppColors.fieldBg,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: selected ? AppColors.primaryBrand : AppColors.fieldBorder),
+          border: Border.all(
+            color: selected ? AppColors.primaryBrand : AppColors.fieldBorder,
+          ),
         ),
         child: Text(
           label,
@@ -155,10 +171,13 @@ class _ExamCard extends StatelessWidget {
 
   ({String label, Color color}) get _badge {
     final s = exam.status.toLowerCase();
-    if (s == 'completed') return (label: 'Completed', color: AppColors.successGreen);
-    if (s == 'cancelled') return (label: 'Cancelled', color: AppColors.textTertiary);
+    if (s == 'completed')
+      return (label: 'Completed', color: AppColors.successGreen);
+    if (s == 'cancelled')
+      return (label: 'Cancelled', color: AppColors.textTertiary);
     if (exam.isToday) return (label: 'Today', color: Colors.amber.shade800);
-    if (exam.isPendingMarks) return (label: 'Pending Marks', color: AppColors.primaryBrand);
+    if (exam.isPendingMarks)
+      return (label: 'Pending Marks', color: AppColors.primaryBrand);
     return (label: 'Scheduled', color: const Color(0xFF2563EB));
   }
 
@@ -214,23 +233,38 @@ class _ExamCard extends StatelessWidget {
             [
               exam.formattedDate ?? exam.examDate,
               ?time,
-              if (exam.subject != null && exam.subject!.isNotEmpty) exam.subject!,
+              if (exam.subject != null && exam.subject!.isNotEmpty)
+                exam.subject!,
             ].join(' · '),
-            style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
+            style: AppTextStyles.outfit(
+              fontSize: 12,
+              color: AppColors.textTertiary,
+            ),
           ),
           Text(
             '${exam.totalMarks.toStringAsFixed(0)} marks (Pass: ${exam.passingMarks.toStringAsFixed(0)})',
-            style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
+            style: AppTextStyles.outfit(
+              fontSize: 12,
+              color: AppColors.textTertiary,
+            ),
           ),
           if (stats != null) ...[
             AppSpacing.v12,
             Row(
               children: [
-                _stat('Entered', '${stats.marksEnteredCount}/${stats.totalStudents}', AppColors.textPrimary),
+                _stat(
+                  'Entered',
+                  '${stats.marksEnteredCount}/${stats.totalStudents}',
+                  AppColors.textPrimary,
+                ),
                 AppSpacing.h8,
                 _stat('Passed', '${stats.passedCount}', AppColors.successGreen),
                 AppSpacing.h8,
-                _stat('Avg', stats.averageMarks.toStringAsFixed(1), const Color(0xFF4F46E5)),
+                _stat(
+                  'Avg',
+                  stats.averageMarks.toStringAsFixed(1),
+                  const Color(0xFF4F46E5),
+                ),
               ],
             ),
           ],
@@ -250,7 +284,11 @@ class _ExamCard extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.lock_outline_rounded, size: 15, color: AppColors.textTertiary),
+                            const Icon(
+                              Icons.lock_outline_rounded,
+                              size: 15,
+                              color: AppColors.textTertiary,
+                            ),
                             AppSpacing.h6,
                             Text(
                               exam.opensOnText,
@@ -269,16 +307,24 @@ class _ExamCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(vertical: 9),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryBrand.withValues(alpha: 0.1),
+                            color: AppColors.primaryBrand.withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.edit_note_rounded, size: 16, color: AppColors.primaryBrand),
+                              const Icon(
+                                Icons.edit_note_rounded,
+                                size: 16,
+                                color: AppColors.primaryBrand,
+                              ),
                               AppSpacing.h4,
                               Text(
-                                entered > 0 ? 'View / Edit Marks' : 'Enter Marks',
+                                entered > 0
+                                    ? 'View / Edit Marks'
+                                    : 'Enter Marks',
                                 style: AppTextStyles.outfit(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
@@ -302,7 +348,11 @@ class _ExamCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.fieldBorder),
                   ),
-                  child: const Icon(Icons.edit_outlined, size: 16, color: AppColors.textPrimary),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 16,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               AppSpacing.h8,
@@ -315,9 +365,15 @@ class _ExamCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.bohoRed.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.bohoRed.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: AppColors.bohoRed.withValues(alpha: 0.2),
+                    ),
                   ),
-                  child: const Icon(Icons.delete_outline_rounded, size: 16, color: AppColors.bohoRed),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    size: 16,
+                    color: AppColors.bohoRed,
+                  ),
                 ),
               ),
             ],
@@ -348,7 +404,11 @@ class _ExamCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               value,
-              style: AppTextStyles.outfit(fontSize: 13, fontWeight: FontWeight.w700, color: color),
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ],
         ),
