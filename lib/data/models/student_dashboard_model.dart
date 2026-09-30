@@ -18,6 +18,7 @@ class StudentDashboardData {
   final List<StudentResourceModel> studyMaterials;
   final List<PendingFee> pendingFees;
   final bool isBirthdayToday;
+  final String? avatarUrl;
 
   StudentDashboardData({
     required this.studentName,
@@ -35,6 +36,7 @@ class StudentDashboardData {
     required this.studyMaterials,
     required this.pendingFees,
     required this.isBirthdayToday,
+    this.avatarUrl,
   });
 
   factory StudentDashboardData.fromJson(Map<String, dynamic> json) {
@@ -72,6 +74,52 @@ class StudentDashboardData {
               .toList() ??
           [],
       isBirthdayToday: json['is_birthday_today'] ?? false,
+      avatarUrl: json['avatar_url']?.toString() ??
+          json['avatar']?.toString() ??
+          json['profile_image']?.toString() ??
+          json['profile_url']?.toString() ??
+          json['photo']?.toString() ??
+          json['student_photo']?.toString() ??
+          json['student_image']?.toString() ??
+          json['image']?.toString(),
+    );
+  }
+
+  StudentDashboardData copyWith({
+    String? studentName,
+    int? batchId,
+    String? batchName,
+    int? attendanceRate,
+    String? totalFees,
+    String? paidFees,
+    String? dueFees,
+    TodayClass? todayClass,
+    List<WeekAttendanceDay>? weekAttendanceDays,
+    List<Assignment>? todayAssignments,
+    TodayAttendance? todayAttendance,
+    List<StudentExamListItem>? upcomingExams,
+    List<StudentResourceModel>? studyMaterials,
+    List<PendingFee>? pendingFees,
+    bool? isBirthdayToday,
+    String? avatarUrl,
+  }) {
+    return StudentDashboardData(
+      studentName: studentName ?? this.studentName,
+      batchId: batchId ?? this.batchId,
+      batchName: batchName ?? this.batchName,
+      attendanceRate: attendanceRate ?? this.attendanceRate,
+      totalFees: totalFees ?? this.totalFees,
+      paidFees: paidFees ?? this.paidFees,
+      dueFees: dueFees ?? this.dueFees,
+      todayClass: todayClass ?? this.todayClass,
+      weekAttendanceDays: weekAttendanceDays ?? this.weekAttendanceDays,
+      todayAssignments: todayAssignments ?? this.todayAssignments,
+      todayAttendance: todayAttendance ?? this.todayAttendance,
+      upcomingExams: upcomingExams ?? this.upcomingExams,
+      studyMaterials: studyMaterials ?? this.studyMaterials,
+      pendingFees: pendingFees ?? this.pendingFees,
+      isBirthdayToday: isBirthdayToday ?? this.isBirthdayToday,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
 }

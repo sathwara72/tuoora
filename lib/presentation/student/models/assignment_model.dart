@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/enums/app_enums.dart';
 
+const _imageExtensions = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'};
+const _videoExtensions = {'mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'};
+const _audioExtensions = {'mp3', 'wav', 'm4a', 'aac', 'ogg'};
+
+AssignmentAttachmentKind kindForExtension(String extension) {
+  final ext = extension.toLowerCase();
+  if (_imageExtensions.contains(ext)) return AssignmentAttachmentKind.image;
+  if (_videoExtensions.contains(ext)) return AssignmentAttachmentKind.video;
+  if (_audioExtensions.contains(ext)) return AssignmentAttachmentKind.audio;
+  return AssignmentAttachmentKind.document;
+}
+
 class AssignmentAttachment {
   final String id;
   final String name;
@@ -56,6 +68,7 @@ class Assignment {
   final DateTime? createdAt;
   final String? submissionNote;
   final String? submissionAttachmentUrl;
+  final String? submittedAtLabel;
 
   /// True once the due date has passed AND late submission isn't allowed
   /// for this assignment — unlike [isOverdue] (display-only, forced false
@@ -87,6 +100,7 @@ class Assignment {
     this.createdAt,
     this.submissionNote,
     this.submissionAttachmentUrl,
+    this.submittedAtLabel,
     this.dueDatePassed = false,
     this.allowLateSubmission = false,
   });
@@ -129,11 +143,7 @@ class Assignment {
       final url = json['attachment_url'].toString();
       final name = url.split('/').last;
       final ext = name.split('.').last.toLowerCase();
-      var kind = AssignmentAttachmentKind.document;
-      if (['jpg', 'jpeg', 'png'].contains(ext)) {
-        kind = AssignmentAttachmentKind.image;
-      }
-      if (['mp4', 'mov'].contains(ext)) kind = AssignmentAttachmentKind.video;
+      final kind = kindForExtension(ext);
 
       attachments.add(
         AssignmentAttachment(
@@ -206,6 +216,7 @@ class Assignment {
     num? scoreVal;
     String? submissionNoteStr;
     String? submissionAttachmentUrlStr;
+    String? submittedAtLabelStr;
     if (json['submission'] != null) {
       final sub = json['submission'];
       completedNoteStr = 'Status: ${sub['status'] ?? 'Submitted'}';
@@ -216,6 +227,7 @@ class Assignment {
       }
       submissionNoteStr = sub['note'];
       submissionAttachmentUrlStr = sub['attachment_url'];
+      submittedAtLabelStr = sub['submitted_at_label'];
     }
 
     DateTime? createdAtDt;
@@ -245,6 +257,7 @@ class Assignment {
       score: scoreVal,
       submissionNote: submissionNoteStr,
       submissionAttachmentUrl: submissionAttachmentUrlStr,
+      submittedAtLabel: submittedAtLabelStr,
       dueDatePassed: duePassed && !allowLate,
       allowLateSubmission: allowLate,
       isOverdue: overdue,

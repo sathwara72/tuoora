@@ -11,7 +11,12 @@ import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/student/controllers/assignments_controller.dart';
 import 'package:tuoora/presentation/student/models/assignment_model.dart';
 import 'package:tuoora/presentation/student/widgets/student_app_bar.dart';
+import 'package:tuoora/presentation/student/widgets/student_attachment_tile.dart'
+    show StudentAttachmentIcon;
+import 'package:tuoora/presentation/student/widgets/student_description_card.dart';
+import 'package:tuoora/presentation/student/widgets/student_info_tile.dart';
 import 'package:tuoora/presentation/student/widgets/student_section_header.dart';
+import 'package:tuoora/presentation/student/widgets/student_status_badge.dart';
 
 class StudentAssignmentDetailScreen extends GetView<AssignmentsController> {
   const StudentAssignmentDetailScreen({super.key});
@@ -63,10 +68,17 @@ class _DetailBody extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _AssignmentHeaderCard(assignment: assignment),
+                if (assignment.isCompleted && assignment.score != null) ...[
+                  const SizedBox(height: AppSpacing.s12),
+                  _ScoreCard(score: assignment.score!),
+                ],
                 const SizedBox(height: AppSpacing.s12),
-                _MetaInfoRow(assignment: assignment),
+                _InfoGridRow(assignment: assignment),
                 const SizedBox(height: AppSpacing.s12),
-                _DescriptionCard(assignment: assignment),
+                StudentDescriptionCard(
+                  title: AppStrings.studentAssignmentDetailDescription,
+                  text: assignment.instructions ?? '—',
+                ),
                 if (assignment.instructionLines.length > 1) ...[
                   const SizedBox(height: AppSpacing.s12),
                   _InstructionsListCard(assignment: assignment),
@@ -90,10 +102,6 @@ class _DetailBody extends StatelessWidget {
                 ],
                 const SizedBox(height: AppSpacing.s16),
                 _StatusBanner(assignment: assignment),
-                if (assignment.isCompleted && assignment.score != null) ...[
-                  const SizedBox(height: AppSpacing.s16),
-                  _ResultCard(score: assignment.score!),
-                ],
                 const SizedBox(height: AppSpacing.s16),
                 _SubmitAssignmentButton(assignment: assignment),
                 const SizedBox(height: AppSpacing.s16),
@@ -178,209 +186,124 @@ class _AssignmentHeaderCard extends StatelessWidget {
             ),
           ),
           AppSpacing.h8,
-          _DetailDuePill(assignment: assignment),
+          _AssignmentStatusBadge(assignment: assignment),
         ],
       ),
     );
   }
 }
 
-class _DetailDuePill extends StatelessWidget {
+class _AssignmentStatusBadge extends StatelessWidget {
   final Assignment assignment;
 
-  const _DetailDuePill({required this.assignment});
+  const _AssignmentStatusBadge({required this.assignment});
 
   @override
   Widget build(BuildContext context) {
-    final bg = assignment.isCompleted
-        ? AppColors.successBg
-        : assignment.isOverdue
-        ? AppColors.errorBg
-        : AppColors.primaryBrandLight;
-    final fg = assignment.isCompleted
-        ? AppColors.successGreen
-        : assignment.isOverdue
-        ? AppColors.bohoRed
-        : AppColors.primaryBrand;
+    if (assignment.isCompleted) {
+      return const StudentStatusBadge(
+        icon: Icons.check_circle_rounded,
+        label: 'Completed',
+        background: AppColors.successBg,
+        foreground: AppColors.successGreen,
+      );
+    }
+    if (assignment.isOverdue) {
+      return const StudentStatusBadge(
+        icon: Icons.flag_rounded,
+        label: 'Overdue',
+        background: AppColors.errorBg,
+        foreground: AppColors.bohoRed,
+      );
+    }
+    return StudentStatusBadge(
+      icon: Icons.schedule_rounded,
+      label: assignment.dueDateFullText ?? assignment.dueLabel,
+      background: AppColors.primaryBrandLight,
+      foreground: AppColors.primaryBrand,
+    );
+  }
+}
 
+class _ScoreCard extends StatelessWidget {
+  final num score;
+
+  const _ScoreCard({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s10,
-        vertical: AppSpacing.s6,
-      ),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.s20),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppSpacing.s8),
+        color: AppColors.successBg,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
-      child: Text(
-        assignment.isCompleted
-            ? AppStrings.studentDonePill
-            : (assignment.dueDateFullText ?? assignment.dueLabel),
-        style: AppTextStyles.outfit(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: fg,
-        ),
+      child: Column(
+        children: [
+          Text(
+            'Score',
+            style: AppTextStyles.outfit(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textTertiary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$score',
+            style: AppTextStyles.outfit(
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+              color: AppColors.successGreen,
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _MetaInfoRow extends StatelessWidget {
+class _InfoGridRow extends StatelessWidget {
   final Assignment assignment;
 
-  const _MetaInfoRow({required this.assignment});
+  const _InfoGridRow({required this.assignment});
 
   @override
   Widget build(BuildContext context) {
-    String publishedLabel = '—';
-    final createdAt = assignment.createdAt;
-    if (createdAt != null) {
-      publishedLabel = DateFormat('d MMM yyyy').format(createdAt);
+    String dueLabel = assignment.dueLabel;
+    final rawDue = assignment.dueDateFullText;
+    if (rawDue != null) {
+      final parsed = DateTime.tryParse(rawDue);
+      if (parsed != null) {
+        dueLabel = DateFormat('d MMM yyyy').format(parsed);
+      }
     }
 
-    final statusLabel = assignment.isCompleted
-        ? 'Submitted'
-        : assignment.isOverdue
-        ? 'Overdue'
-        : 'Pending';
+    final secondTile = assignment.isCompleted
+        ? StudentInfoTile(
+            icon: Icons.event_available_outlined,
+            label: 'Submitted On',
+            value: assignment.submittedAtLabel ?? '—',
+          )
+        : StudentInfoTile(
+            icon: Icons.flag_outlined,
+            label: 'Status',
+            value: assignment.isOverdue ? 'Overdue' : 'Pending',
+          );
 
     return Row(
       children: [
         Expanded(
-          child: _MetaInfoTile(
-            icon: Icons.event_available_outlined,
-            label: 'Published On',
-            value: publishedLabel,
+          child: StudentInfoTile(
+            icon: Icons.calendar_today_outlined,
+            label: 'Due Date',
+            value: dueLabel,
           ),
         ),
         AppSpacing.h10,
-        Expanded(
-          child: _MetaInfoTile(
-            icon: Icons.flag_outlined,
-            label: 'Status',
-            value: statusLabel,
-          ),
-        ),
-        AppSpacing.h10,
-        Expanded(
-          child: _MetaInfoTile(
-            icon: Icons.attach_file_rounded,
-            label: 'Attachments',
-            value: '${assignment.attachments.length}',
-          ),
-        ),
+        Expanded(child: secondTile),
       ],
-    );
-  }
-}
-
-class _MetaInfoTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _MetaInfoTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s10,
-        vertical: AppSpacing.s12,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: AppColors.primaryBrand),
-          const SizedBox(height: AppSpacing.s8),
-          Text(
-            label,
-            style: AppTextStyles.outfit(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: AppTextStyles.outfit(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DescriptionCard extends StatelessWidget {
-  final Assignment assignment;
-
-  const _DescriptionCard({required this.assignment});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            AppStrings.studentAssignmentDetailDescription,
-            style: AppTextStyles.outfit(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.orangeTag,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s8),
-          Text(
-            assignment.instructions ?? '—',
-            style: AppTextStyles.outfit(
-              fontSize: 13,
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -493,7 +416,7 @@ class _AttachmentTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _AttachmentIcon(kind: attachment.kind),
+              StudentAttachmentIcon(kind: attachment.kind),
               AppSpacing.h12,
               Expanded(
                 child: Column(
@@ -556,50 +479,6 @@ class _AttachmentTile extends StatelessWidget {
   }
 }
 
-class _AttachmentIcon extends StatelessWidget {
-  final AssignmentAttachmentKind kind;
-
-  const _AttachmentIcon({required this.kind});
-
-  @override
-  Widget build(BuildContext context) {
-    late final Color bg;
-    late final Color fg;
-    late final IconData icon;
-    switch (kind) {
-      case AssignmentAttachmentKind.document:
-        bg = AppColors.successBg;
-        fg = AppColors.successGreen;
-        icon = Icons.description_rounded;
-        break;
-      case AssignmentAttachmentKind.image:
-        bg = AppColors.primaryBrandLight;
-        fg = AppColors.orangeTag;
-        icon = Icons.image_rounded;
-        break;
-      case AssignmentAttachmentKind.video:
-        bg = AppColors.primaryBrandLight;
-        fg = AppColors.orangeTag;
-        icon = Icons.videocam_rounded;
-        break;
-      case AssignmentAttachmentKind.audio:
-        bg = AppColors.primaryBrandLight;
-        fg = AppColors.orangeTag;
-        icon = Icons.audiotrack_rounded;
-        break;
-    }
-    return Container(
-      width: AppSpacing.s40,
-      height: AppSpacing.s40,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppSpacing.s12),
-      ),
-      child: Icon(icon, color: fg, size: 20),
-    );
-  }
-}
-
 class _StatusBanner extends StatelessWidget {
   final Assignment assignment;
 
@@ -608,7 +487,7 @@ class _StatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (assignment.isCompleted) {
-      return _CompletedBanner(assignment: assignment);
+      return _GoodJobBanner(assignment: assignment);
     }
     return _PendingBanner(assignment: assignment);
   }
@@ -949,59 +828,17 @@ class _PendingBanner extends StatelessWidget {
   }
 }
 
-class _CompletedBanner extends StatelessWidget {
+class _GoodJobBanner extends StatelessWidget {
   final Assignment assignment;
 
-  const _CompletedBanner({required this.assignment});
+  const _GoodJobBanner({required this.assignment});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: AppColors.successBg,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 2),
-            child: Icon(
-              Icons.check_rounded,
-              size: 20,
-              color: AppColors.successGreen,
-            ),
-          ),
-          AppSpacing.h12,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  assignment.completedNote ?? '',
-                  style: AppTextStyles.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.successGreen,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+    final scoreText = assignment.score != null
+        ? 'You scored ${assignment.score} on this assignment. Keep up the good work!'
+        : 'Your submission has been recorded. Keep up the good work!';
 
-class _ResultCard extends StatelessWidget {
-  final num score;
-  const _ResultCard({required this.score});
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -1018,18 +855,18 @@ class _ResultCard extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: const BoxDecoration(
-              color: AppColors.warningAmber,
+              color: AppColors.successGreen,
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.emoji_events_rounded,
+              Icons.auto_stories_rounded,
               color: AppColors.white,
-              size: 26,
+              size: 24,
             ),
           ),
           const SizedBox(height: AppSpacing.s12),
           Text(
-            'Well Done!',
+            'Good Job!',
             style: AppTextStyles.outfit(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -1038,7 +875,7 @@ class _ResultCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'You scored $score on this assignment.',
+            scoreText,
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

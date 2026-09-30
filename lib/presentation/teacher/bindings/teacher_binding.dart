@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import 'package:tuoora/core/api/api_client.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
+import 'package:tuoora/data/repositories_impl/auth_repository_impl.dart';
 import 'package:tuoora/data/repositories/teacher_attendance_repository.dart';
 import 'package:tuoora/data/repositories/teacher_batch_repository.dart';
 import 'package:tuoora/data/repositories/teacher_profile_repository.dart';
@@ -45,7 +46,13 @@ class TeacherBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<ApiClient>(() => ApiClient());
-    Get.lazyPut(() => AuthRepository(Get.find<ApiClient>()), fenix: true);
+    if (!Get.isRegistered<AuthRepository>()) {
+      final authRepo = AuthRepository(Get.find<ApiClient>());
+      Get.put<AuthRepositoryImpl>(authRepo, permanent: true);
+      Get.put<AuthRepository>(authRepo, permanent: true);
+    } else if (!Get.isRegistered<AuthRepositoryImpl>()) {
+      Get.put<AuthRepositoryImpl>(Get.find<AuthRepository>(), permanent: true);
+    }
     Get.lazyPut<TeacherBatchRepositoryImpl>(
       () => TeacherBatchRepository(Get.find<ApiClient>()),
       fenix: true,

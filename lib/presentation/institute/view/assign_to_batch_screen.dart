@@ -537,7 +537,7 @@ class AssignToBatchScreen extends StatelessWidget {
           padding: AppSpacing.cardPadding,
           decoration: BoxDecoration(
             color: AppColors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
             border: Border.all(color: AppColors.borderGrey),
           ),
           child: Column(

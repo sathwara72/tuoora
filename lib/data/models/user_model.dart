@@ -130,7 +130,10 @@ class User {
       staffRole: _extractLabel(json['staff_role'] ?? json['role']),
       department: _extractLabel(json['staff_department'] ?? json['department']),
       mustChangePassword: json['must_change_password'] == true,
-      profileImage: json['profile_url'] ?? json['profile_image'],
+      profileImage: json['profile_url'] ??
+          json['profile_image'] ??
+          json['avatar_url'] ??
+          json['avatar'],
       institutes: parsedInstitutes,
     );
   }
@@ -182,6 +185,7 @@ class User {
     int? instituteId,
     String? instituteName,
     List<TeacherInstituteInfo>? institutes,
+    String? profileImage,
   }) {
     return User(
       id: id,
@@ -209,7 +213,7 @@ class User {
       staffRole: staffRole,
       department: department,
       mustChangePassword: mustChangePassword ?? this.mustChangePassword,
-      profileImage: profileImage,
+      profileImage: profileImage ?? this.profileImage,
       institutes: institutes ?? this.institutes,
     );
   }

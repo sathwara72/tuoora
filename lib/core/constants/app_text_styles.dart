@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 
 class AppTextStyles {
-  /// App-wide font (Outfit). Use the recommended weight hierarchy:
+  /// App-wide font (Baloo 2). Use the recommended weight hierarchy:
   ///   - `w700` for big headers / page titles
   ///   - `w500` / `w600` for section headers
   ///   - `w400` for body / subtitle / descriptions
@@ -16,7 +16,7 @@ class AppTextStyles {
     FontStyle? fontStyle,
     TextDecoration? decoration,
   }) {
-    return GoogleFonts.outfit(
+    return GoogleFonts.baloo2(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,

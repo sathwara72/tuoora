@@ -7,6 +7,7 @@ import 'package:tuoora/data/models/student_dashboard_model.dart';
 import 'package:tuoora/data/repositories/student_dashboard_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/presentation/student/models/assignment_model.dart';
 import 'package:tuoora/presentation/student/models/student_timetable_model.dart';
 import 'package:tuoora/presentation/student/widgets/birthday_wish_dialog.dart';
@@ -43,6 +44,7 @@ class StudentDashboardController extends GetxController {
 
   final RxBool isLoading = true.obs;
   final Rxn<StudentDashboardData> dashboardData = Rxn<StudentDashboardData>();
+  final RxString userAvatarUrl = ''.obs;
   
   final RxList<StudentTimetableSlot> timetableSlots = <StudentTimetableSlot>[].obs;
   final Rx<DateTime> selectedDate = DateTime.now().obs;
@@ -56,7 +58,18 @@ class StudentDashboardController extends GetxController {
     final apiClient = Get.find<ApiClient>();
     _repository = StudentDashboardRepository(apiClient);
     _timetableRepo = StudentTimetableRepository(apiClient);
+    if (Get.isRegistered<AuthService>()) {
+      userAvatarUrl.value =
+          Get.find<AuthService>().currentUser?.profileImage ?? '';
+    }
     fetchDashboard();
+  }
+
+  void updateAvatarUrl(String url) {
+    userAvatarUrl.value = url;
+    if (dashboardData.value != null) {
+      dashboardData.value = dashboardData.value!.copyWith(avatarUrl: url);
+    }
   }
 
   void selectDate(DateTime date) {
@@ -93,6 +106,9 @@ class StudentDashboardController extends GetxController {
       final data = futures[0] as StudentDashboardData;
       timetableSlots.assignAll(futures[1] as List<StudentTimetableSlot>);
       dashboardData.value = data;
+      if (data.avatarUrl != null && data.avatarUrl!.isNotEmpty) {
+        userAvatarUrl.value = data.avatarUrl!;
+      }
 
       _checkAndShowBirthdayWish(data);
     } catch (e) {

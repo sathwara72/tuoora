@@ -90,12 +90,12 @@ class StudentStudyMaterialScreen
       child: InkWell(
         onTap: () =>
             Get.toNamed(AppRoutes.studentStudyMaterialDetail, arguments: item),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.white,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
             border: Border.all(
               color: const Color(0xFFE2E8F0),
               width: 1,
@@ -368,7 +368,7 @@ class StudentStudyMaterialScreen
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Row(

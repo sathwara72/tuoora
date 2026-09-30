@@ -115,8 +115,15 @@ class ExamModel {
 
   String get examTypeLabel => ExamType.labelFor(examType);
   String get formattedDate => DateFormat('dd MMM, yyyy').format(examDate);
-  bool get isScheduled => status == 'scheduled';
-  bool get isCompleted => status == 'completed';
+
+  bool get _datePassed {
+    final today = DateTime.now();
+    return examDate.isBefore(DateTime(today.year, today.month, today.day));
+  }
+
+  bool get isScheduled => status == 'scheduled' && !_datePassed;
+  bool get isCompleted =>
+      status == 'completed' || (status == 'scheduled' && _datePassed);
   bool get isCancelled => status == 'cancelled';
 
   factory ExamModel.fromJson(Map<String, dynamic> json) {

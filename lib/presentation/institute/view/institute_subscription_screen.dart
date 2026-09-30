@@ -139,7 +139,7 @@ class InstituteSubscriptionScreen
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         boxShadow: [
           BoxShadow(
             color: isActive
@@ -278,7 +278,7 @@ class InstituteSubscriptionScreen
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: AppColors.fieldBorder),
         boxShadow: [
           BoxShadow(

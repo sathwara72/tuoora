@@ -582,7 +582,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen> {
       padding: AppSpacing.all32,
       decoration: BoxDecoration(
         color: AppColors.background,
-        borderRadius: BorderRadius.circular(AppSpacing.s32),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
       child: Column(
         children: [

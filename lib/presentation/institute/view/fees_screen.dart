@@ -98,7 +98,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       )
                     : null,
                 color: isCollectedTab ? null : AppColors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                 border: Border.all(
                   color: isCollectedTab ? Colors.transparent : AppColors.borderGrey,
                   width: 1.5,
@@ -182,7 +182,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       )
                     : null,
                 color: isPendingTab ? null : AppColors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                 border: Border.all(
                   color: isPendingTab ? Colors.transparent : const Color(0xFFFDE68A),
                   width: 1.5,
@@ -487,7 +487,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: const Color(0xFFFDE68A)),
         boxShadow: [
           BoxShadow(

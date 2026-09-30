@@ -171,13 +171,16 @@ class _ExamCard extends StatelessWidget {
 
   ({String label, Color color}) get _badge {
     final s = exam.status.toLowerCase();
-    if (s == 'completed')
+    if (s == 'completed') {
       return (label: 'Completed', color: AppColors.successGreen);
-    if (s == 'cancelled')
+    }
+    if (s == 'cancelled') {
       return (label: 'Cancelled', color: AppColors.textTertiary);
+    }
     if (exam.isToday) return (label: 'Today', color: Colors.amber.shade800);
-    if (exam.isPendingMarks)
+    if (exam.isPendingMarks) {
       return (label: 'Pending Marks', color: AppColors.primaryBrand);
+    }
     return (label: 'Scheduled', color: const Color(0xFF2563EB));
   }
 

@@ -45,9 +45,13 @@ class InstituteBinding extends Bindings {
     Get.lazyPut<StudentRepositoryImpl>(
       () => StudentRepository(Get.find<ApiClient>()),
     );
-    Get.lazyPut<AuthRepositoryImpl>(
-      () => AuthRepository(Get.find<ApiClient>()),
-    );
+    if (!Get.isRegistered<AuthRepository>()) {
+      final authRepo = AuthRepository(Get.find<ApiClient>());
+      Get.put<AuthRepositoryImpl>(authRepo, permanent: true);
+      Get.put<AuthRepository>(authRepo, permanent: true);
+    } else if (!Get.isRegistered<AuthRepositoryImpl>()) {
+      Get.put<AuthRepositoryImpl>(Get.find<AuthRepository>(), permanent: true);
+    }
     Get.lazyPut<InstituteRepositoryImpl>(
       () => InstituteRepository(Get.find<ApiClient>()),
     );

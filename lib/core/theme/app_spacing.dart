@@ -147,8 +147,8 @@ class AppSpacing {
   // ============================================
   // Card design-system tokens
   // ============================================
-  /// Corner radius for any card surface (8 dp).
-  static const double cardRadius = s8;
+  /// Corner radius for any card surface (7 dp).
+  static const double cardRadius = 7.0;
 
   /// Internal padding for any card surface (8 dp on all sides).
   static const EdgeInsets cardPadding = EdgeInsets.all(s8);

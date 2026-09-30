@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/data/models/notification_preference_model.dart';
 import 'package:tuoora/presentation/institute/controllers/notification_preferences_controller.dart';
@@ -59,7 +60,7 @@ class NotificationPreferencesScreen
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
         boxShadow: [
           BoxShadow(

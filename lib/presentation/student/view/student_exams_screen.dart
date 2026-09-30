@@ -79,7 +79,7 @@ class StudentExamsScreen extends GetView<StudentExamsController> {
       padding: AppSpacing.all20,
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: AppColors.successBg),
       ),
       child: Row(

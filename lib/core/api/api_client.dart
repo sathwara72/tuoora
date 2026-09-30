@@ -10,6 +10,7 @@ import 'package:tuoora/core/services/bug_report_service.dart';
 import 'package:tuoora/core/services/institute_account_status_handler.dart';
 import 'package:tuoora/core/services/server_error_handler.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'package:tuoora/data/repositories/auth_repository.dart';
 import 'package:tuoora/data/repositories_impl/auth_repository_impl.dart';
 
 class ApiClient extends GetConnect {
@@ -34,7 +35,14 @@ class ApiClient extends GetConnect {
         request.headers['Accept'] = 'application/json';
       }
 
-      if (authService.isAuthenticated) {
+      final path = request.url.path;
+      final isAuthRefresh = path.endsWith(ApiConstants.authRefresh) ||
+          path.endsWith('${ApiConstants.authRefresh}/');
+      final isLogin = path.endsWith(ApiConstants.instituteLogin) ||
+          path.endsWith(ApiConstants.studentLogin) ||
+          path.endsWith(ApiConstants.teacherLogin);
+
+      if (authService.isAuthenticated && !isAuthRefresh && !isLogin) {
         request.headers['Authorization'] = 'Bearer ${authService.token}';
       }
 
@@ -192,34 +200,66 @@ class ApiClient extends GetConnect {
   }
 
   Future<_RefreshOutcome> _doRefresh() async {
-    if (!Get.isRegistered<AuthRepositoryImpl>()) {
-      return _RefreshOutcome.unavailable;
-    }
     final auth = Get.find<AuthService>();
     final refreshToken = auth.refreshToken;
-    if (refreshToken.isEmpty) return _RefreshOutcome.rejected;
+    if (refreshToken.isEmpty) {
+      if (kDebugMode) debugPrint('ApiClient: Refresh token is empty');
+      return _RefreshOutcome.rejected;
+    }
+
+    AuthRepositoryImpl repo;
+    if (Get.isRegistered<AuthRepositoryImpl>()) {
+      repo = Get.find<AuthRepositoryImpl>();
+    } else if (Get.isRegistered<AuthRepository>()) {
+      repo = Get.find<AuthRepository>();
+    } else {
+      repo = AuthRepository(this);
+    }
 
     try {
-      final repo = Get.find<AuthRepositoryImpl>();
+      if (kDebugMode) debugPrint('ApiClient: Refreshing access token...');
       final fresh = await repo.refreshAccessToken(refreshToken);
-      if (fresh == null) return _RefreshOutcome.rejected;
+      if (fresh == null) {
+        if (kDebugMode) {
+          debugPrint('ApiClient: Refresh token expired or rejected by server');
+        }
+        return _RefreshOutcome.rejected;
+      }
       await auth.updateTokens(
         accessToken: fresh.accessToken,
         refreshToken: fresh.refreshToken,
       );
+      if (kDebugMode) debugPrint('ApiClient: Token successfully refreshed!');
       return _RefreshOutcome.refreshed;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint('ApiClient: Token refresh exception: $e');
       return _RefreshOutcome.unavailable;
     }
+  }
+
+  String _detectRole(AuthService auth) {
+    final currentRole = auth.currentUser?.role;
+    if (currentRole != null && currentRole.isNotEmpty) {
+      return currentRole.toUpperCase();
+    }
+    final storedRole = auth.userRoleFromStorage;
+    if (storedRole != null && storedRole.isNotEmpty) {
+      return storedRole.toUpperCase();
+    }
+    final route = Get.currentRoute.toLowerCase();
+    if (route.contains('/institute')) return 'INSTITUTE';
+    if (route.contains('/teacher')) return 'TEACHER';
+    if (route.contains('/student')) return 'STUDENT';
+    return 'STUDENT';
   }
 
   Future<void> _forceLogout() async {
     if (_loggingOut) return;
     _loggingOut = true;
-    var role = 'STUDENT';
+    String role = 'STUDENT';
     try {
       final auth = Get.find<AuthService>();
-      role = auth.currentUser?.role ?? role;
+      role = _detectRole(auth);
       await auth.clearSession();
     } catch (_) {}
     _goToLogin(role);

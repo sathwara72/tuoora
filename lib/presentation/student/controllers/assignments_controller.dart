@@ -136,7 +136,7 @@ class AssignmentsController extends GetxController {
             id: attachment.id,
             name: attachment.name,
             sizeLabel: attachmentDetail.fileSize,
-            kind: attachment.kind,
+            kind: kindForExtension(attachmentDetail.extension),
             url: attachmentDetail.previewUrl,
             extensionLabel: attachmentDetail.extension,
           );

@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:get/get.dart';
@@ -7,9 +9,11 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_empty_view.dart';
+import 'package:tuoora/core/widgets/app_network_image.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/student_bottom_nav.dart';
 import 'package:tuoora/presentation/student/controllers/student_controller.dart';
+import 'package:tuoora/presentation/student/controllers/student_profile_controller.dart';
 import 'package:tuoora/presentation/student/widgets/student_app_bar.dart';
 import 'package:tuoora/presentation/student/controllers/assignments_controller.dart';
 import 'package:tuoora/presentation/student/controllers/student_dashboard_controller.dart';
@@ -68,7 +72,6 @@ class StudentDashboard extends GetView<StudentDashboardController> {
           final assignmentItems = controller.dashboardAssignments;
           final classes = controller.classesForSelectedDate;
           final selectedDate = controller.selectedDate.value;
-          final isSelectedToday = _isSameDay(selectedDate, DateTime.now());
           final classRows = _resolveClassRows(classes, selectedDate);
 
           return Column(
@@ -91,47 +94,7 @@ class StudentDashboard extends GetView<StudentDashboardController> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _buildWeekCalendar(),
-                        const SizedBox(height: AppSpacing.s20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                isSelectedToday
-                                    ? "Today's Classes"
-                                    : "${DateFormat('EEEE').format(selectedDate)}'s Classes",
-                                style: AppTextStyles.outfit(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () =>
-                                  Get.toNamed(AppRoutes.studentTimetable),
-                              behavior: HitTestBehavior.opaque,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'View Timetable',
-                                    style: AppTextStyles.outfit(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.orangeTag,
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.chevron_right_rounded,
-                                    size: 16,
-                                    color: AppColors.orangeTag,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.s12),
+                        const SizedBox(height: AppSpacing.s16),
                         if (classRows.isEmpty)
                           const AppEmptyView(
                             icon: Icons.event_busy_outlined,
@@ -147,18 +110,14 @@ class StudentDashboard extends GetView<StudentDashboardController> {
                               child: _ClassListItem(data: row),
                             ),
                           ),
-                        const SizedBox(height: AppSpacing.s8),
-                        _buildQuickActionsGrid(),
-                        const SizedBox(height: AppSpacing.s24),
+                        const SizedBox(height: AppSpacing.s6),
+                        _AttendanceHeroCard(
+                          status: data.todayAttendance.status,
+                          detail: data.todayAttendance.text,
+                          onTap: _openAttendanceTab,
+                        ),
                         if (assignmentItems.isNotEmpty) ...[
-                          _HomeSectionHeader(
-                            icon: Icons.assignment_rounded,
-                            iconBg: AppColors.primaryBrandLight,
-                            iconColor: AppColors.primaryBrand,
-                            title: AppStrings.homeTodaysTasks,
-                            onSeeAll: _openAssignmentsTab,
-                          ),
-                          const SizedBox(height: AppSpacing.s12),
+                          const SizedBox(height: AppSpacing.s16),
                           ...assignmentItems.map((item) {
                             return Padding(
                               padding: const EdgeInsets.only(
@@ -171,29 +130,16 @@ class StudentDashboard extends GetView<StudentDashboardController> {
                               ),
                             );
                           }),
-                          const SizedBox(height: AppSpacing.s24),
                         ],
-                        _AttendanceHeroCard(
-                          status: data.todayAttendance.status,
-                          detail: data.todayAttendance.text,
-                          onTap: _openAttendanceTab,
-                        ),
-                        const SizedBox(height: AppSpacing.s24),
+                        const SizedBox(height: AppSpacing.s16),
+                        _buildQuickActionsGrid(),
+                        const SizedBox(height: AppSpacing.s20),
                         if (data.studyMaterials.isNotEmpty ||
                             data.pendingFees.isNotEmpty) ...[
                           _buildSummaryTilesRow(data),
-                          const SizedBox(height: AppSpacing.s24),
+                          const SizedBox(height: AppSpacing.s16),
                         ],
                         if (data.studyMaterials.isNotEmpty) ...[
-                          _HomeSectionHeader(
-                            icon: Icons.menu_book_rounded,
-                            iconBg: AppColors.violetSoft,
-                            iconColor: AppColors.violet,
-                            title: AppStrings.homeRecentStudyMaterial,
-                            onSeeAll: () =>
-                                Get.toNamed(AppRoutes.studentStudyMaterial),
-                          ),
-                          const SizedBox(height: AppSpacing.s12),
                           ...data.studyMaterials.take(2).map((material) {
                             return Padding(
                               padding: const EdgeInsets.only(
@@ -609,18 +555,7 @@ class _GreetingHeader extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Row(
         children: [
-          CircleAvatar(
-            radius: AppSpacing.s24,
-            backgroundColor: AppColors.primaryBrandLight,
-            child: Text(
-              initials,
-              style: AppTextStyles.outfit(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryBrand,
-              ),
-            ),
-          ),
+          _buildAvatar(),
           AppSpacing.h12,
           Expanded(
             child: Column(
@@ -652,6 +587,95 @@ class _GreetingHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    return Obx(() {
+      String localPath = '';
+      String remoteUrl = '';
+
+      if (Get.isRegistered<StudentProfileController>()) {
+        final profileCtrl = Get.find<StudentProfileController>();
+        localPath = profileCtrl.profileImagePath.value;
+        remoteUrl = profileCtrl.profileData.value?.header.avatarUrl ?? '';
+      }
+
+      if (remoteUrl.isEmpty && Get.isRegistered<StudentDashboardController>()) {
+        final dashCtrl = Get.find<StudentDashboardController>();
+        remoteUrl = dashCtrl.userAvatarUrl.value;
+        if (remoteUrl.isEmpty) {
+          remoteUrl = dashCtrl.dashboardData.value?.avatarUrl ?? '';
+        }
+      }
+
+      if (remoteUrl.isEmpty && Get.isRegistered<AuthService>()) {
+        remoteUrl = Get.find<AuthService>().currentUser?.profileImage ?? '';
+      }
+
+      final hasLocal = localPath.isNotEmpty && File(localPath).existsSync();
+      final hasRemote = remoteUrl.isNotEmpty && remoteUrl.startsWith('http');
+
+      Widget avatarChild;
+      if (hasLocal) {
+        avatarChild = Image.file(
+          File(localPath),
+          fit: BoxFit.cover,
+          width: 48,
+          height: 48,
+          errorBuilder: (_, _, _) => _initialsWidget(),
+        );
+      } else if (hasRemote) {
+        avatarChild = AppNetworkImage(
+          url: remoteUrl,
+          fit: BoxFit.cover,
+          width: 48,
+          height: 48,
+          placeholder: _initialsWidget(),
+          errorWidget: _initialsWidget(),
+        );
+      } else {
+        avatarChild = _initialsWidget();
+      }
+
+      return Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppColors.primaryBrandLight,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.white, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryBrand.withValues(alpha: 0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipOval(
+          child: SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: avatarChild,
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _initialsWidget() {
+    return Container(
+      color: AppColors.primaryBrandLight,
+      alignment: Alignment.center,
+      child: Text(
+        initials,
+        style: AppTextStyles.outfit(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: AppColors.primaryBrand,
+        ),
       ),
     );
   }
@@ -866,73 +890,6 @@ class _ClassStatusPill extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _HomeSectionHeader extends StatelessWidget {
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String title;
-  final VoidCallback? onSeeAll;
-
-  const _HomeSectionHeader({
-    required this.icon,
-    required this.iconBg,
-    required this.iconColor,
-    required this.title,
-    this.onSeeAll,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: iconBg,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: iconColor, size: 15),
-        ),
-        AppSpacing.h8,
-        Expanded(
-          child: Text(
-            title,
-            style: AppTextStyles.outfit(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-        if (onSeeAll != null)
-          GestureDetector(
-            onTap: onSeeAll,
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'See all',
-                  style: AppTextStyles.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.orangeTag,
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  size: 16,
-                  color: AppColors.orangeTag,
-                ),
-              ],
-            ),
-          ),
-      ],
     );
   }
 }

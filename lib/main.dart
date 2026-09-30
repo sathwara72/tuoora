@@ -20,6 +20,8 @@ import 'package:tuoora/core/services/branding_service.dart';
 import 'package:tuoora/core/services/institute_account_status_handler.dart';
 import 'package:tuoora/core/services/bug_report_service.dart';
 import 'package:tuoora/core/services/server_error_handler.dart';
+import 'package:tuoora/data/repositories/auth_repository.dart';
+import 'package:tuoora/data/repositories_impl/auth_repository_impl.dart';
 import 'package:tuoora/core/services/media_cache_service.dart';
 import 'package:tuoora/core/services/notifications/notification_router.dart';
 import 'package:tuoora/core/services/push_notification_service.dart';
@@ -51,6 +53,9 @@ void main() async {
   Get.put(ServerErrorHandler());
   Get.put(AppUpdateService());
   await Get.putAsync(() => AuthService().init());
+  final authRepo = AuthRepository(Get.find<ApiClient>());
+  Get.put<AuthRepositoryImpl>(authRepo, permanent: true);
+  Get.put<AuthRepository>(authRepo, permanent: true);
   await Get.putAsync(() => BrandingService().init());
   await Get.putAsync(() => NotificationRouter().init());
   await Get.putAsync(() => PushNotificationService().init());

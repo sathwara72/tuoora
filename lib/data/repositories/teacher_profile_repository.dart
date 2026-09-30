@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:tuoora/core/api/api_client.dart';
+import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/data/models/user_model.dart';
@@ -59,6 +60,11 @@ class TeacherProfileRepository implements TeacherProfileRepositoryImpl {
       formData,
     );
     if (response.status.hasError) {
+      if (response.statusCode == 422 && response.body?['errors'] != null) {
+        throw ValidationException(
+          Map<String, dynamic>.from(response.body['errors']),
+        );
+      }
       throw Exception(response.body?['message'] ?? 'Failed to update avatar');
     }
     return TeacherProfile.fromJson(

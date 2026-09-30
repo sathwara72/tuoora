@@ -1,8 +1,9 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
@@ -25,20 +26,9 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
         bottom: false,
         child: Column(
           children: [
-            StudentAppBar(
+            const StudentAppBar(
+              title: 'Attendance',
               isRoot: true,
-              titleWidget: Obx(
-                () => Text(
-                  '${controller.currentMonthName} ${controller.currentYear}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.outfit(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
             ),
             Expanded(
               child: RefreshIndicator(
@@ -63,14 +53,10 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        StudentSectionHeader(title: AppStrings.today),
-                        const SizedBox(height: AppSpacing.s12),
-                        _buildTodayCard(),
-                        const SizedBox(height: AppSpacing.s24),
-                        StudentSectionHeader(title: AppStrings.month),
-                        const SizedBox(height: AppSpacing.s12),
+                        _buildHeroCard(),
+                        const SizedBox(height: AppSpacing.s20),
                         _buildMonthCard(),
-                        const SizedBox(height: AppSpacing.s24),
+                        const SizedBox(height: AppSpacing.s20),
                         StudentSectionHeader(title: AppStrings.monthlySummary),
                         const SizedBox(height: AppSpacing.s12),
                         _buildSummaryCard(),
@@ -90,19 +76,18 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
     );
   }
 
-  Widget _buildTodayCard() {
+  Widget _buildHeroCard() {
     return Container(
-      padding: AppSpacing.cardPadding,
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        gradient: const LinearGradient(
+          colors: [AppColors.primaryBrandLight, AppColors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.4)),
       ),
       child: Obx(() {
         if (controller.isLoading.value) {
@@ -112,47 +97,102 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
         final data = controller.attendanceData.value?.today;
         if (data == null) return const SizedBox();
 
-        final isNotMarked = data.status == 'Absent';
+        final todayLabel = DateFormat('d MMM yyyy').format(DateTime.now());
+        final statusLower = data.status.trim().toLowerCase();
 
-        return Row(
+        final Color statusBg;
+        final Color statusFg;
+        final IconData statusIcon;
+        final Border? statusBorder;
+
+        if (statusLower.contains('present') || statusLower == 'p') {
+          statusBg = AppColors.successBg;
+          statusFg = AppColors.greenText;
+          statusIcon = Icons.check_circle_rounded;
+          statusBorder = null;
+        } else if (statusLower.contains('absent') || statusLower == 'a') {
+          statusBg = AppColors.errorBg;
+          statusFg = AppColors.bohoRed;
+          statusIcon = Icons.cancel_rounded;
+          statusBorder = null;
+        } else if (statusLower.contains('holiday') || statusLower == 'h') {
+          statusBg = AppColors.warningBg;
+          statusFg = AppColors.warningAmber;
+          statusIcon = Icons.calendar_month_rounded;
+          statusBorder = null;
+        } else {
+          statusBg = AppColors.fieldBg;
+          statusFg = AppColors.textSecondary;
+          statusIcon = Icons.schedule_rounded;
+          statusBorder = Border.all(color: AppColors.borderGrey);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: isNotMarked
-                    ? AppColors.primaryBrand
-                    : AppColors.successBg,
-                borderRadius: BorderRadius.circular(AppSpacing.s8),
+                color: AppColors.primaryBrand,
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(
-                isNotMarked ? Icons.close_rounded : Icons.check_rounded,
-                color: isNotMarked ? AppColors.white : AppColors.successGreen,
-                size: 24,
-              ),
-            ),
-            AppSpacing.h16,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  const Icon(
+                    Icons.calendar_today_rounded,
+                    size: 12,
+                    color: AppColors.white,
+                  ),
+                  const SizedBox(width: 6),
                   Text(
-                    data.status,
+                    'Today, $todayLabel',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isNotMarked
-                          ? AppColors.textPrimary
-                          : AppColors.successGreen,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.white,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    data.text,
-                    style: AppTextStyles.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textTertiary,
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: statusBg,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                border: statusBorder,
+              ),
+              child: Row(
+                children: [
+                  Icon(statusIcon, color: statusFg, size: 22),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          data.status,
+                          style: AppTextStyles.outfit(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: statusFg,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          data.text,
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -310,7 +350,7 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
   }
 
   Widget _buildCalendarGrid() {
-    final days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    final days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return Obx(() {
       if (controller.isLoading.value) {
         return _buildCalendarGridShimmer();
@@ -320,6 +360,9 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
       final Map<int, String> statusDays = calendarData?.days ?? {};
 
       final viewDate = controller.viewDate.value;
+      final now = DateTime.now();
+      final isCurrentMonth =
+          viewDate.year == now.year && viewDate.month == now.month;
 
       int daysInMonth = DateTime(viewDate.year, viewDate.month + 1, 0).day;
       int firstWeekday = DateTime(viewDate.year, viewDate.month, 1).weekday;
@@ -361,8 +404,11 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
 
       for (int day = 1; day <= daysInMonth; day++) {
         String type = statusDays[day] ?? 'no_class';
+        final isToday = isCurrentMonth && day == now.day;
 
-        currentRow.add(Expanded(child: _buildDateBubble('$day', type)));
+        currentRow.add(
+          Expanded(child: _buildDateBubble('$day', type, isToday: isToday)),
+        );
 
         if (currentRow.length == 7) {
           rows.add(
@@ -394,7 +440,7 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
     });
   }
 
-  Widget _buildDateBubble(String day, String type) {
+  Widget _buildDateBubble(String day, String type, {bool isToday = false}) {
     // Dashed sibling-month placeholder is a separate render path.
     if (type == 'p_dashed') {
       return Center(
@@ -422,7 +468,7 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
     // visually distinct at a glance. Holiday used to share Absent's red,
     // which was the main source of confusion — it now reads as amber
     // ("special day off") instead of as a missed attendance.
-    final ({Color bg, Color fg}) palette = switch (type) {
+    ({Color bg, Color fg}) palette = switch (type) {
       'present' || 'p' => (bg: AppColors.successBg, fg: AppColors.greenText),
       'absent' || 'a' => (bg: AppColors.errorBg, fg: AppColors.bohoRed),
       'holiday' || 'h' => (bg: AppColors.warningBg, fg: AppColors.warningAmber),
@@ -437,6 +483,10 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
         type != 'holiday' &&
         type != 'h';
 
+    if (isToday) {
+      palette = (bg: AppColors.primaryBrand, fg: AppColors.white);
+    }
+
     return Center(
       child: Container(
         width: AppSpacing.s36,
@@ -444,13 +494,16 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
         decoration: BoxDecoration(
           color: palette.bg,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          border: isToday
+              ? Border.all(color: AppColors.instBrandOrange, width: 2)
+              : null,
         ),
         child: Stack(
           alignment: Alignment.center,
           children: [
             // Faint × behind the date number on no-class days, so the cell
             // visually reads as "nothing scheduled" without losing the date.
-            if (isNoClass)
+            if (isNoClass && !isToday)
               Icon(
                 Icons.close_rounded,
                 size: 28,
@@ -485,6 +538,7 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
           'No class',
           icon: Icons.close_rounded,
         ),
+        _legendItem(AppColors.primaryBrand, AppColors.white, 'Today'),
       ],
     );
   }
@@ -546,62 +600,175 @@ class AttendanceScreen extends GetView<AttendanceHistoryController> {
         final summary = data.summary;
         final percent = summary.pct;
 
-        return Row(
+        final calendarDays = data.calendar.days;
+        final viewDate = controller.viewDate.value;
+        final daysInMonth = DateTime(viewDate.year, viewDate.month + 1, 0).day;
+        int presentCount = 0, absentCount = 0, holidayCount = 0;
+        for (final v in calendarDays.values) {
+          switch (v) {
+            case 'present':
+            case 'p':
+              presentCount++;
+            case 'absent':
+            case 'a':
+              absentCount++;
+            case 'holiday':
+            case 'h':
+              holidayCount++;
+          }
+        }
+        final noClassCount =
+            (daysInMonth - presentCount - absentCount - holidayCount).clamp(
+              0,
+              daysInMonth,
+            );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
-              width: 64,
-              height: 64,
-              child: CustomPaint(
-                painter: _SummaryRingPainter(percent: percent),
-                child: Center(
-                  child: Text(
-                    '$percent%',
-                    style: AppTextStyles.outfit(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.successGreen,
+            Row(
+              children: [
+                SizedBox(
+                  width: 64,
+                  height: 64,
+                  child: CustomPaint(
+                    painter: _SummaryRingPainter(percent: percent),
+                    child: Center(
+                      child: Text(
+                        '$percent%',
+                        style: AppTextStyles.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.successGreen,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+                AppSpacing.h16,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        summary.label,
+                        style: AppTextStyles.outfit(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$percent%',
+                        style: AppTextStyles.outfit(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${summary.present} present - ${summary.absent} absent',
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            AppSpacing.h16,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    summary.label,
-                    style: AppTextStyles.outfit(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textTertiary,
-                    ),
+            const SizedBox(height: AppSpacing.s16),
+            Row(
+              children: [
+                Expanded(
+                  child: _miniStat(
+                    icon: Icons.check_circle_rounded,
+                    bg: AppColors.successBg,
+                    fg: AppColors.greenText,
+                    count: presentCount,
+                    label: 'Present',
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '$percent%',
-                    style: AppTextStyles.outfit(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  child: _miniStat(
+                    icon: Icons.cancel_rounded,
+                    bg: AppColors.errorBg,
+                    fg: AppColors.bohoRed,
+                    count: absentCount,
+                    label: 'Absent',
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${summary.present} present - ${summary.absent} absent',
-                    style: AppTextStyles.outfit(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.textTertiary,
-                    ),
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  child: _miniStat(
+                    icon: Icons.calendar_month_rounded,
+                    bg: AppColors.warningBg,
+                    fg: AppColors.warningAmber,
+                    count: holidayCount,
+                    label: 'Holidays',
                   ),
-                ],
-              ),
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  child: _miniStat(
+                    icon: Icons.cancel_rounded,
+                    bg: AppColors.fieldBg,
+                    fg: AppColors.textMuted,
+                    count: noClassCount,
+                    label: 'No Class',
+                  ),
+                ),
+              ],
             ),
           ],
         );
       }),
+    );
+  }
+
+  Widget _miniStat({
+    required IconData icon,
+    required Color bg,
+    required Color fg,
+    required int count,
+    required String label,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppSpacing.s12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 16, color: fg),
+          const SizedBox(height: 4),
+          Text(
+            '$count',
+            style: AppTextStyles.outfit(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: fg,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.outfit(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textTertiary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

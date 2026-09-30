@@ -314,7 +314,7 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(
           color: isCancelled ? const Color(0xFFFECDD3) : const Color(0xFFE2E8F0),
         ),

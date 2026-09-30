@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:tuoora/config/app_routes.dart';
+import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
@@ -40,14 +41,24 @@ class TeacherProfileController extends GetxController {
     try {
       final picked = await ImagePicker().pickImage(
         source: ImageSource.gallery,
-        imageQuality: 85,
+        imageQuality: 75,
+        maxWidth: 1080,
+        maxHeight: 1080,
       );
       if (picked == null) return;
       isUploadingAvatar.value = true;
       profile.value = await _repository.updateAvatar(picked.path);
       AppSnackBar.success('Profile photo updated');
     } catch (e) {
-      AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      if (e is ValidationException && e.errors.isNotEmpty) {
+        final firstError = e.errors.values.first;
+        final message = firstError is List
+            ? firstError.first.toString()
+            : firstError.toString();
+        AppSnackBar.error(message);
+      } else {
+        AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       isUploadingAvatar.value = false;
     }
