@@ -266,6 +266,7 @@ class AddEditStudentScreen extends GetView<InstituteStudentController> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: AppInputField(
@@ -275,19 +276,25 @@ class AddEditStudentScreen extends GetView<InstituteStudentController> {
                               controller: phoneCtrl,
                               keyboardType: TextInputType.phone,
                               maxLength: 10,
+                              errorText: index < controller.optionalPhoneErrors.length
+                                  ? controller.optionalPhoneErrors[index].value
+                                  : null,
                               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             ),
                           ),
                           const SizedBox(width: 8),
-                          IconButton(
-                            onPressed: () => controller.removeOptionalPhone(index),
-                            icon: const Icon(
-                              Icons.remove_circle_outline_rounded,
-                              color: Colors.redAccent,
-                              size: 22,
+                          Padding(
+                            padding: const EdgeInsets.only(top: 14.0),
+                            child: IconButton(
+                              onPressed: () => controller.removeOptionalPhone(index),
+                              icon: const Icon(
+                                Icons.remove_circle_outline_rounded,
+                                color: Colors.redAccent,
+                                size: 22,
+                              ),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
                             ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
                           ),
                         ],
                       ),

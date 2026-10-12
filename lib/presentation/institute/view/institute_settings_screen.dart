@@ -254,16 +254,19 @@ class InstituteSettingsScreen extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 64,
+                    height: 64,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF25D366),
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.cardRadius,
-                      ),
+                      color: const Color(0xFF25D366).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    alignment: Alignment.center,
+                    child: SvgPicture.asset(
+                      AppImages.icWhatsapp,
+                      width: 44,
+                      height: 44,
                     ),
                   ),
-                  SvgPicture.asset(AppImages.icWhatsapp, width: 48, height: 48),
                 ],
               ),
               AppSpacing.v20,
