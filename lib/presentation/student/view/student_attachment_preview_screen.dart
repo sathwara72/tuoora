@@ -1,6 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:video_player/video_player.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -140,74 +143,160 @@ class _ImagePreview extends StatelessWidget {
   }
 }
 
-class _VideoPreview extends StatelessWidget {
+class _VideoPreview extends StatefulWidget {
   final AssignmentAttachment attachment;
 
   const _VideoPreview({required this.attachment});
 
   @override
+  State<_VideoPreview> createState() => _VideoPreviewState();
+}
+
+class _VideoPreviewState extends State<_VideoPreview> {
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  bool _loading = true;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final url = widget.attachment.url;
+    if (url == null || url.isEmpty) {
+      setState(() {
+        _failed = true;
+        _loading = false;
+      });
+      return;
+    }
+    try {
+      _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
+      await _videoController!.initialize();
+      _chewieController = ChewieController(
+        videoPlayerController: _videoController!,
+        autoPlay: false,
+        looping: false,
+        showOptions: false,
+        placeholder: const CommonLoading(color: AppColors.white),
+      );
+      if (mounted) setState(() => _loading = false);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _failed = true;
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _chewieController?.dispose();
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final duration = attachment.durationLabel ?? '0:00';
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       child: Container(
-        height: 220,
+        constraints: const BoxConstraints(minHeight: 220),
         color: AppColors.textPrimary,
+        child: _failed
+            ? const _ErrorPlaceholder(icon: Icons.videocam_off_rounded)
+            : (_loading || _chewieController == null)
+            ? const _LoadingPlaceholder()
+            : AspectRatio(
+                aspectRatio: _videoController!.value.aspectRatio,
+                child: Chewie(controller: _chewieController!),
+              ),
+      ),
+    );
+  }
+}
+
+class _DocumentPreview extends StatefulWidget {
+  final AssignmentAttachment attachment;
+
+  const _DocumentPreview({required this.attachment});
+
+  @override
+  State<_DocumentPreview> createState() => _DocumentPreviewState();
+}
+
+class _DocumentPreviewState extends State<_DocumentPreview> {
+  WebViewController? _controller;
+  bool _loading = true;
+  bool _failed = false;
+
+  static const _docExtensions = [
+    '.pdf',
+    '.doc',
+    '.docx',
+    '.ppt',
+    '.pptx',
+    '.xls',
+    '.xlsx',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    final url = widget.attachment.url;
+    if (url == null || url.isEmpty) {
+      _failed = true;
+      _loading = false;
+      return;
+    }
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(AppColors.background)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (_) {
+            if (mounted) setState(() => _loading = false);
+          },
+          onWebResourceError: (_) {
+            if (mounted) {
+              setState(() {
+                _failed = true;
+                _loading = false;
+              });
+            }
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(_resolvedUrl(url)));
+  }
+
+  String _resolvedUrl(String raw) {
+    final lower = raw.toLowerCase();
+    if (_docExtensions.any(lower.endsWith)) {
+      return 'https://docs.google.com/viewer?embedded=true&url=$raw';
+    }
+    return raw;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_failed || _controller == null) {
+      return const _ErrorPlaceholder(icon: Icons.insert_drive_file_outlined);
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 320),
+        color: AppColors.background,
         child: Stack(
           children: [
-            Center(
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.95),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: AppColors.textPrimary,
-                  size: 36,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
-              child: Column(
-                children: [
-                  Container(
-                    height: 2,
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(1),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        AppStrings.studentAttachmentPreview000,
-                        style: AppTextStyles.outfit(
-                          fontSize: 10,
-                          color: AppColors.white.withValues(alpha: 0.85),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Text(
-                        duration,
-                        style: AppTextStyles.outfit(
-                          fontSize: 10,
-                          color: AppColors.white.withValues(alpha: 0.85),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            Positioned.fill(child: WebViewWidget(controller: _controller!)),
+            if (_loading) const _LoadingPlaceholder(),
           ],
         ),
       ),
@@ -215,150 +304,81 @@ class _VideoPreview extends StatelessWidget {
   }
 }
 
-class _DocumentPreview extends StatelessWidget {
-  final AssignmentAttachment attachment;
-
-  const _DocumentPreview({required this.attachment});
-
-  @override
-  Widget build(BuildContext context) {
-    final ext = attachment.inferredExtension;
-    final pages = attachment.pageCount ?? 1;
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: AppSpacing.cardPadding,
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _docHeadline(attachment.name),
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.s12),
-                ...List.generate(7, (i) {
-                  final widthFactor = (i == 6) ? 0.55 : (0.7 + (i % 3) * 0.1);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: widthFactor.clamp(0.4, 1.0),
-                      child: Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: AppColors.borderGrey,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'PAGE 1 OF $pages',
-                style: AppTextStyles.outfit(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textTertiary,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              Text(
-                '${ext.isEmpty ? 'FILE' : ext} · ${attachment.sizeLabel}',
-                style: AppTextStyles.outfit(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textTertiary,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _docHeadline(String filename) {
-    final dot = filename.lastIndexOf('.');
-    return dot == -1 ? filename : filename.substring(0, dot);
-  }
-}
-
-class _AudioPreview extends StatelessWidget {
+class _AudioPreview extends StatefulWidget {
   final AssignmentAttachment attachment;
 
   const _AudioPreview({required this.attachment});
 
   @override
+  State<_AudioPreview> createState() => _AudioPreviewState();
+}
+
+class _AudioPreviewState extends State<_AudioPreview> {
+  VideoPlayerController? _audioController;
+  ChewieController? _chewieController;
+  bool _loading = true;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final url = widget.attachment.url;
+    if (url == null || url.isEmpty) {
+      setState(() {
+        _failed = true;
+        _loading = false;
+      });
+      return;
+    }
+    try {
+      _audioController = VideoPlayerController.networkUrl(Uri.parse(url));
+      await _audioController!.initialize();
+      _chewieController = ChewieController(
+        videoPlayerController: _audioController!,
+        autoPlay: false,
+        looping: false,
+        aspectRatio: 16 / 9,
+        allowFullScreen: false,
+        showOptions: false,
+        placeholder: const CommonLoading(color: AppColors.white),
+      );
+      if (mounted) setState(() => _loading = false);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _failed = true;
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _chewieController?.dispose();
+    _audioController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final duration = attachment.durationLabel ?? '0:00';
-    return Container(
-      height: 180,
-      decoration: BoxDecoration(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 180),
         color: AppColors.primaryBrandLight,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.play_arrow_rounded,
-              color: AppColors.orangeTag,
-              size: 36,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s12),
-          Text(
-            duration,
-            style: AppTextStyles.outfit(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.orangeTag,
-            ),
-          ),
-        ],
+        child: _failed
+            ? const _ErrorPlaceholder(icon: Icons.audiotrack_rounded)
+            : (_loading || _chewieController == null)
+            ? const _LoadingPlaceholder()
+            : AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Chewie(controller: _chewieController!),
+              ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tuoora/core/theme/app_spacing.dart';
 
 class AppTheme {
   // Mirrors AppColors.primaryBrand (the actual brand color used pervasively
@@ -36,18 +37,18 @@ class AppTheme {
     // that don't set their own backgroundColor.
     scaffoldBackgroundColor: Colors.transparent,
     textTheme: TextTheme(
-      headlineLarge: GoogleFonts.outfit(
+      headlineLarge: GoogleFonts.baloo2(
         fontSize: 28,
         fontWeight: FontWeight.w700,
         color: onSurface,
       ),
-      headlineMedium: GoogleFonts.outfit(
+      headlineMedium: GoogleFonts.baloo2(
         fontSize: 24,
         fontWeight: FontWeight.w600,
         color: onSurface,
       ),
-      bodyLarge: GoogleFonts.outfit(fontSize: 16, color: onSurface),
-      bodyMedium: GoogleFonts.outfit(fontSize: 14, color: onSurface),
+      bodyLarge: GoogleFonts.baloo2(fontSize: 16, color: onSurface),
+      bodyMedium: GoogleFonts.baloo2(fontSize: 14, color: onSurface),
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
@@ -60,7 +61,7 @@ class AppTheme {
         foregroundColor: onPrimary,
         minimumSize: _buttonMinSize,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-        textStyle: GoogleFonts.outfit(
+        textStyle: GoogleFonts.baloo2(
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
@@ -69,7 +70,7 @@ class AppTheme {
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         minimumSize: _buttonMinSize,
-        textStyle: GoogleFonts.outfit(
+        textStyle: GoogleFonts.baloo2(
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
@@ -78,10 +79,15 @@ class AppTheme {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         minimumSize: _buttonMinSize,
-        textStyle: GoogleFonts.outfit(
+        textStyle: GoogleFonts.baloo2(
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
+      ),
+    ),
+    cardTheme: CardThemeData(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
       ),
     ),
   );

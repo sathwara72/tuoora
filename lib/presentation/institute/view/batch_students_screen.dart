@@ -379,13 +379,6 @@ class BatchStudentsScreen extends StatelessWidget {
   }
 
   String _getEnrollmentText(Student student) {
-    final enrollmentId = student.enrollmentID?.toString().trim() ?? '';
-    if (enrollmentId.isNotEmpty) {
-      return 'Enrollment ID: $enrollmentId';
-    }
-    if (student.idHash.isNotEmpty) {
-      return 'Enrollment ID: ${student.idHash}';
-    }
-    return 'Enrollment ID: ${student.id}';
+    return 'Enrollment ID: ${student.displayEnrollmentId}';
   }
 }

@@ -222,7 +222,7 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),

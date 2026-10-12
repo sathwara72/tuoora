@@ -1,4 +1,3 @@
-import 'package:tuoora/data/repositories/student_notifications_repository.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/presentation/institute/bindings/institute_binding.dart';
@@ -105,8 +104,6 @@ import 'package:tuoora/presentation/student/view/student_receipts_list_screen.da
 import 'package:tuoora/presentation/student/controllers/student_receipts_list_controller.dart';
 import 'package:tuoora/presentation/student/controllers/fees_controller.dart';
 import 'package:tuoora/presentation/student/controllers/student_notifications_controller.dart';
-import 'package:tuoora/presentation/student/view/student_notification_preferences_screen.dart';
-import 'package:tuoora/presentation/student/controllers/student_notification_preferences_controller.dart';
 import 'package:tuoora/presentation/student/view/student_study_material_screen.dart';
 import 'package:tuoora/presentation/student/controllers/student_study_material_controller.dart';
 import 'package:tuoora/presentation/student/view/student_study_material_detail_screen.dart';
@@ -268,17 +265,6 @@ class AppPages {
         }
         Get.lazyPut<StudentReceiptsListController>(
           () => StudentReceiptsListController(),
-        );
-      }),
-    ),
-    GetPage(
-      name: AppRoutes.studentNotificationPreferences,
-      page: () => const StudentNotificationPreferencesScreen(),
-      binding: BindingsBuilder(() {
-        Get.lazyPut<StudentNotificationPreferencesController>(
-          () => StudentNotificationPreferencesController(
-            StudentNotificationsRepository(Get.find()),
-          ),
         );
       }),
     ),

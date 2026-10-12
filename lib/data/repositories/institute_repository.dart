@@ -572,28 +572,32 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<List<int>> exportFeeReport() async {
+  Future<List<int>> exportFeeReport({int? batchId}) async {
     return _downloadFile(
-      ApiConstants.instituteReportFeeExport,
+      _withBatch(ApiConstants.instituteReportFeeExport, batchId),
       acceptHeader: 'application/pdf',
     );
   }
 
   @override
-  Future<List<int>> exportAttendanceReport() async {
+  Future<List<int>> exportAttendanceReport({int? batchId}) async {
     return _downloadFile(
-      ApiConstants.instituteReportAttendanceExport,
+      _withBatch(ApiConstants.instituteReportAttendanceExport, batchId),
       acceptHeader: 'application/pdf',
     );
   }
 
   @override
-  Future<List<int>> exportPerformanceReport() async {
+  Future<List<int>> exportPerformanceReport({int? batchId}) async {
     return _downloadFile(
-      ApiConstants.instituteReportPerformanceExport,
+      _withBatch(ApiConstants.instituteReportPerformanceExport, batchId),
       acceptHeader: 'application/pdf',
     );
   }
+
+  /// Limits an export endpoint to one batch; no batch means all batches.
+  String _withBatch(String endpoint, int? batchId) =>
+      batchId == null ? endpoint : '$endpoint?batch_id=$batchId';
 
   @override
   Future<List<StudentBatchItem>> getStudentsForBatchReport(int batchId) async {
@@ -991,6 +995,7 @@ class InstituteRepository implements InstituteRepositoryImpl {
       'title': data['title'],
       'description': data['description'],
       'due_date': data['due_date'],
+      'allow_late_submission': data['allow_late_submission'] == true ? '1' : '0',
     };
 
     if (data['attachment'] != null) {

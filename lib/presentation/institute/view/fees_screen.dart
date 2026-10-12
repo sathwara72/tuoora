@@ -98,7 +98,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       )
                     : null,
                 color: isCollectedTab ? null : AppColors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                 border: Border.all(
                   color: isCollectedTab ? Colors.transparent : AppColors.borderGrey,
                   width: 1.5,
@@ -182,7 +182,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       )
                     : null,
                 color: isPendingTab ? null : AppColors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                 border: Border.all(
                   color: isPendingTab ? Colors.transparent : const Color(0xFFFDE68A),
                   width: 1.5,
@@ -431,11 +431,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
         final studentName = record.student?.name.trim().isNotEmpty == true
             ? record.student!.name
             : 'Student';
-        final displayId = (record.student?.enrollmentID?.isNotEmpty == true)
-            ? record.student!.enrollmentID!
-            : (record.student?.id != null && record.student!.id != 0
-                ? record.student!.id.toString()
-                : (record.studentId != 0 ? record.studentId.toString() : 'N/A'));
+        final displayId = record.student?.displayEnrollmentId ?? 'N/A';
 
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.s10),
@@ -491,7 +487,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: const Color(0xFFFDE68A)),
         boxShadow: [
           BoxShadow(
@@ -535,7 +531,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                     Row(
                       children: [
                         Text(
-                          student.enrollmentId,
+                          student.enrollmentId.trim().isNotEmpty
+                              ? student.enrollmentId
+                              : 'N/A',
                           style: AppTextStyles.outfit(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,

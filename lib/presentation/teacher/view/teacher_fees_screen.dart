@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -21,7 +22,7 @@ class TeacherFeesScreen extends GetView<TeacherFeesController> {
             TeacherAppBar(title: 'Fees · ${controller.batch.name}'),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const Center(child: CommonLoading());
                 }
                 if (controller.errorMessage.value != null) {
@@ -31,7 +32,10 @@ class TeacherFeesScreen extends GetView<TeacherFeesController> {
                       child: Text(
                         controller.errorMessage.value!,
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
+                        style: AppTextStyles.outfit(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                   );
@@ -40,12 +44,15 @@ class TeacherFeesScreen extends GetView<TeacherFeesController> {
                   return Center(
                     child: Text(
                       'No fee records yet.',
-                      style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: controller.fetchFees,
+                  onRefresh: () => PullRefresh.run(controller.fetchFees),
                   child: ListView.separated(
                     padding: AppSpacing.x16,
                     itemCount: controller.fees.length,
@@ -58,7 +65,9 @@ class TeacherFeesScreen extends GetView<TeacherFeesController> {
                         padding: AppSpacing.cardPadding,
                         decoration: BoxDecoration(
                           color: AppColors.white,
-                          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                          borderRadius: BorderRadius.circular(
+                            AppSpacing.cardRadius,
+                          ),
                           border: Border.all(color: AppColors.borderGrey),
                         ),
                         child: Row(
@@ -77,15 +86,23 @@ class TeacherFeesScreen extends GetView<TeacherFeesController> {
                                   ),
                                   Text(
                                     '₹${paid.toStringAsFixed(0)} / ₹${total.toStringAsFixed(0)}',
-                                    style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
+                                    style: AppTextStyles.outfit(
+                                      fontSize: 12,
+                                      color: AppColors.textTertiary,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryBrand.withValues(alpha: 0.1),
+                                color: AppColors.primaryBrand.withValues(
+                                  alpha: 0.1,
+                                ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(

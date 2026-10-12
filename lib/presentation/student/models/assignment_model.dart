@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/enums/app_enums.dart';
 
+const _imageExtensions = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'};
+const _videoExtensions = {'mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'};
+const _audioExtensions = {'mp3', 'wav', 'm4a', 'aac', 'ogg'};
+
+AssignmentAttachmentKind kindForExtension(String extension) {
+  final ext = extension.toLowerCase();
+  if (_imageExtensions.contains(ext)) return AssignmentAttachmentKind.image;
+  if (_videoExtensions.contains(ext)) return AssignmentAttachmentKind.video;
+  if (_audioExtensions.contains(ext)) return AssignmentAttachmentKind.audio;
+  return AssignmentAttachmentKind.document;
+}
+
 class AssignmentAttachment {
   final String id;
   final String name;
@@ -47,16 +59,25 @@ class Assignment {
   final List<AssignmentAttachment> attachments;
   final String? pendingNote;
   final String? completedNote;
-  final String? gradeNote;
+
+  /// Raw grading score, if the teacher has entered one. There is no
+  /// total-marks/max-score field for homework in the backend, so this is
+  /// shown as a bare number — never as "x / y" or a percentage.
+  final num? score;
   final bool isOverdue;
   final DateTime? createdAt;
   final String? submissionNote;
   final String? submissionAttachmentUrl;
+  final String? submittedAtLabel;
 
-  /// True once the due date has passed, regardless of submission status —
-  /// unlike [isOverdue] (display-only, forced false once completed), this
-  /// is what gates whether a (re)submission is still allowed.
+  /// True once the due date has passed AND late submission isn't allowed
+  /// for this assignment — unlike [isOverdue] (display-only, forced false
+  /// once completed), this is what gates whether a (re)submission is still
+  /// allowed.
   final bool dueDatePassed;
+
+  /// Whether the teacher/institute allowed submissions after the due date.
+  final bool allowLateSubmission;
 
   const Assignment({
     required this.id,
@@ -74,15 +95,26 @@ class Assignment {
     this.attachments = const [],
     this.pendingNote,
     this.completedNote,
-    this.gradeNote,
+    this.score,
     this.isOverdue = false,
     this.createdAt,
     this.submissionNote,
     this.submissionAttachmentUrl,
+    this.submittedAtLabel,
     this.dueDatePassed = false,
+    this.allowLateSubmission = false,
   });
 
   bool get isCompleted => badge == AssignmentBadge.done;
+
+  /// Individual instruction lines derived from the raw description text
+  /// (split on newlines). Falls back to a single-item list containing the
+  /// whole description when it has no line breaks.
+  List<String> get instructionLines => (instructions ?? '')
+      .split('\n')
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toList();
 
   factory Assignment.fromJson(
     Map<String, dynamic> json, {
@@ -111,11 +143,7 @@ class Assignment {
       final url = json['attachment_url'].toString();
       final name = url.split('/').last;
       final ext = name.split('.').last.toLowerCase();
-      var kind = AssignmentAttachmentKind.document;
-      if (['jpg', 'jpeg', 'png'].contains(ext)) {
-        kind = AssignmentAttachmentKind.image;
-      }
-      if (['mp4', 'mov'].contains(ext)) kind = AssignmentAttachmentKind.video;
+      final kind = kindForExtension(ext);
 
       attachments.add(
         AssignmentAttachment(
@@ -169,6 +197,8 @@ class Assignment {
     final bool duePassed =
         json['is_overdue'] == true || (dueDiffDays != null && dueDiffDays < 0);
 
+    final bool allowLate = json['allow_late_submission'] == true;
+
     final bool overdue = !isCompleted && duePassed;
 
     AssignmentBadge badge = AssignmentBadge.today;
@@ -183,17 +213,21 @@ class Assignment {
     }
 
     String? completedNoteStr;
-    String? gradeNoteStr;
+    num? scoreVal;
     String? submissionNoteStr;
     String? submissionAttachmentUrlStr;
+    String? submittedAtLabelStr;
     if (json['submission'] != null) {
       final sub = json['submission'];
       completedNoteStr = 'Status: ${sub['status'] ?? 'Submitted'}';
       if (sub['score'] != null) {
-        gradeNoteStr = 'Score: ${sub['score']}';
+        scoreVal = sub['score'] is num
+            ? sub['score'] as num
+            : num.tryParse(sub['score'].toString());
       }
       submissionNoteStr = sub['note'];
       submissionAttachmentUrlStr = sub['attachment_url'];
+      submittedAtLabelStr = sub['submitted_at_label'];
     }
 
     DateTime? createdAtDt;
@@ -220,10 +254,12 @@ class Assignment {
       attachments: attachments,
       pendingNote: overdue ? 'Overdue' : null,
       completedNote: completedNoteStr,
-      gradeNote: gradeNoteStr,
+      score: scoreVal,
       submissionNote: submissionNoteStr,
       submissionAttachmentUrl: submissionAttachmentUrlStr,
-      dueDatePassed: duePassed,
+      submittedAtLabel: submittedAtLabelStr,
+      dueDatePassed: duePassed && !allowLate,
+      allowLateSubmission: allowLate,
       isOverdue: overdue,
       createdAt: createdAtDt,
     );

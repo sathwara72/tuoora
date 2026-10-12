@@ -77,11 +77,43 @@ class AuthRepository implements AuthRepositoryImpl {
       throw Exception(response.body?['message'] ?? 'Login failed');
     }
 
-    final data = response.body['data'];
-    final token =
-        data['token']?.toString() ?? data['access_token']?.toString() ?? '';
-    final accessToken = data['access_token']?.toString() ?? token;
-    final refreshToken = data['refresh_token']?.toString() ?? '';
+    final body = response.body;
+    Map<String, dynamic> data = {};
+    if (body is Map) {
+      if (body['data'] is Map) {
+        data = Map<String, dynamic>.from(body['data']);
+        if (data['user'] is Map) {
+          final userMap = Map<String, dynamic>.from(data['user']);
+          userMap.addAll(data);
+          data = userMap;
+        }
+      } else {
+        data = Map<String, dynamic>.from(body);
+      }
+    }
+
+    String? findVal(String key) {
+      if (data[key] != null && data[key].toString().isNotEmpty) {
+        return data[key].toString();
+      }
+      if (body is Map && body[key] != null && body[key].toString().isNotEmpty) {
+        return body[key].toString();
+      }
+      if (data['tokens'] is Map && data['tokens'][key] != null) {
+        return data['tokens'][key].toString();
+      }
+      if (body is Map &&
+          body['tokens'] is Map &&
+          body['tokens'][key] != null) {
+        return body['tokens'][key].toString();
+      }
+      return null;
+    }
+
+    final token = findVal('token') ?? findVal('access_token') ?? '';
+    final accessToken = findVal('access_token') ?? token;
+    final refreshToken = findVal('refresh_token') ?? '';
+
     return User.fromJson(
       data,
       token,
@@ -107,13 +139,39 @@ class AuthRepository implements AuthRepositoryImpl {
       }
       return null;
     }
-    final data = response.body?['data'];
-    if (data is! Map) return null;
-    final newAccess =
-        data['access_token']?.toString() ?? data['token']?.toString();
-    final newRefresh = data['refresh_token']?.toString();
+
+    final body = response.body;
+    Map<String, dynamic> data = {};
+    if (body is Map) {
+      if (body['data'] is Map) {
+        data = Map<String, dynamic>.from(body['data']);
+      } else {
+        data = Map<String, dynamic>.from(body);
+      }
+    }
+
+    String? findVal(String key) {
+      if (data[key] != null && data[key].toString().isNotEmpty) {
+        return data[key].toString();
+      }
+      if (body is Map && body[key] != null && body[key].toString().isNotEmpty) {
+        return body[key].toString();
+      }
+      if (data['tokens'] is Map && data['tokens'][key] != null) {
+        return data['tokens'][key].toString();
+      }
+      if (body is Map &&
+          body['tokens'] is Map &&
+          body['tokens'][key] != null) {
+        return body['tokens'][key].toString();
+      }
+      return null;
+    }
+
+    final newAccess = findVal('access_token') ?? findVal('token');
+    final newRefresh = findVal('refresh_token') ?? refreshToken;
     if (newAccess == null || newAccess.isEmpty) return null;
-    return (accessToken: newAccess, refreshToken: newRefresh ?? refreshToken);
+    return (accessToken: newAccess, refreshToken: newRefresh);
   }
 
   @override

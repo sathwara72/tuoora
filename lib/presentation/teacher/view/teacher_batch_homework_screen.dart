@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -42,7 +43,7 @@ class TeacherBatchHomeworkScreen
             ),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const Center(child: CommonLoading());
                 }
                 if (controller.homeworks.isEmpty) {
@@ -57,7 +58,7 @@ class TeacherBatchHomeworkScreen
                   );
                 }
                 return RefreshIndicator(
-                  onRefresh: controller.fetchHomeworks,
+                  onRefresh: () => PullRefresh.run(controller.fetchHomeworks),
                   child: ListView.separated(
                     padding: AppSpacing.x16,
                     itemCount: controller.homeworks.length,

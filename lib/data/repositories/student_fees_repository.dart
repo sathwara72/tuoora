@@ -139,7 +139,7 @@ class StudentFeesRepository {
   }) async {
     final client = HttpClient();
     Uri currentUri = initialUri;
-    HttpClientResponse? response;
+    late HttpClientResponse response;
     int redirectCount = 0;
 
     try {
@@ -181,10 +181,8 @@ class StudentFeesRepository {
         break;
       }
 
-      if (response == null || response.statusCode != 200) {
-        throw Exception(
-          'Download failed (${response?.statusCode ?? 'No response'})',
-        );
+      if (response.statusCode != 200) {
+        throw Exception('Download failed (${response.statusCode})');
       }
 
       final contentLength = response.contentLength;

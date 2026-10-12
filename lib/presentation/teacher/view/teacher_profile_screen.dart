@@ -338,7 +338,7 @@ class TeacherProfileScreen extends GetView<TeacherProfileController> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
         boxShadow: [
           BoxShadow(

@@ -83,6 +83,13 @@ class TeacherAddHomeworkScreen extends GetView<TeacherAddHomeworkController> {
                         ),
                       ),
                     ),
+                    AppSpacing.v16,
+                    Obx(
+                      () => _lateSubmissionToggle(
+                        value: controller.allowLateSubmission.value,
+                        onChanged: (v) => controller.allowLateSubmission.value = v,
+                      ),
+                    ),
                     if (!controller.isEditing) ...[
                       AppSpacing.v16,
                       _label('Attachment (optional)'),
@@ -153,6 +160,49 @@ class TeacherAddHomeworkScreen extends GetView<TeacherAddHomeworkController> {
           ),
         ),
       );
+
+  Widget _lateSubmissionToggle({
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.fieldBg,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(color: AppColors.fieldBorder),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Allow Late Submission',
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Students can still submit after the due date passes.',
+                  style: AppTextStyles.outfit(fontSize: 12, color: AppColors.fieldLabel),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: AppColors.primaryBrand,
+            activeThumbColor: Colors.white,
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _field({
     required TextEditingController controller,

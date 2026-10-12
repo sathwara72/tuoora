@@ -1,7 +1,6 @@
 class StudentIdCard {
   final String studentName;
   final String? studentPhone;
-  final String? studentStandard;
   final String? studentDob;
   final String? studentProfileImageUrl;
   final String batchName;
@@ -16,7 +15,6 @@ class StudentIdCard {
   const StudentIdCard({
     required this.studentName,
     this.studentPhone,
-    this.studentStandard,
     this.studentDob,
     this.studentProfileImageUrl,
     required this.batchName,
@@ -36,7 +34,6 @@ class StudentIdCard {
     return StudentIdCard(
       studentName: student['name'] ?? '',
       studentPhone: student['phone'],
-      studentStandard: student['standard'],
       studentDob: student['dob'],
       studentProfileImageUrl: student['profile_image_url'],
       batchName: student['batch'] ?? 'N/A',

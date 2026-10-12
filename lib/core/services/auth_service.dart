@@ -29,6 +29,16 @@ class AuthService extends GetxService {
       _storage.read('stay_authenticated') ?? false;
   bool get isLoggedIn => _storage.read('logged_in') ?? false;
 
+  String? get userRoleFromStorage {
+    try {
+      final userData = _storage.read('user');
+      if (userData is Map && userData['role'] != null) {
+        return userData['role'].toString();
+      }
+    } catch (_) {}
+    return null;
+  }
+
   void _loadSession() {
     try {
       final userData = _storage.read('user');
@@ -101,6 +111,14 @@ class AuthService extends GetxService {
     } else {
       await _storage.remove(emailKey);
       await _storage.remove(passwordKey);
+    }
+  }
+
+  Future<void> updateProfileImage(String url) async {
+    if (_currentUser.value != null) {
+      final updated = _currentUser.value!.copyWith(profileImage: url);
+      _currentUser.value = updated;
+      await _storage.write('user', updated.toJson());
     }
   }
 

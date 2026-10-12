@@ -220,7 +220,7 @@ class FeeReceiptScreen extends GetView<InstituteController> {
               ),
               AppSpacing.v4,
               Text(
-                'Enrollment ID: ${r.student?.enrollmentId ?? r.studentId}',
+                'Enrollment ID: ${r.student?.displayEnrollmentId ?? 'N/A'}',
                 style: AppTextStyles.outfit(
                   fontSize: 12,
                   color: AppColors.textSecondary,

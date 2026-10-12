@@ -1,4 +1,4 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -84,8 +84,9 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
                     onRefresh: () => controller.fetchStudents(reset: true),
                     color: AppColors.primaryBrand,
                     child: Obx(() {
-                      final isSearching =
-                          controller.searchQuery.value.trim().isNotEmpty;
+                      final isSearching = controller.searchQuery.value
+                          .trim()
+                          .isNotEmpty;
                       return CommonStateWidget(
                         isLoading: controller.isLoadingStudents.value,
                         isEmpty: controller.students.isEmpty,
@@ -104,7 +105,8 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
                             const EdgeInsets.only(bottom: 96),
                           ),
                           physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: controller.students.length +
+                          itemCount:
+                              controller.students.length +
                               (controller.isLoadMore.value ? 1 : 0),
                           itemBuilder: (context, index) {
                             if (index == controller.students.length) {
@@ -124,7 +126,6 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
                               child: _buildStudentCard(
                                 name: student.name,
                                 id: student.id,
-                                grade: student.grade,
                                 imageUrl: student.imageUrl,
                               ),
                             );
@@ -158,7 +159,6 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
   Widget _buildStudentCard({
     required String name,
     required int id,
-    required String grade,
     required String imageUrl,
   }) {
     return GestureDetector(
@@ -205,29 +205,6 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
                     ),
-                  ),
-                  AppSpacing.v4,
-                  Row(
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.school_rounded,
-                            size: AppSpacing.s18,
-                            color: AppColors.fieldLabel,
-                          ),
-                          AppSpacing.h4,
-                          Text(
-                            grade,
-                            style: AppTextStyles.outfit(
-                              fontSize: AppSpacing.s16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ),
                 ],
               ),

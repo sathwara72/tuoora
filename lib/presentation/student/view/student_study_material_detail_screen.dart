@@ -148,7 +148,7 @@ class StudentStudyMaterialDetailScreen
       padding: AppSpacing.cardPadding,
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(

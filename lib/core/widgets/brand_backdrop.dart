@@ -223,7 +223,7 @@ class LoginBackdrop extends StatelessWidget {
               children: [
                 Text(
                   quote,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.baloo2(
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                     color: const Color(0xFF6B7280),
@@ -392,7 +392,7 @@ class RoleLoginBackdrop extends StatelessWidget {
                   Text(
                     'Your Learning\nJourney Starts Here',
                     textAlign: TextAlign.end,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.baloo2(
                       fontSize: 12,
                       color: const Color(0xFF9AA5B8),
                       height: 1.35,

@@ -182,7 +182,7 @@ class TeacherDashboardScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                     border: Border.all(
                       color: const Color(0xFFF1F5F9),
                       width: 1.2,
@@ -494,7 +494,7 @@ class _DashboardTile extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
           boxShadow: [
             BoxShadow(
@@ -595,7 +595,7 @@ class _ClassCard extends StatelessWidget {
         width: 260,
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           border: Border.all(
             color: phase == ClassPhase.ongoing
                 ? color.withValues(alpha: 0.5)
@@ -611,7 +611,7 @@ class _ClassCard extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
           child: Row(
             children: [
               Container(width: 6, color: color),

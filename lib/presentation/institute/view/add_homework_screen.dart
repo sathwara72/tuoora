@@ -50,6 +50,8 @@ class AddHomeworkScreen extends StatelessWidget {
                     const InstituteLabel(AppStrings.instDueDateLabel),
                     _buildDatePicker(context, controller),
                     AppSpacing.v24,
+                    _buildLateSubmissionToggle(controller),
+                    AppSpacing.v24,
                     AppInputField(
                       label: AppStrings.instInstructionDetailsLabel,
                       controller: controller.descriptionController,
@@ -142,6 +144,51 @@ class AddHomeworkScreen extends StatelessWidget {
             }
             return const SizedBox.shrink();
           }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLateSubmissionToggle(HomeworkController controller) {
+    return Container(
+      padding: AppSpacing.all16,
+      decoration: BoxDecoration(
+        color: AppColors.fieldBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  AppStrings.instAllowLateSubmissionLabel,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                AppSpacing.v4,
+                Text(
+                  AppStrings.instAllowLateSubmissionDesc,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Obx(
+            () => Switch(
+              value: controller.allowLateSubmission.value,
+              onChanged: (v) => controller.allowLateSubmission.value = v,
+              activeTrackColor: AppColors.primaryBrand,
+              activeThumbColor: AppColors.white,
+            ),
+          ),
         ],
       ),
     );

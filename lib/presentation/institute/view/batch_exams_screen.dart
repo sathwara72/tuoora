@@ -3,6 +3,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/institute/controllers/exam_controller.dart';
 import 'package:tuoora/presentation/institute/models/batch_model.dart';
 import 'package:tuoora/presentation/institute/models/exam_model.dart';
@@ -272,7 +273,7 @@ class _BatchExamsScreenState extends State<BatchExamsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
         boxShadow: [
           BoxShadow(

@@ -103,16 +103,19 @@ class TeacherExam {
 
   bool get isScheduled {
     final s = status.trim().toLowerCase();
-    if (s == 'scheduled') return true;
     if (s == 'completed' || s == 'cancelled' || s == 'ongoing' || s == 'active') return false;
-    final parsed = DateTime.tryParse(examDate);
-    if (parsed != null) {
-      final now = DateTime.now();
-      final todayMidnight = DateTime(now.year, now.month, now.day);
-      final examMidnight = DateTime(parsed.year, parsed.month, parsed.day);
-      if (examMidnight.isAfter(todayMidnight)) return true;
-    }
-    return false;
+    if (s != 'scheduled') return false;
+    final d = _examDay;
+    if (d == null) return true;
+    final now = DateTime.now();
+    final todayMidnight = DateTime(now.year, now.month, now.day);
+    return !d.isBefore(todayMidnight);
+  }
+
+  bool get isCompleted {
+    final s = status.trim().toLowerCase();
+    if (s == 'completed') return true;
+    return s == 'scheduled' && !isScheduled;
   }
 
   DateTime? get _examDay {

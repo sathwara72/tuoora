@@ -795,7 +795,7 @@ class _ResourceCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: AppColors.borderGrey),
       ),
       padding: const EdgeInsets.all(14),

@@ -12,7 +12,6 @@ class User {
   final String? address;
   final int? instituteId;
   final int? batchId;
-  final String? standard;
   final String? idHash;
   final String? city;
   final String? state;
@@ -47,7 +46,6 @@ class User {
     this.address,
     this.instituteId,
     this.batchId,
-    this.standard,
     this.idHash,
     this.city,
     this.state,
@@ -120,7 +118,6 @@ class User {
       address: json['address'],
       instituteId: instId is int ? instId : int.tryParse(instId?.toString() ?? ''),
       batchId: json['batch_id'],
-      standard: json['standard'],
       idHash: json['id_hash'],
       city: json['city'],
       state: json['state'],
@@ -133,7 +130,10 @@ class User {
       staffRole: _extractLabel(json['staff_role'] ?? json['role']),
       department: _extractLabel(json['staff_department'] ?? json['department']),
       mustChangePassword: json['must_change_password'] == true,
-      profileImage: json['profile_url'] ?? json['profile_image'],
+      profileImage: json['profile_url'] ??
+          json['profile_image'] ??
+          json['avatar_url'] ??
+          json['avatar'],
       institutes: parsedInstitutes,
     );
   }
@@ -161,7 +161,6 @@ class User {
       'address': address,
       'institute_id': instituteId,
       'batch_id': batchId,
-      'standard': standard,
       'id_hash': idHash,
       'city': city,
       'state': state,
@@ -186,6 +185,7 @@ class User {
     int? instituteId,
     String? instituteName,
     List<TeacherInstituteInfo>? institutes,
+    String? profileImage,
   }) {
     return User(
       id: id,
@@ -201,7 +201,6 @@ class User {
       address: address,
       instituteId: instituteId ?? this.instituteId,
       batchId: batchId,
-      standard: standard,
       idHash: idHash,
       city: city,
       state: state,
@@ -214,7 +213,7 @@ class User {
       staffRole: staffRole,
       department: department,
       mustChangePassword: mustChangePassword ?? this.mustChangePassword,
-      profileImage: profileImage,
+      profileImage: profileImage ?? this.profileImage,
       institutes: institutes ?? this.institutes,
     );
   }

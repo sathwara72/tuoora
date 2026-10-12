@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -40,7 +41,7 @@ class AddOnsScreen extends GetView<AddOnsController> {
             const InstituteAppBar(title: 'Add-ons', isRoot: false),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const CommonLoading();
                 }
 
@@ -58,13 +59,14 @@ class AddOnsScreen extends GetView<AddOnsController> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: controller.fetchAddOns,
+                  onRefresh: () => PullRefresh.run(controller.fetchAddOns),
                   color: AppColors.primaryBrand,
                   child: ListView.separated(
                     padding: AppSpacing.all16,
                     itemCount: addOns.length,
                     separatorBuilder: (_, _) => AppSpacing.v16,
-                    itemBuilder: (context, index) => _AddOnCard(addOn: addOns[index]),
+                    itemBuilder: (context, index) =>
+                        _AddOnCard(addOn: addOns[index]),
                   ),
                 );
               }),
@@ -126,7 +128,10 @@ class _AddOnCard extends StatelessWidget {
               ),
               if (addOn.purchased)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.successBg,
                     borderRadius: BorderRadius.circular(8),

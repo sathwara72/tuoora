@@ -282,7 +282,12 @@ class NotesController extends GetxController {
   }
 
   Future<void> pickImage(ImageSource source) async {
-    final XFile? image = await _picker.pickImage(source: source);
+    final XFile? image = await _picker.pickImage(
+      source: source,
+      imageQuality: 75,
+      maxWidth: 1600,
+      maxHeight: 1600,
+    );
     if (image == null) return;
     selectedImagePath.value = image.path;
   }
