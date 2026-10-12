@@ -1415,6 +1415,7 @@ class _InlineAcademicReportState extends State<_InlineAcademicReport> {
             report: report,
             feeBalanceFooter: widget.feeBalanceFooter,
             afterFeeBalance: widget.afterFeeBalance,
+            fallbackStudent: widget.student,
           );
         }),
       ],

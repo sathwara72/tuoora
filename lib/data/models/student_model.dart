@@ -175,6 +175,7 @@ class Student {
       'state': state,
       'country': country,
       'pincode': pincode,
+      'optional_phones': optionalPhones,
     };
   }
 
@@ -184,6 +185,7 @@ class Student {
     String? email,
     String? phone,
     int? instituteId,
+    String? enrollmentID,
     int? parentId,
     int? batchId,
     String? standard,
@@ -212,6 +214,7 @@ class Student {
     String? state,
     String? country,
     String? pincode,
+    List<String>? optionalPhones,
     // copyWith cannot set a field back to null, so removing a student from a
     // batch has to clear the batch explicitly.
     bool clearBatch = false,
@@ -222,6 +225,7 @@ class Student {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       instituteId: instituteId ?? this.instituteId,
+      enrollmentID: enrollmentID ?? this.enrollmentID,
       parentId: parentId ?? this.parentId,
       batchId: clearBatch ? null : (batchId ?? this.batchId),
       standard: standard ?? this.standard,
@@ -251,6 +255,7 @@ class Student {
       state: state ?? this.state,
       country: country ?? this.country,
       pincode: pincode ?? this.pincode,
+      optionalPhones: optionalPhones ?? this.optionalPhones,
     );
   }
 

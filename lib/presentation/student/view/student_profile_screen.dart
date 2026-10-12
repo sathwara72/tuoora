@@ -890,17 +890,45 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
   Widget _buildYourInfoCard(StudentProfileInfo info) {
     return _buildCardWrap(
       children: [
-        _buildInfoRow('Phone', info.phone),
-        Divider(height: 1, color: AppColors.borderGrey.withValues(alpha: 0.5)),
-        _buildInfoRow('Email', info.email),
-        if (info.parentName != null) ...[
+        if (info.phone.isNotEmpty) _buildInfoRow('Phone', info.phone),
+        if (info.optionalPhones.isNotEmpty) ...[
+          for (int i = 0; i < info.optionalPhones.length; i++) ...[
+            Divider(
+              height: 1,
+              color: AppColors.borderGrey.withValues(alpha: 0.5),
+            ),
+            _buildInfoRow(
+              info.optionalPhones.length == 1
+                  ? 'Alt Phone'
+                  : 'Alt Phone ${i + 1}',
+              info.optionalPhones[i],
+            ),
+          ],
+        ],
+        if (info.email.isNotEmpty) ...[
+          Divider(
+            height: 1,
+            color: AppColors.borderGrey.withValues(alpha: 0.5),
+          ),
+          _buildInfoRow('Email', info.email),
+        ],
+        if (info.schoolName != null && info.schoolName!.isNotEmpty) ...[
+          Divider(
+            height: 1,
+            color: AppColors.borderGrey.withValues(alpha: 0.5),
+          ),
+          _buildInfoRow('School', info.schoolName!),
+        ],
+        if (info.parentName != null && info.parentName!.isNotEmpty) ...[
           Divider(
             height: 1,
             color: AppColors.borderGrey.withValues(alpha: 0.5),
           ),
           _buildInfoRow(
-            info.parentRelation,
-            '${info.parentName} • ${info.parentPhone ?? ''}',
+            info.parentRelation.isNotEmpty ? info.parentRelation : 'Guardian',
+            info.parentPhone != null && info.parentPhone!.isNotEmpty
+                ? '${info.parentName} • ${info.parentPhone}'
+                : info.parentName!,
           ),
         ],
       ],
@@ -911,9 +939,10 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
     return Padding(
       padding: AppSpacing.cardPadding,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 60,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 72),
             child: Text(
               label,
               style: AppTextStyles.outfit(
@@ -922,6 +951,7 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
               ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,

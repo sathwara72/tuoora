@@ -25,7 +25,10 @@ class StudentProfileModel {
       ),
       stats: StudentProfileStats.fromJson(json['stats'] ?? {}),
       studentQr: qr,
-      info: StudentProfileInfo.fromJson(json['info'] ?? {}),
+      info: StudentProfileInfo.fromJson(
+        (json['info'] as Map?)?.cast<String, dynamic>() ?? {},
+        rootJson: json,
+      ),
     );
   }
 
@@ -200,6 +203,8 @@ class StudentProfileInfo {
   final String? parentName;
   final String? parentPhone;
   final String parentRelation;
+  final String? schoolName;
+  final List<String> optionalPhones;
 
   StudentProfileInfo({
     required this.phone,
@@ -207,15 +212,67 @@ class StudentProfileInfo {
     this.parentName,
     this.parentPhone,
     required this.parentRelation,
+    this.schoolName,
+    this.optionalPhones = const [],
   });
 
-  factory StudentProfileInfo.fromJson(Map<String, dynamic> json) {
+  factory StudentProfileInfo.fromJson(
+    Map<String, dynamic> json, {
+    Map<String, dynamic>? rootJson,
+  }) {
+    List<String> parseOptional(dynamic val) {
+      if (val is List) {
+        return val
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      } else if (val is String && val.trim().isNotEmpty) {
+        return [val.trim()];
+      }
+      return const [];
+    }
+
+    final parsedOptionalPhones = parseOptional(json['optional_phones']).isNotEmpty
+        ? parseOptional(json['optional_phones'])
+        : (rootJson != null ? parseOptional(rootJson['optional_phones']) : const <String>[]);
+
+    final rawSchool = json['school_name']?.toString() ??
+        json['school']?.toString() ??
+        rootJson?['school_name']?.toString() ??
+        rootJson?['school']?.toString();
+
+    final cleanSchool =
+        (rawSchool != null && rawSchool.trim().isNotEmpty && rawSchool.trim().toLowerCase() != 'null')
+            ? rawSchool.trim()
+            : null;
+
+    final studentMap = rootJson?['student'] is Map ? rootJson!['student'] as Map : null;
+    final fallbackSchool = studentMap?['school_name']?.toString() ?? studentMap?['school']?.toString();
+    final effectiveSchool = cleanSchool ??
+        ((fallbackSchool != null && fallbackSchool.trim().isNotEmpty) ? fallbackSchool.trim() : null);
+
+    final effectiveOptional = parsedOptionalPhones.isNotEmpty
+        ? parsedOptionalPhones
+        : (studentMap != null ? parseOptional(studentMap['optional_phones']) : const <String>[]);
+
     return StudentProfileInfo(
-      phone: json['phone'] ?? '',
-      email: json['email'] ?? '',
-      parentName: json['parent_name'],
-      parentPhone: json['parent_phone'],
-      parentRelation: json['parent_relation'] ?? '',
+      phone: json['phone']?.toString() ??
+          rootJson?['phone']?.toString() ??
+          studentMap?['phone']?.toString() ??
+          '',
+      email: json['email']?.toString() ??
+          rootJson?['email']?.toString() ??
+          studentMap?['email']?.toString() ??
+          '',
+      parentName: json['parent_name']?.toString() ??
+          rootJson?['guardian_name']?.toString() ??
+          studentMap?['guardian_name']?.toString(),
+      parentPhone: json['parent_phone']?.toString() ??
+          rootJson?['guardian_phone']?.toString() ??
+          studentMap?['guardian_phone']?.toString(),
+      parentRelation: json['parent_relation']?.toString() ?? 'Guardian',
+      schoolName: effectiveSchool,
+      optionalPhones: effectiveOptional,
     );
   }
 }

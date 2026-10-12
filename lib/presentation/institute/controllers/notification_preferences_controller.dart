@@ -11,10 +11,37 @@ class NotificationPreferencesController extends GetxController {
   final isLoading = false.obs;
   final isSaving = false.obs;
   final modules = <NotificationPreferenceModule>[].obs;
+  final selectedAudienceFilter = 'ALL'.obs; // 'ALL', 'Parents & Students', 'Teachers & Staff', 'Institute / Admin'
+  final selectedTemplateRule = Rxn<NotificationPreferenceModule>();
 
-  int get activeCount => modules
-      .where((m) => m.whatsappEnabled || m.pushEnabled || m.emailEnabled)
-      .length;
+  int get totalCount => modules.length;
+
+  int get parentsStudentsCount =>
+      modules.where((m) => m.audience == 'Parents & Students').length;
+
+  int get teachersStaffCount =>
+      modules.where((m) => m.audience == 'Teachers & Staff').length;
+
+  int get instituteAdminCount =>
+      modules.where((m) => m.audience == 'Institute / Admin').length;
+
+  int get activeRulesCount =>
+      modules.where((m) => m.isAnyChannelActive).length;
+
+  List<NotificationPreferenceModule> get filteredModules {
+    if (selectedAudienceFilter.value == 'ALL') return modules;
+    return modules
+        .where((m) => m.audience == selectedAudienceFilter.value)
+        .toList();
+  }
+
+  Map<String, List<NotificationPreferenceModule>> get groupedFilteredModules {
+    final map = <String, List<NotificationPreferenceModule>>{};
+    for (final m in filteredModules) {
+      map.putIfAbsent(m.category, () => []).add(m);
+    }
+    return map;
+  }
 
   @override
   void onInit() {
@@ -27,35 +54,132 @@ class NotificationPreferencesController extends GetxController {
       isLoading.value = true;
       final result = await _repository.getNotificationPreferences();
       if (result.isNotEmpty) {
-        modules.assignAll(result);
+        // Merge with full default rules to ensure all 20 rules and their rich metadata exist
+        final merged = <NotificationPreferenceModule>[];
+        for (final def in NotificationPreferenceModule.defaultRules) {
+          final foundIndex = result.indexWhere((r) => r.module == def.module);
+          if (foundIndex != -1) {
+            final serverRule = result[foundIndex];
+            merged.add(def.copyWith(
+              isEnabled: serverRule.isEnabled,
+              whatsappEnabled: serverRule.whatsappEnabled,
+              pushEnabled: serverRule.pushEnabled,
+              emailEnabled: serverRule.emailEnabled,
+            ));
+          } else {
+            merged.add(def);
+          }
+        }
+        modules.assignAll(merged);
       } else {
-        modules.assignAll(_defaultModules);
+        modules.assignAll(NotificationPreferenceModule.defaultRules);
       }
     } catch (_) {
       if (modules.isEmpty) {
-        modules.assignAll(_defaultModules);
+        modules.assignAll(NotificationPreferenceModule.defaultRules);
       }
     } finally {
       isLoading.value = false;
     }
   }
 
-  void toggleWhatsapp(int index, bool val) {
-    if (index >= 0 && index < modules.length) {
-      modules[index] = modules[index].copyWith(whatsappEnabled: val);
+  void setFilter(String filter) {
+    selectedAudienceFilter.value = filter;
+  }
+
+  void toggleMaster(String moduleKey, bool val) {
+    final index = modules.indexWhere((m) => m.module == moduleKey);
+    if (index != -1) {
+      final item = modules[index];
+      // If toggled on and no channel was active, activate all channels by default
+      final activateChannels = val && (!item.whatsappEnabled && !item.pushEnabled && !item.emailEnabled);
+      modules[index] = item.copyWith(
+        isEnabled: val,
+        whatsappEnabled: activateChannels ? true : (val ? item.whatsappEnabled : false),
+        pushEnabled: activateChannels ? true : (val ? item.pushEnabled : false),
+        emailEnabled: activateChannels ? true : (val ? item.emailEnabled : false),
+      );
     }
   }
 
-  void togglePush(int index, bool val) {
-    if (index >= 0 && index < modules.length) {
-      modules[index] = modules[index].copyWith(pushEnabled: val);
+  void toggleWhatsapp(String moduleKey, bool val) {
+    final index = modules.indexWhere((m) => m.module == moduleKey);
+    if (index != -1) {
+      final item = modules[index];
+      modules[index] = item.copyWith(
+        whatsappEnabled: val,
+        isEnabled: val ? true : (item.pushEnabled || item.emailEnabled),
+      );
     }
   }
 
-  void toggleEmail(int index, bool val) {
-    if (index >= 0 && index < modules.length) {
-      modules[index] = modules[index].copyWith(emailEnabled: val);
+  void togglePush(String moduleKey, bool val) {
+    final index = modules.indexWhere((m) => m.module == moduleKey);
+    if (index != -1) {
+      final item = modules[index];
+      modules[index] = item.copyWith(
+        pushEnabled: val,
+        isEnabled: val ? true : (item.whatsappEnabled || item.emailEnabled),
+      );
     }
+  }
+
+  void toggleEmail(String moduleKey, bool val) {
+    final index = modules.indexWhere((m) => m.module == moduleKey);
+    if (index != -1) {
+      final item = modules[index];
+      modules[index] = item.copyWith(
+        emailEnabled: val,
+        isEnabled: val ? true : (item.whatsappEnabled || item.pushEnabled),
+      );
+    }
+  }
+
+  bool isCategoryAllEnabled(String category) {
+    final catModules = modules.where((m) => m.category == category).toList();
+    if (catModules.isEmpty) return false;
+    return catModules.every((m) => m.isEnabled);
+  }
+
+  void toggleCategory(String category, bool val) {
+    final updated = modules.map((m) {
+      if (m.category == category) {
+        return m.copyWith(
+          isEnabled: val,
+          whatsappEnabled: val,
+          pushEnabled: val,
+          emailEnabled: val,
+        );
+      }
+      return m;
+    }).toList();
+    modules.assignAll(updated);
+  }
+
+  void enableAll() {
+    final updated = modules.map((m) {
+      return m.copyWith(
+        isEnabled: true,
+        whatsappEnabled: true,
+        pushEnabled: true,
+        emailEnabled: true,
+      );
+    }).toList();
+    modules.assignAll(updated);
+    AppSnackBar.success('All notification rules enabled');
+  }
+
+  void disableAll() {
+    final updated = modules.map((m) {
+      return m.copyWith(
+        isEnabled: false,
+        whatsappEnabled: false,
+        pushEnabled: false,
+        emailEnabled: false,
+      );
+    }).toList();
+    modules.assignAll(updated);
+    AppSnackBar.info('All notification rules disabled');
   }
 
   Future<void> savePreferences() async {
@@ -64,7 +188,23 @@ class NotificationPreferencesController extends GetxController {
       final payload = modules.map((m) => m.toJson()).toList();
       final updated = await _repository.updateNotificationPreferences(payload);
       if (updated.isNotEmpty) {
-        modules.assignAll(updated);
+        // Keep updated states
+        final merged = <NotificationPreferenceModule>[];
+        for (final def in modules) {
+          final foundIndex = updated.indexWhere((r) => r.module == def.module);
+          if (foundIndex != -1) {
+            final serverRule = updated[foundIndex];
+            merged.add(def.copyWith(
+              isEnabled: serverRule.isEnabled,
+              whatsappEnabled: serverRule.whatsappEnabled,
+              pushEnabled: serverRule.pushEnabled,
+              emailEnabled: serverRule.emailEnabled,
+            ));
+          } else {
+            merged.add(def);
+          }
+        }
+        modules.assignAll(merged);
       }
       AppSnackBar.success('Notification preferences updated successfully');
     } catch (e) {
@@ -73,53 +213,4 @@ class NotificationPreferencesController extends GetxController {
       isSaving.value = false;
     }
   }
-
-  static final List<NotificationPreferenceModule> _defaultModules = [
-    NotificationPreferenceModule(
-      module: 'fee_reminder',
-      name: 'Fee Payment Reminders',
-      desc: 'Auto-dispatched before / on due date or via manual reminder button',
-      icon: '💰',
-      whatsappEnabled: true,
-      pushEnabled: true,
-      emailEnabled: true,
-    ),
-    NotificationPreferenceModule(
-      module: 'payment_receipt',
-      name: 'Fee Payment Receipts',
-      desc:
-          'Immediate receipt notification when installment or payment is logged',
-      icon: '📄',
-      whatsappEnabled: true,
-      pushEnabled: true,
-      emailEnabled: true,
-    ),
-    NotificationPreferenceModule(
-      module: 'attendance_absent',
-      name: 'Attendance Absent Alerts',
-      desc: 'Immediate alert to parents when student is marked absent',
-      icon: '📋',
-      whatsappEnabled: true,
-      pushEnabled: true,
-      emailEnabled: true,
-    ),
-    NotificationPreferenceModule(
-      module: 'exam_results',
-      name: 'Exam Results & Marks',
-      desc: 'Score card & percentage notifications when test is scored',
-      icon: '📝',
-      whatsappEnabled: true,
-      pushEnabled: true,
-      emailEnabled: true,
-    ),
-    NotificationPreferenceModule(
-      module: 'broadcast_announcement',
-      name: 'General Notices & Broadcasts',
-      desc: 'Holiday, schedule changes, and mass campus circulars',
-      icon: '📢',
-      whatsappEnabled: true,
-      pushEnabled: true,
-      emailEnabled: true,
-    ),
-  ];
 }
