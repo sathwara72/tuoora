@@ -33,6 +33,10 @@ import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    debugPrint('UI Error caught: ${details.exception}');
+    return const SizedBox.shrink();
+  };
   await dotenv.load(fileName: '.env');
   await GetStorage.init();
   if (!kIsWeb) {
