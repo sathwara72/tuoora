@@ -11,6 +11,7 @@ import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/widgets/app_whatsapp_icon.dart';
 
 class InstituteSettingsScreen extends StatelessWidget {
   const InstituteSettingsScreen({super.key});
@@ -261,11 +262,7 @@ class InstituteSettingsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     alignment: Alignment.center,
-                    child: SvgPicture.asset(
-                      AppImages.icWhatsapp,
-                      width: 44,
-                      height: 44,
-                    ),
+                    child: const AppWhatsAppIcon(size: 44),
                   ),
                 ],
               ),

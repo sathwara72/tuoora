@@ -9,6 +9,7 @@ import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/data/models/notification_preference_model.dart';
 import 'package:tuoora/presentation/institute/controllers/notification_preferences_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
+import 'package:tuoora/core/widgets/app_whatsapp_icon.dart';
 
 const Color _whatsappColor = Color(0xFF10B981);
 const Color _pushColor = Color(0xFF2563EB);
@@ -635,11 +636,7 @@ class NotificationPreferencesScreen
               children: [
                 _buildChannelToggle(
                   label: 'WhatsApp',
-                  iconWidget: SvgPicture.asset(
-                    AppImages.icWhatsapp,
-                    width: 16,
-                    height: 16,
-                  ),
+                  iconWidget: const AppWhatsAppIcon(size: 16),
                   value: rule.isEnabled && rule.whatsappEnabled,
                   color: _whatsappColor,
                   onChanged: (val) =>
@@ -1003,16 +1000,48 @@ class _TemplatePreviewSheetState extends State<_TemplatePreviewSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Container(
+              height: 42,
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 color: const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
+              child: Stack(
                 children: [
-                  _channelTabItem(0, 'WhatsApp', AppImages.icWhatsapp, isSvg: true),
-                  _channelTabItem(1, 'Mobile Push', Icons.notifications_active_rounded),
-                  _channelTabItem(2, 'Email', Icons.mail_rounded),
+                  // Single smooth sliding indicator pill (eliminates dual-switch animation)
+                  AnimatedAlign(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOutCubic,
+                    alignment: const [
+                      Alignment.centerLeft,
+                      Alignment.center,
+                      Alignment.centerRight,
+                    ][_selectedChannelIndex],
+                    child: FractionallySizedBox(
+                      widthFactor: 1 / 3,
+                      heightFactor: 1.0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      _channelTabItem(0, 'WhatsApp', isWhatsApp: true),
+                      _channelTabItem(1, 'Mobile Push', icon: Icons.notifications_active_rounded),
+                      _channelTabItem(2, 'Email', icon: Icons.mail_rounded),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1030,45 +1059,29 @@ class _TemplatePreviewSheetState extends State<_TemplatePreviewSheet> {
     );
   }
 
-  Widget _channelTabItem(int index, String label, dynamic icon, {bool isSvg = false}) {
+  Widget _channelTabItem(int index, String label,
+      {IconData? icon, bool isWhatsApp = false}) {
     final isSelected = _selectedChannelIndex == index;
     return Expanded(
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () => setState(() => _selectedChannelIndex = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
+        child: Container(
+          color: Colors.transparent,
+          alignment: Alignment.center,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (isSvg)
-                Opacity(
-                  opacity: isSelected ? 1.0 : 0.45,
-                  child: SvgPicture.asset(
-                    icon as String,
-                    width: 16,
-                    height: 16,
-                  ),
-                )
-              else
-                Icon(icon as IconData,
-                    size: 15,
-                    color: isSelected
-                        ? AppColors.textPrimary
-                        : const Color(0xFF64748B)),
+              if (isWhatsApp)
+                const AppWhatsAppIcon(size: 16)
+              else if (icon != null)
+                Icon(
+                  icon,
+                  size: 15,
+                  color: isSelected
+                      ? AppColors.textPrimary
+                      : const Color(0xFF64748B),
+                ),
               const SizedBox(width: 6),
               Text(
                 label,
@@ -1118,11 +1131,7 @@ class _TemplatePreviewSheetState extends State<_TemplatePreviewSheet> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: SvgPicture.asset(
-                  AppImages.icWhatsapp,
-                  width: 28,
-                  height: 28,
-                ),
+                child: const AppWhatsAppIcon(size: 28),
               ),
               const SizedBox(width: 10),
               Expanded(
