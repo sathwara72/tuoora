@@ -37,6 +37,7 @@ class InstituteStudentController extends GetxController {
   final addressController = TextEditingController();
   final schoolNameController = TextEditingController();
   final optionalPhoneControllers = <TextEditingController>[].obs;
+  final optionalPhoneErrors = <RxnString>[].obs;
 
   final nameError = RxnString();
   final parentNameError = RxnString();
@@ -123,9 +124,10 @@ class InstituteStudentController extends GetxController {
     addressController.clear();
     schoolNameController.clear();
     for (var c in optionalPhoneControllers) {
-      c.dispose();
+      WidgetsBinding.instance.addPostFrameCallback((_) => c.dispose());
     }
     optionalPhoneControllers.clear();
+    optionalPhoneErrors.clear();
     selectedImagePath.value = null;
     selectedBatchId.value = null;
     selectedProfileBatchId.value = null;
@@ -170,6 +172,29 @@ class InstituteStudentController extends GetxController {
       'Date of Birth',
     );
 
+    // Validate optional phone numbers
+    bool areOptionalPhonesValid = true;
+    for (int i = 0; i < optionalPhoneControllers.length; i++) {
+      final text = optionalPhoneControllers[i].text.trim();
+      if (text.isNotEmpty) {
+        final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
+        if (digits.length != 10) {
+          areOptionalPhonesValid = false;
+          if (triedToSave.value && i < optionalPhoneErrors.length) {
+            optionalPhoneErrors[i].value = 'Enter valid 10-digit mobile number';
+          }
+        } else {
+          if (triedToSave.value && i < optionalPhoneErrors.length) {
+            optionalPhoneErrors[i].value = null;
+          }
+        }
+      } else {
+        if (triedToSave.value && i < optionalPhoneErrors.length) {
+          optionalPhoneErrors[i].value = null;
+        }
+      }
+    }
+
     if (triedToSave.value) {
       nameError.value = nErr;
       parentNameError.value = pnErr;
@@ -185,7 +210,8 @@ class InstituteStudentController extends GetxController {
         pErr == null &&
         eErr == null &&
         pwdErr == null &&
-        dErr == null;
+        dErr == null &&
+        areOptionalPhonesValid;
   }
 
   Future<void> fetchStudentDetails(dynamic id, {dynamic batchId}) async {
@@ -224,9 +250,10 @@ class InstituteStudentController extends GetxController {
     phoneController.text = student.phone;
     schoolNameController.text = student.schoolName ?? '';
     for (var c in optionalPhoneControllers) {
-      c.dispose();
+      WidgetsBinding.instance.addPostFrameCallback((_) => c.dispose());
     }
     optionalPhoneControllers.clear();
+    optionalPhoneErrors.clear();
     for (var p in student.optionalPhones) {
       addOptionalPhone(p);
     }
@@ -240,14 +267,24 @@ class InstituteStudentController extends GetxController {
 
   void addOptionalPhone([String val = '']) {
     if (optionalPhoneControllers.length < 3) {
-      optionalPhoneControllers.add(TextEditingController(text: val));
+      final ctrl = TextEditingController(text: val);
+      ctrl.addListener(validateForm);
+      optionalPhoneControllers.add(ctrl);
+      optionalPhoneErrors.add(RxnString());
+      validateForm();
     }
   }
 
   void removeOptionalPhone(int index) {
     if (index >= 0 && index < optionalPhoneControllers.length) {
-      optionalPhoneControllers[index].dispose();
-      optionalPhoneControllers.removeAt(index);
+      final ctrl = optionalPhoneControllers.removeAt(index);
+      if (index < optionalPhoneErrors.length) {
+        optionalPhoneErrors.removeAt(index);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ctrl.dispose();
+      });
+      validateForm();
     }
   }
 
@@ -382,8 +419,7 @@ class InstituteStudentController extends GetxController {
         'phone': phoneController.text.trim(),
         if (schoolNameController.text.trim().isNotEmpty)
           'school_name': schoolNameController.text.trim(),
-        if (cleanedOptionalPhones.isNotEmpty)
-          'optional_phones': cleanedOptionalPhones,
+        'optional_phones': cleanedOptionalPhones,
         'guardian_name': parentNameController.text,
         'dob': dobController.text,
         if (selectedBatchId.value != null) 'batch_id': selectedBatchId.value,
@@ -449,6 +485,22 @@ class InstituteStudentController extends GetxController {
     }
     if (errors.containsKey('dob')) {
       dobError.value = (errors['dob'] as List).first.toString();
+    }
+    if (errors.containsKey('optional_phones')) {
+      final err = errors['optional_phones'];
+      final msg = err is List ? err.first.toString() : err.toString();
+      if (optionalPhoneErrors.isNotEmpty) {
+        optionalPhoneErrors.first.value = msg;
+      }
+    }
+    for (int i = 0; i < optionalPhoneControllers.length; i++) {
+      if (errors.containsKey('optional_phones.$i')) {
+        final err = errors['optional_phones.$i'];
+        final msg = err is List ? err.first.toString() : err.toString();
+        if (i < optionalPhoneErrors.length) {
+          optionalPhoneErrors[i].value = msg;
+        }
+      }
     }
     isFormValid.value = false;
   }

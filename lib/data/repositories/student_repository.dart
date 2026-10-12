@@ -40,24 +40,44 @@ class StudentRepository implements StudentRepositoryImpl {
     return items.map((json) => Student.fromJson(json)).toList();
   }
 
+  FormData _buildStudentFormData(Map<String, dynamic> data) {
+    final formData = FormData({});
+
+    data.forEach((key, value) {
+      if (key == 'profile_image_url' &&
+          value != null &&
+          value.toString().isNotEmpty &&
+          !value.toString().startsWith('http')) {
+        formData.files.add(
+          MapEntry(
+            'profile_image_url',
+            MultipartFile(
+              value,
+              filename: 'student_profile.jpg',
+            ),
+          ),
+        );
+      } else if (key == 'optional_phones') {
+        if (value is List) {
+          for (final phone in value) {
+            if (phone != null && phone.toString().trim().isNotEmpty) {
+              formData.fields.add(MapEntry('optional_phones[]', phone.toString().trim()));
+            }
+          }
+        } else if (value != null && value.toString().trim().isNotEmpty) {
+          formData.fields.add(MapEntry('optional_phones[]', value.toString().trim()));
+        }
+      } else if (value != null) {
+        formData.fields.add(MapEntry(key, value.toString()));
+      }
+    });
+
+    return formData;
+  }
+
   @override
   Future<Student> createStudent(Map<String, dynamic> data) async {
-    final formData = FormData(data);
-
-    if (data['profile_image_url'] != null &&
-        data['profile_image_url'].toString().isNotEmpty &&
-        !data['profile_image_url'].toString().startsWith('http')) {
-      formData.files.add(
-        MapEntry(
-          'profile_image_url',
-          MultipartFile(
-            data['profile_image_url'],
-            filename: 'student_profile.jpg',
-          ),
-        ),
-      );
-      data.remove('profile_image_url');
-    }
+    final formData = _buildStudentFormData(data);
 
     final response = await _apiClient.post(
       ApiConstants.instituteStudents,
@@ -87,23 +107,7 @@ class StudentRepository implements StudentRepositoryImpl {
 
   @override
   Future<Student> updateStudent(dynamic id, Map<String, dynamic> data) async {
-    final formData = FormData(data);
-
-    if (data['profile_image_url'] != null &&
-        data['profile_image_url'].toString().isNotEmpty &&
-        !data['profile_image_url'].toString().startsWith('http')) {
-      formData.files.add(
-        MapEntry(
-          'profile_image_url',
-          MultipartFile(
-            data['profile_image_url'],
-            filename: 'student_profile.jpg',
-          ),
-        ),
-      );
-      data.remove('profile_image_url');
-    }
-
+    final formData = _buildStudentFormData(data);
     formData.fields.add(const MapEntry('_method', 'PUT'));
 
     final response = await _apiClient.post(

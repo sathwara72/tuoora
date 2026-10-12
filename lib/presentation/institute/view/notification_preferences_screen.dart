@@ -10,13 +10,13 @@ import 'package:tuoora/data/models/notification_preference_model.dart';
 import 'package:tuoora/presentation/institute/controllers/notification_preferences_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 
+const Color _whatsappColor = Color(0xFF10B981);
+const Color _pushColor = Color(0xFF2563EB);
+const Color _emailColor = Color(0xFF475569);
+
 class NotificationPreferencesScreen
     extends GetView<NotificationPreferencesController> {
   const NotificationPreferencesScreen({super.key});
-
-  static const Color _whatsappColor = Color(0xFF10B981);
-  static const Color _pushColor = Color(0xFF2563EB);
-  static const Color _emailColor = Color(0xFF475569);
 
   @override
   Widget build(BuildContext context) {
@@ -578,44 +578,46 @@ class NotificationPreferencesScreen
           ),
           const SizedBox(height: 12),
 
-          // Second Row: Audience Pill + Preview & Edit Button
+          // Second Row: Audience Pill + Preview Button
           Row(
             children: [
               _buildAudienceBadge(rule.audience),
               const Spacer(),
-              // Preview & Edit Button
-              InkWell(
-                onTap: () => _openSingleRulePreview(context, rule),
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.visibility_outlined,
-                        size: 14,
-                        color: Color(0xFF334155),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Preview & Edit',
-                        style: AppTextStyles.outfit(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF334155),
+              // Preview Button (Not shown for INSTITUTE & ADMIN ALERTS)
+              if (rule.category != 'INSTITUTE & ADMIN ALERTS' &&
+                  rule.audience != 'Institute / Admin')
+                InkWell(
+                  onTap: () => _openSingleRulePreview(context, rule),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.visibility_outlined,
+                          size: 14,
+                          color: Color(0xFF334155),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 5),
+                        Text(
+                          'Preview',
+                          style: AppTextStyles.outfit(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF334155),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -635,8 +637,8 @@ class NotificationPreferencesScreen
                   label: 'WhatsApp',
                   iconWidget: SvgPicture.asset(
                     AppImages.icWhatsapp,
-                    width: 15,
-                    height: 15,
+                    width: 16,
+                    height: 16,
                   ),
                   value: rule.isEnabled && rule.whatsappEnabled,
                   color: _whatsappColor,
@@ -756,15 +758,26 @@ class NotificationPreferencesScreen
   // Message Templates & Previews Bottom Sheet
   // ---------------------------------------------------------------------------
   void _openTemplatesPreviewSheet(BuildContext context) {
-    if (controller.modules.isEmpty) return;
-    final initialRule = controller.modules.first;
-    _openSingleRulePreview(context, initialRule, canSelectRule: true);
+    final previewableRules = controller.modules
+        .where((r) =>
+            r.category != 'INSTITUTE & ADMIN ALERTS' &&
+            r.audience != 'Institute / Admin')
+        .toList();
+    if (previewableRules.isEmpty) return;
+    final initialRule = previewableRules.first;
+    _openSingleRulePreview(
+      context,
+      initialRule,
+      canSelectRule: true,
+      customRulesList: previewableRules,
+    );
   }
 
   void _openSingleRulePreview(
     BuildContext context,
     NotificationPreferenceModule rule, {
     bool canSelectRule = false,
+    List<NotificationPreferenceModule>? customRulesList,
   }) {
     showModalBottomSheet(
       context: context,
@@ -773,7 +786,7 @@ class NotificationPreferencesScreen
       builder: (ctx) => _TemplatePreviewSheet(
         initialRule: rule,
         canSelectRule: canSelectRule,
-        allRules: controller.modules,
+        allRules: customRulesList ?? controller.modules,
       ),
     );
   }
@@ -1042,10 +1055,17 @@ class _TemplatePreviewSheetState extends State<_TemplatePreviewSheet> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isSvg)
-                SvgPicture.asset(icon as String, width: 14, height: 14)
+                Opacity(
+                  opacity: isSelected ? 1.0 : 0.45,
+                  child: SvgPicture.asset(
+                    icon as String,
+                    width: 16,
+                    height: 16,
+                  ),
+                )
               else
                 Icon(icon as IconData,
-                    size: 14,
+                    size: 15,
                     color: isSelected
                         ? AppColors.textPrimary
                         : const Color(0xFF64748B)),
@@ -1096,17 +1116,47 @@ class _TemplatePreviewSheetState extends State<_TemplatePreviewSheet> {
         children: [
           Row(
             children: [
-              SvgPicture.asset(AppImages.icWhatsapp, width: 18, height: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Tuoora Official Delivery',
-                style: AppTextStyles.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF075E54),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: SvgPicture.asset(
+                  AppImages.icWhatsapp,
+                  width: 28,
+                  height: 28,
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Tuoora Official Delivery',
+                          style: AppTextStyles.outfit(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF075E54),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.verified_rounded,
+                          size: 14,
+                          color: Color(0xFF25D366),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Official Business Account',
+                      style: AppTextStyles.outfit(
+                        fontSize: 10,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Text(
                 'Today, 10:30 AM',
                 style: AppTextStyles.outfit(
