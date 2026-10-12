@@ -5,6 +5,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_empty_view.dart';
+import 'package:tuoora/data/models/student_model.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
 import 'package:tuoora/presentation/institute/models/report_models.dart';
 
@@ -21,11 +22,15 @@ class StudentReportContent extends StatelessWidget {
   /// Shown right after the Fee Balance card (e.g. the milestone schedule).
   final Widget? afterFeeBalance;
 
+  /// Optional fallback student model if report doesn't contain all fields.
+  final Student? fallbackStudent;
+
   const StudentReportContent({
     super.key,
     required this.report,
     this.feeBalanceFooter,
     this.afterFeeBalance,
+    this.fallbackStudent,
   });
 
   ReportsController get controller => Get.find<ReportsController>();
@@ -595,6 +600,15 @@ class StudentReportContent extends StatelessWidget {
   // TAB 0: Academic & Info (Image 3)
   Widget _buildAcademicInfoTab(StudentWiseReportData report) {
     final s = report.student;
+    final effectiveSchool =
+        (s.schoolName != null && s.schoolName!.trim().isNotEmpty)
+            ? s.schoolName!.trim()
+            : fallbackStudent?.schoolName?.trim();
+    final effectivePhone =
+        s.phone.isNotEmpty ? s.phone : (fallbackStudent?.phone ?? '');
+    final effectiveOptionalPhones = s.optionalPhones.isNotEmpty
+        ? s.optionalPhones
+        : (fallbackStudent?.optionalPhones ?? const <String>[]);
 
     return Container(
       padding: AppSpacing.cardPadding,
@@ -635,6 +649,10 @@ class StudentReportContent extends StatelessWidget {
           ),
           AppSpacing.v20,
           _buildInfoField('BATCH NAME', s.batchName),
+          if (effectiveSchool != null && effectiveSchool.isNotEmpty) ...[
+            AppSpacing.v16,
+            _buildInfoField('SCHOOL NAME', effectiveSchool),
+          ],
           AppSpacing.v16,
           _buildInfoField('DATE OF ADMISSION', s.admissionDate),
           AppSpacing.v16,
@@ -642,13 +660,31 @@ class StudentReportContent extends StatelessWidget {
           AppSpacing.v16,
           _buildActionInfoField(
             'PHONE NUMBER',
-            s.phone,
+            effectivePhone.isNotEmpty ? effectivePhone : 'N/A',
             icon: Icons.phone_outlined,
             onTap: () async {
-              final uri = Uri.parse('tel:${s.phone}');
-              if (await canLaunchUrl(uri)) launchUrl(uri);
+              if (effectivePhone.isNotEmpty) {
+                final uri = Uri.parse('tel:$effectivePhone');
+                if (await canLaunchUrl(uri)) launchUrl(uri);
+              }
             },
           ),
+          if (effectiveOptionalPhones.isNotEmpty) ...[
+            for (int i = 0; i < effectiveOptionalPhones.length; i++) ...[
+              AppSpacing.v16,
+              _buildActionInfoField(
+                effectiveOptionalPhones.length == 1
+                    ? 'OPTIONAL PHONE'
+                    : 'OPTIONAL PHONE ${i + 1}',
+                effectiveOptionalPhones[i],
+                icon: Icons.phone_android_outlined,
+                onTap: () async {
+                  final uri = Uri.parse('tel:${effectiveOptionalPhones[i]}');
+                  if (await canLaunchUrl(uri)) launchUrl(uri);
+                },
+              ),
+            ],
+          ],
           AppSpacing.v16,
           _buildActionInfoField(
             'EMAIL ADDRESS',

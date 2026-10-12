@@ -58,6 +58,8 @@ class TeacherBatchStudent {
   final num totalDue;
   final num totalPaid;
   final String? gender;
+  final String? schoolName;
+  final List<String> optionalPhones;
 
   const TeacherBatchStudent({
     required this.id,
@@ -72,6 +74,8 @@ class TeacherBatchStudent {
     this.totalDue = 0,
     this.totalPaid = 0,
     this.gender,
+    this.schoolName,
+    this.optionalPhones = const [],
   });
 
   factory TeacherBatchStudent.fromJson(Map<String, dynamic> json) {
@@ -80,6 +84,20 @@ class TeacherBatchStudent {
       if (val is int) return val;
       return int.tryParse(val.toString()) ?? fallback;
     }
+
+    final rawSchool = json['school_name']?.toString() ?? json['school']?.toString();
+    final cleanSchool = (rawSchool != null &&
+            rawSchool.trim().isNotEmpty &&
+            rawSchool.trim().toLowerCase() != 'null')
+        ? rawSchool.trim()
+        : null;
+
+    final optPhones = json['optional_phones'] is List
+        ? (json['optional_phones'] as List)
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList()
+        : const <String>[];
 
     return TeacherBatchStudent(
       id: safeInt(json['id']),
@@ -94,6 +112,8 @@ class TeacherBatchStudent {
       totalDue: num.tryParse(json['total_due']?.toString() ?? '0') ?? 0,
       totalPaid: num.tryParse(json['total_paid']?.toString() ?? '0') ?? 0,
       gender: json['gender']?.toString(),
+      schoolName: cleanSchool,
+      optionalPhones: optPhones,
     );
   }
 
@@ -111,6 +131,8 @@ class TeacherBatchStudent {
       'total_due': totalDue,
       'total_paid': totalPaid,
       'gender': gender,
+      'school_name': schoolName,
+      'optional_phones': optionalPhones,
     };
   }
 }

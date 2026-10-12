@@ -668,6 +668,8 @@ class StudentReportProfile {
   final List<StudentReportBatchItem> allBatches;
   final int? activeBatchId;
   final int? selectedBatchId;
+  final String? schoolName;
+  final List<String> optionalPhones;
 
   StudentReportProfile({
     required this.id,
@@ -686,6 +688,8 @@ class StudentReportProfile {
     this.allBatches = const [],
     this.activeBatchId,
     this.selectedBatchId,
+    this.schoolName,
+    this.optionalPhones = const [],
   });
 
   factory StudentReportProfile.fromJson(Map<String, dynamic> json) {
@@ -697,6 +701,24 @@ class StudentReportProfile {
           ),
         )
         .toList();
+
+    List<String> parseOptionalPhones(dynamic val) {
+      if (val is List) {
+        return val.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      } else if (val is String && val.trim().isNotEmpty) {
+        return [val.trim()];
+      }
+      return const [];
+    }
+
+    final rawSchool = json['school_name']?.toString() ?? json['school']?.toString();
+    final cleanSchool = (rawSchool != null &&
+            rawSchool.trim().isNotEmpty &&
+            rawSchool.trim().toLowerCase() != 'null')
+        ? rawSchool.trim()
+        : null;
+
+    final optPhones = parseOptionalPhones(json['optional_phones']);
 
     return StudentReportProfile(
       id: FeeRecord.safeInt(json['id']),
@@ -731,6 +753,8 @@ class StudentReportProfile {
       selectedBatchId: json['selected_batch_id'] != null
           ? FeeRecord.safeInt(json['selected_batch_id'])
           : null,
+      schoolName: cleanSchool,
+      optionalPhones: optPhones,
     );
   }
 }

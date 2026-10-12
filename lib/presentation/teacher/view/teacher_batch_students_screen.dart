@@ -290,6 +290,30 @@ class TeacherBatchStudentsScreen
                           launchUrl(uri);
                         },
                       ),
+                    if (student.optionalPhones.isNotEmpty)
+                      for (int i = 0; i < student.optionalPhones.length; i++)
+                        _detailTile(
+                          icon: Icons.phone_android_outlined,
+                          label: student.optionalPhones.length == 1
+                              ? 'Alt Phone'
+                              : 'Alt Phone ${i + 1}',
+                          value: student.optionalPhones[i],
+                          actionIcon: Icons.call_outlined,
+                          onTapAction: () {
+                            final uri = Uri(
+                              scheme: 'tel',
+                              path: student.optionalPhones[i],
+                            );
+                            launchUrl(uri);
+                          },
+                        ),
+                    if (student.schoolName != null &&
+                        student.schoolName!.isNotEmpty)
+                      _detailTile(
+                        icon: Icons.school_outlined,
+                        label: 'School',
+                        value: student.schoolName!,
+                      ),
                     if (student.email != null && student.email!.isNotEmpty)
                       _detailTile(
                         icon: Icons.email_outlined,
