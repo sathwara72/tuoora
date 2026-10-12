@@ -32,13 +32,18 @@ class InstituteStudentController extends GetxController {
   final parentNameController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   final dobController = TextEditingController();
   final addressController = TextEditingController();
+  final schoolNameController = TextEditingController();
+  final optionalPhoneControllers = <TextEditingController>[].obs;
 
   final nameError = RxnString();
   final parentNameError = RxnString();
   final phoneError = RxnString();
   final emailError = RxnString();
+  final passwordError = RxnString();
+  final isPasswordVisible = false.obs;
   final dobError = RxnString();
 
   final editingStudentId = Rxn<dynamic>();
@@ -53,6 +58,7 @@ class InstituteStudentController extends GetxController {
     parentNameController.addListener(validateForm);
     phoneController.addListener(validateForm);
     emailController.addListener(validateForm);
+    passwordController.addListener(validateForm);
     dobController.addListener(validateForm);
     addressController.addListener(validateForm);
     handleArguments();
@@ -110,8 +116,16 @@ class InstituteStudentController extends GetxController {
     parentNameController.clear();
     phoneController.clear();
     emailController.clear();
+    passwordController.clear();
+    passwordError.value = null;
+    isPasswordVisible.value = false;
     dobController.clear();
     addressController.clear();
+    schoolNameController.clear();
+    for (var c in optionalPhoneControllers) {
+      c.dispose();
+    }
+    optionalPhoneControllers.clear();
     selectedImagePath.value = null;
     selectedBatchId.value = null;
     selectedProfileBatchId.value = null;
@@ -132,8 +146,13 @@ class InstituteStudentController extends GetxController {
     parentNameController.dispose();
     phoneController.dispose();
     emailController.dispose();
+    passwordController.dispose();
     dobController.dispose();
     addressController.dispose();
+    schoolNameController.dispose();
+    for (var c in optionalPhoneControllers) {
+      c.dispose();
+    }
     super.onClose();
   }
 
@@ -144,7 +163,8 @@ class InstituteStudentController extends GetxController {
       'Guardian Name',
     );
     final pErr = ValidationUtils.validatePhone(phoneController.text);
-    final eErr = ValidationUtils.validateEmail(emailController.text);
+    final eErr = ValidationUtils.validateOptionalEmail(emailController.text);
+    final pwdErr = ValidationUtils.validateOptionalPassword(passwordController.text);
     final dErr = ValidationUtils.validateRequired(
       dobController.text,
       'Date of Birth',
@@ -155,6 +175,7 @@ class InstituteStudentController extends GetxController {
       parentNameError.value = pnErr;
       phoneError.value = pErr;
       emailError.value = eErr;
+      passwordError.value = pwdErr;
       dobError.value = dErr;
     }
 
@@ -163,6 +184,7 @@ class InstituteStudentController extends GetxController {
         pnErr == null &&
         pErr == null &&
         eErr == null &&
+        pwdErr == null &&
         dErr == null;
   }
 
@@ -194,11 +216,39 @@ class InstituteStudentController extends GetxController {
     editingStudentId.value = student.id;
     nameController.text = student.name;
     emailController.text = student.email;
+    passwordController.clear();
+    passwordError.value = null;
+    isPasswordVisible.value = false;
     dobController.text = student.dob;
     parentNameController.text = student.guardianName ?? '';
     phoneController.text = student.phone;
+    schoolNameController.text = student.schoolName ?? '';
+    for (var c in optionalPhoneControllers) {
+      c.dispose();
+    }
+    optionalPhoneControllers.clear();
+    for (var p in student.optionalPhones) {
+      addOptionalPhone(p);
+    }
 
     validateForm();
+  }
+
+  void togglePasswordVisibility() {
+    isPasswordVisible.value = !isPasswordVisible.value;
+  }
+
+  void addOptionalPhone([String val = '']) {
+    if (optionalPhoneControllers.length < 3) {
+      optionalPhoneControllers.add(TextEditingController(text: val));
+    }
+  }
+
+  void removeOptionalPhone(int index) {
+    if (index >= 0 && index < optionalPhoneControllers.length) {
+      optionalPhoneControllers[index].dispose();
+      optionalPhoneControllers.removeAt(index);
+    }
   }
 
   void setGrade(String grade) {
@@ -318,10 +368,22 @@ class InstituteStudentController extends GetxController {
     try {
       isLoading.value = true;
 
+      final cleanedOptionalPhones = optionalPhoneControllers
+          .map((c) => c.text.replaceAll(RegExp(r'[^0-9]'), ''))
+          .where((p) => p.length == 10)
+          .toList();
+
       final studentData = {
-        'name': nameController.text,
-        'email': emailController.text,
-        'phone': phoneController.text,
+        'name': nameController.text.trim(),
+        if (emailController.text.trim().isNotEmpty)
+          'email': emailController.text.trim(),
+        if (passwordController.text.isNotEmpty)
+          'password': passwordController.text,
+        'phone': phoneController.text.trim(),
+        if (schoolNameController.text.trim().isNotEmpty)
+          'school_name': schoolNameController.text.trim(),
+        if (cleanedOptionalPhones.isNotEmpty)
+          'optional_phones': cleanedOptionalPhones,
         'guardian_name': parentNameController.text,
         'dob': dobController.text,
         if (selectedBatchId.value != null) 'batch_id': selectedBatchId.value,
@@ -381,6 +443,9 @@ class InstituteStudentController extends GetxController {
     }
     if (errors.containsKey('email')) {
       emailError.value = (errors['email'] as List).first.toString();
+    }
+    if (errors.containsKey('password')) {
+      passwordError.value = (errors['password'] as List).first.toString();
     }
     if (errors.containsKey('dob')) {
       dobError.value = (errors['dob'] as List).first.toString();

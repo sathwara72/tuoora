@@ -33,6 +33,7 @@ class Student {
   final String? state;
   final String? country;
   final String? pincode;
+  final List<String> optionalPhones;
 
   const Student({
     required this.id,
@@ -69,6 +70,7 @@ class Student {
     this.state,
     this.country,
     this.pincode,
+    this.optionalPhones = const [],
   });
 
   static bool _asBool(dynamic v) => v == true || v == 1 || v == '1';
@@ -100,6 +102,11 @@ class Student {
       guardianName: json['guardian_name']?.toString(),
       monthlyFee: json['monthly_fee']?.toString(),
       schoolName: json['school_name']?.toString(),
+      optionalPhones: json['optional_phones'] is List
+          ? (json['optional_phones'] as List)
+              .map((e) => e.toString())
+              .toList()
+          : const [],
       status: json['status']?.toString() ?? '1',
       idHash:
           json['id_hash']?.toString() ??
