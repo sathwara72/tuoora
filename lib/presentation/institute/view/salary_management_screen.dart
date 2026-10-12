@@ -162,28 +162,52 @@ class SalaryManagementScreen extends GetView<StaffController> {
           itemCount: controller.globalSalaryList.length,
           separatorBuilder: (_, _) => const SizedBox(height: 10),
           itemBuilder: (context, index) {
-            final salary = controller.globalSalaryList[index];
-            final date = DateFormat(
-              'MMM dd, yyyy',
-            ).format(DateTime.parse(salary.paymentDate));
-            return Container(
-              padding: AppSpacing.cardPadding,
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-                border: Border.all(color: AppColors.background),
-              ),
-              child: _buildPayoutItem(
-                salary.staff?.fullName ?? 'Unknown Staff',
-                '$date \u2022 ${salary.paymentMethod}',
-                '₹${salary.netSalary}',
-                salary.staff?.profileUrl ?? '',
-              ),
-            );
+            try {
+              final salary = controller.globalSalaryList[index];
+              final date = _formatPaymentDate(salary.paymentDate);
+              final staffName = (salary.staff?.fullName ?? '').trim().isNotEmpty
+                  ? salary.staff!.fullName.trim()
+                  : 'Staff Member';
+              final method = salary.paymentMethod.trim().isNotEmpty
+                  ? salary.paymentMethod.trim()
+                  : 'Salary';
+              final amount = salary.netSalary.trim().isNotEmpty
+                  ? salary.netSalary.trim()
+                  : '0.00';
+
+              return Container(
+                padding: AppSpacing.cardPadding,
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+                  border: Border.all(color: AppColors.background),
+                ),
+                child: _buildPayoutItem(
+                  staffName,
+                  '$date \u2022 $method',
+                  '₹$amount',
+                  salary.staff?.profileUrl ?? '',
+                ),
+              );
+            } catch (e, stack) {
+              debugPrint('Error rendering salary payout at index $index: $e\n$stack');
+              return const SizedBox.shrink();
+            }
           },
         ),
       );
     });
+  }
+
+  String _formatPaymentDate(String rawDate) {
+    if (rawDate.trim().isEmpty) return 'N/A';
+    try {
+      final parsed = DateTime.tryParse(rawDate);
+      if (parsed != null) {
+        return DateFormat('MMM dd, yyyy').format(parsed);
+      }
+    } catch (_) {}
+    return rawDate;
   }
 
   Widget _buildPayoutItem(
@@ -245,6 +269,12 @@ class SalaryManagementScreen extends GetView<StaffController> {
   }
 
   Widget _buildStaffAvatar(String name, String? profileUrl) {
+    final validUrl = (profileUrl != null &&
+            profileUrl.trim().isNotEmpty &&
+            profileUrl.trim().startsWith('http'))
+        ? profileUrl.trim()
+        : null;
+
     return Container(
       width: 44,
       height: 44,
@@ -252,9 +282,9 @@ class SalaryManagementScreen extends GetView<StaffController> {
         color: AppColors.primaryBrand.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: profileUrl != null && profileUrl.isNotEmpty
+      child: validUrl != null
           ? AppNetworkImage(
-              url: profileUrl,
+              url: validUrl,
               fit: BoxFit.cover,
               borderRadius: BorderRadius.circular(22),
               errorWidget: _buildInitials(name),
@@ -277,11 +307,16 @@ class SalaryManagementScreen extends GetView<StaffController> {
   }
 
   String getInitials(String name) {
-    if (name.isEmpty) return 'S';
-    List<String> names = name.split(' ');
-    if (names.length > 1) {
-      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'S';
+    final parts =
+        trimmed.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.length > 1) {
+      final first = parts.first.isNotEmpty ? parts.first[0] : '';
+      final last = parts.last.isNotEmpty ? parts.last[0] : '';
+      final res = '$first$last'.toUpperCase();
+      return res.isNotEmpty ? res : 'S';
     }
-    return names[0][0].toUpperCase();
+    return parts.first.isNotEmpty ? parts.first[0].toUpperCase() : 'S';
   }
 }

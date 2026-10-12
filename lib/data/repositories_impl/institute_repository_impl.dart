@@ -2,6 +2,7 @@ import 'package:tuoora/data/models/institute_subscription_model.dart';
 import 'package:tuoora/data/models/batch_model.dart';
 import 'package:tuoora/data/models/institute_profile_model.dart';
 import 'package:tuoora/data/models/staff_model.dart';
+import 'package:tuoora/data/models/notification_preference_model.dart';
 import 'package:tuoora/data/models/whatsapp_settings_model.dart';
 import 'package:tuoora/presentation/institute/models/expense_model.dart';
 import 'package:tuoora/presentation/institute/models/fee_record.dart';
@@ -87,26 +88,28 @@ abstract class InstituteRepositoryImpl {
 
   // Downloads the PDF receipt for a single fee record.
   Future<List<int>> downloadFeeReceipt(int feeId);
+  Future<PendingFeesResponse> getPendingFees({String? search, int? batchId});
+  Future<Map<String, dynamic>> sendFeeReminders({int? studentId, int? batchId});
 
   // Reports
   Future<FeeReportResponse> getFeeReport();
   Future<BatchFeeDetailResponse> getBatchFeeReport(int batchId);
-  Future<List<int>> exportFeeReport();
+  Future<List<int>> exportFeeReport({int? batchId});
 
   // Attendance Reports
   Future<AttendanceReportResponse> getAttendanceReport();
   Future<BatchAttendanceDetailResponse> getBatchAttendanceReport(int batchId);
-  Future<List<int>> exportAttendanceReport();
+  Future<List<int>> exportAttendanceReport({int? batchId});
 
   // Performance Reports
   Future<PerformanceReportResponse> getPerformanceReport();
   Future<BatchPerformanceDetailResponse> getBatchPerformanceReport(int batchId);
-  Future<List<int>> exportPerformanceReport();
+  Future<List<int>> exportPerformanceReport({int? batchId});
 
   // Student Wise Report
   Future<List<StudentBatchItem>> getStudentsForBatchReport(int batchId);
-  Future<StudentWiseReportData> getStudentWiseReport(int studentId);
-  Future<List<int>> exportStudentWiseReport(int studentId);
+  Future<StudentWiseReportData> getStudentWiseReport(int studentId, {int? batchId});
+  Future<List<int>> exportStudentWiseReport(int studentId, {int? batchId});
 
   // Business Analytics
   Future<AnalyticsResponse> getAnalytics({int months = 6});
@@ -170,11 +173,24 @@ abstract class InstituteRepositoryImpl {
   Future<List<NotificationModel>> getNotifications();
 
   // Expenses
-  Future<ExpenseListResponse> listExpenses({int page = 1});
+  Future<ExpenseListResponse> listExpenses({
+    int page = 1,
+    int? month,
+    int? year,
+    int? categoryId,
+    int? perPage,
+  });
   Future<List<ExpenseCategory>> getExpenseCategories();
   Future<ExpenseCategory> createExpenseCategory(Map<String, dynamic> data);
+  Future<ExpenseCategory> updateExpenseCategory(int categoryId, Map<String, dynamic> data);
+  Future<void> deleteExpenseCategory(int categoryId);
   Future<ExpenseModel> createExpense(Map<String, dynamic> data);
-  Future<ExpenseAnalysis> getExpenseAnalysis(String month, String year);
+  Future<List<ExpenseModel>> listSalaryExpenses({
+    required int month,
+    required int year,
+  });
+  Future<bool> getIncludeSalaryInExpenses();
+  Future<bool> setIncludeSalaryInExpenses(bool include);
 
   // Staff
   Future<StaffListResponse> listStaff({int page = 1, String? search});
@@ -212,4 +228,8 @@ abstract class InstituteRepositoryImpl {
   Future<void> logSalary(Map<String, dynamic> data);
   Future<void> deleteResource(int id);
   Future<void> deleteDeviceSession(int sessionId);
+  Future<List<NotificationPreferenceModule>> getNotificationPreferences();
+  Future<List<NotificationPreferenceModule>> updateNotificationPreferences(
+    List<Map<String, dynamic>> modules,
+  );
 }

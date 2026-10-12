@@ -7,27 +7,11 @@ import 'package:tuoora/data/models/student_dashboard_model.dart';
 import 'package:tuoora/data/repositories/student_dashboard_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/presentation/student/models/assignment_model.dart';
-import 'package:tuoora/presentation/student/models/student_exam_model.dart';
+import 'package:tuoora/presentation/student/models/student_timetable_model.dart';
 import 'package:tuoora/presentation/student/widgets/birthday_wish_dialog.dart';
-
-class TodayClassDisplay {
-  final String dayNumber;
-  final String monthLabel;
-  final String weekdayLabel;
-  final String headerLabel;
-  final String subject;
-  final String subtitle;
-
-  const TodayClassDisplay({
-    required this.dayNumber,
-    required this.monthLabel,
-    required this.weekdayLabel,
-    required this.headerLabel,
-    required this.subject,
-    required this.subtitle,
-  });
-}
+import 'package:tuoora/data/repositories/student_timetable_repository.dart';
 
 class DashboardAssignmentDisplay {
   final Assignment assignment;
@@ -48,20 +32,6 @@ class DashboardAssignmentDisplay {
 }
 
 class StudentDashboardController extends GetxController {
-  static const _monthA = <String>[
-    'JAN',
-    'FEB',
-    'MAR',
-    'APR',
-    'MAY',
-    'JUN',
-    'JUL',
-    'AUG',
-    'SEP',
-    'OCT',
-    'NOV',
-    'DEC',
-  ];
   static const _weekdayA = <String>[
     'MON',
     'TUE',
@@ -74,21 +44,71 @@ class StudentDashboardController extends GetxController {
 
   final RxBool isLoading = true.obs;
   final Rxn<StudentDashboardData> dashboardData = Rxn<StudentDashboardData>();
+  final RxString userAvatarUrl = ''.obs;
+  
+  final RxList<StudentTimetableSlot> timetableSlots = <StudentTimetableSlot>[].obs;
+  final Rx<DateTime> selectedDate = DateTime.now().obs;
 
   late final StudentDashboardRepository _repository;
+  late final StudentTimetableRepository _timetableRepo;
 
   @override
   void onInit() {
     super.onInit();
-    _repository = StudentDashboardRepository(Get.find<ApiClient>());
+    final apiClient = Get.find<ApiClient>();
+    _repository = StudentDashboardRepository(apiClient);
+    _timetableRepo = StudentTimetableRepository(apiClient);
+    if (Get.isRegistered<AuthService>()) {
+      userAvatarUrl.value =
+          Get.find<AuthService>().currentUser?.profileImage ?? '';
+    }
     fetchDashboard();
+  }
+
+  void updateAvatarUrl(String url) {
+    userAvatarUrl.value = url;
+    if (dashboardData.value != null) {
+      dashboardData.value = dashboardData.value!.copyWith(avatarUrl: url);
+    }
+  }
+
+  void selectDate(DateTime date) {
+    selectedDate.value = date;
+  }
+
+  List<StudentTimetableSlot> get classesForSelectedDate {
+    final dayStr = _weekdayA[selectedDate.value.weekday - 1].toLowerCase();
+    final dayMap = {
+      'mon': 'monday',
+      'tue': 'tuesday',
+      'wed': 'wednesday',
+      'thu': 'thursday',
+      'fri': 'friday',
+      'sat': 'saturday',
+      'sun': 'sunday',
+    };
+    final fullDayStr = dayMap[dayStr] ?? 'monday';
+
+    final filtered = timetableSlots
+        .where((s) => s.dayOfWeek.toLowerCase() == fullDayStr)
+        .toList();
+    filtered.sort((a, b) => a.startTime.compareTo(b.startTime));
+    return filtered;
   }
 
   Future<void> fetchDashboard() async {
     try {
       isLoading.value = true;
-      final data = await _repository.getDashboardData();
+      final futures = await Future.wait([
+        _repository.getDashboardData(),
+        _timetableRepo.getTimetable(day: 'all').catchError((_) => <StudentTimetableSlot>[]),
+      ]);
+      final data = futures[0] as StudentDashboardData;
+      timetableSlots.assignAll(futures[1] as List<StudentTimetableSlot>);
       dashboardData.value = data;
+      if (data.avatarUrl != null && data.avatarUrl!.isNotEmpty) {
+        userAvatarUrl.value = data.avatarUrl!;
+      }
 
       _checkAndShowBirthdayWish(data);
     } catch (e) {
@@ -131,34 +151,6 @@ class StudentDashboardController extends GetxController {
         .toUpperCase();
   }
 
-  TodayClassDisplay? get todayClassDisplay {
-    final tc = dashboardData.value?.todayClass;
-    if (tc == null) return null;
-
-    final now = DateTime.now();
-
-    final weekdayLabel = tc.dayShort.isNotEmpty
-        ? tc.dayShort.toUpperCase()
-        : _weekdayA[now.weekday - 1];
-
-    final headerLabel = tc.isToday ? "TODAY’S CLASS" : 'NEXT CLASS';
-
-    final subtitleParts = <String>[
-      if (tc.startTime.isNotEmpty) tc.startTime,
-      if ((tc.teacherName ?? '').isNotEmpty) tc.teacherName!,
-      if (tc.description.isNotEmpty) tc.description,
-    ];
-
-    return TodayClassDisplay(
-      dayNumber: now.day.toString(),
-      monthLabel: _monthA[now.month - 1],
-      weekdayLabel: weekdayLabel,
-      headerLabel: headerLabel,
-      subject: tc.subject,
-      subtitle: subtitleParts.join('  •  '),
-    );
-  }
-
   List<DashboardAssignmentDisplay> get dashboardAssignments {
     final items = dashboardData.value?.todayAssignments ?? const [];
     return items
@@ -175,8 +167,8 @@ class StudentDashboardController extends GetxController {
         .toList();
   }
 
-  List<StudentExamListItem> get dashboardUpcomingExams {
-    final items = dashboardData.value?.upcomingExams ?? const [];
-    return items.take(2).toList();
+  int get pendingAssignmentsCount {
+    final items = dashboardData.value?.todayAssignments ?? const [];
+    return items.where((a) => a.badge != AssignmentBadge.done).length;
   }
 }

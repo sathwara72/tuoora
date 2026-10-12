@@ -16,6 +16,8 @@ class TeacherMarkAttendanceController extends GetxController {
   final isLoading = true.obs;
   final isSubmitting = false.obs;
   final rows = <TeacherAttendanceRow>[].obs;
+  final searchQuery = ''.obs;
+  final filterStatus = 'all'.obs; // 'all', 'present', 'absent'
 
   bool get isToday {
     final now = DateTime.now();
@@ -45,6 +47,25 @@ class TeacherMarkAttendanceController extends GetxController {
   int get unmarkedCount =>
       rows.where((r) => r.status == null || r.status!.isEmpty).length;
   int get totalCount => rows.length;
+
+  List<TeacherAttendanceRow> get filteredRows {
+    return rows.where((r) {
+      final status = r.status?.toLowerCase();
+      if (filterStatus.value == 'present' && status != 'present') return false;
+      if (filterStatus.value == 'absent' && status != 'absent') return false;
+
+      if (searchQuery.value.trim().isNotEmpty) {
+        final q = searchQuery.value.toLowerCase().trim();
+        final name = r.studentName.toLowerCase();
+        final phone = (r.phone ?? '').toLowerCase();
+        final enroll = (r.enrollmentId ?? '').toLowerCase();
+        if (!name.contains(q) && !phone.contains(q) && !enroll.contains(q)) {
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+  }
 
   @override
   void onInit() {
@@ -94,22 +115,26 @@ class TeacherMarkAttendanceController extends GetxController {
     rows.refresh();
   }
 
-  Future<void> markByQr(String qrPayload) async {
+  Future<QrAttendanceResult> markByQrDirect(String qrPayload) async {
     if (!isEditable) {
-      AppSnackBar.error('Attendance for this date can no longer be edited');
-      return;
+      throw Exception('Attendance for this date can no longer be edited');
     }
+    final result = await _repository.markAttendanceByQr(
+      batchId: batch.id,
+      date: apiDate,
+      qrPayload: qrPayload,
+    );
+    final row = rows.firstWhereOrNull((r) => r.studentId == result.studentId);
+    if (row != null) {
+      row.status = 'present';
+      rows.refresh();
+    }
+    return result;
+  }
+
+  Future<void> markByQr(String qrPayload) async {
     try {
-      final result = await _repository.markAttendanceByQr(
-        batchId: batch.id,
-        date: apiDate,
-        qrPayload: qrPayload,
-      );
-      final row = rows.firstWhereOrNull((r) => r.studentId == result.studentId);
-      if (row != null) {
-        row.status = 'present';
-        rows.refresh();
-      }
+      final result = await markByQrDirect(qrPayload);
       AppSnackBar.success('Marked ${result.studentName} present');
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));

@@ -19,6 +19,7 @@ import 'package:tuoora/presentation/institute/models/school_class_model.dart';
 import 'package:tuoora/presentation/institute/models/attendance_record_model.dart';
 import 'package:tuoora/data/models/notification_model.dart';
 import 'package:tuoora/data/models/staff_model.dart';
+import 'package:tuoora/data/models/notification_preference_model.dart';
 import 'package:tuoora/data/models/subscription_model.dart';
 import 'package:tuoora/data/models/white_label_model.dart';
 import 'package:tuoora/presentation/institute/models/birthday_model.dart';
@@ -188,8 +189,8 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }) async {
     final fields = <String, dynamic>{
       'app_name': appName,
-      if (primaryColor != null) 'primary_color': primaryColor,
-      if (secondaryColor != null) 'secondary_color': secondaryColor,
+      'primary_color': ?primaryColor,
+      'secondary_color': ?secondaryColor,
     };
     final formData = FormData(fields);
     if (logoPath != null && logoPath.isNotEmpty) {
@@ -446,6 +447,38 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<PendingFeesResponse> getPendingFees({String? search, int? batchId}) async {
+    final query = <String, String>{};
+    if (search != null && search.isNotEmpty) query['search'] = search;
+    if (batchId != null) query['batch_id'] = batchId.toString();
+
+    final response = await _apiClient.get(
+      '${ApiConstants.instituteFees}/pending',
+      query: query,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to fetch pending fees');
+    }
+    return PendingFeesResponse.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<Map<String, dynamic>> sendFeeReminders({int? studentId, int? batchId}) async {
+    final body = <String, dynamic>{};
+    if (studentId != null) body['student_id'] = studentId;
+    if (batchId != null) body['batch_id'] = batchId;
+
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteFees}/send-reminders',
+      body,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to send fee reminders');
+    }
+    return response.body is Map ? (response.body as Map).cast<String, dynamic>() : <String, dynamic>{};
+  }
+
+  @override
   Future<FeeReportResponse> getFeeReport() async {
     final response = await _apiClient.get(ApiConstants.instituteReportFee);
     if (response.status.hasError) {
@@ -539,28 +572,32 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<List<int>> exportFeeReport() async {
+  Future<List<int>> exportFeeReport({int? batchId}) async {
     return _downloadFile(
-      ApiConstants.instituteReportFeeExport,
+      _withBatch(ApiConstants.instituteReportFeeExport, batchId),
       acceptHeader: 'application/pdf',
     );
   }
 
   @override
-  Future<List<int>> exportAttendanceReport() async {
+  Future<List<int>> exportAttendanceReport({int? batchId}) async {
     return _downloadFile(
-      ApiConstants.instituteReportAttendanceExport,
+      _withBatch(ApiConstants.instituteReportAttendanceExport, batchId),
       acceptHeader: 'application/pdf',
     );
   }
 
   @override
-  Future<List<int>> exportPerformanceReport() async {
+  Future<List<int>> exportPerformanceReport({int? batchId}) async {
     return _downloadFile(
-      ApiConstants.instituteReportPerformanceExport,
+      _withBatch(ApiConstants.instituteReportPerformanceExport, batchId),
       acceptHeader: 'application/pdf',
     );
   }
+
+  /// Limits an export endpoint to one batch; no batch means all batches.
+  String _withBatch(String endpoint, int? batchId) =>
+      batchId == null ? endpoint : '$endpoint?batch_id=$batchId';
 
   @override
   Future<List<StudentBatchItem>> getStudentsForBatchReport(int batchId) async {
@@ -582,10 +619,17 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<StudentWiseReportData> getStudentWiseReport(int studentId) async {
+  Future<StudentWiseReportData> getStudentWiseReport(
+    int studentId, {
+    int? batchId,
+  }) async {
+    final query = <String, String>{'student_id': studentId.toString()};
+    if (batchId != null) {
+      query['batch_id'] = batchId.toString();
+    }
     final response = await _apiClient.get(
       ApiConstants.instituteReportStudent,
-      query: {'student_id': studentId.toString()},
+      query: query,
     );
     if (response.status.hasError) {
       throw Exception('Failed to fetch student report: ${response.statusText}');
@@ -596,9 +640,16 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<List<int>> exportStudentWiseReport(int studentId) async {
+  Future<List<int>> exportStudentWiseReport(
+    int studentId, {
+    int? batchId,
+  }) async {
+    var url = '${ApiConstants.instituteReportStudentExport}?student_id=$studentId';
+    if (batchId != null) {
+      url += '&batch_id=$batchId';
+    }
     return _downloadFile(
-      '${ApiConstants.instituteReportStudentExport}?student_id=$studentId',
+      url,
       acceptHeader: 'application/pdf',
     );
   }
@@ -944,6 +995,7 @@ class InstituteRepository implements InstituteRepositoryImpl {
       'title': data['title'],
       'description': data['description'],
       'due_date': data['due_date'],
+      'allow_late_submission': data['allow_late_submission'] == true ? '1' : '0',
     };
 
     if (data['attachment'] != null) {
@@ -1141,10 +1193,24 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<ExpenseListResponse> listExpenses({int page = 1}) async {
+  Future<ExpenseListResponse> listExpenses({
+    int page = 1,
+    int? month,
+    int? year,
+    int? categoryId,
+    int? perPage,
+  }) async {
+    final Map<String, String> queryParams = {
+      'page': page.toString(),
+    };
+    if (month != null) queryParams['month'] = month.toString();
+    if (year != null) queryParams['year'] = year.toString();
+    if (categoryId != null) queryParams['category_id'] = categoryId.toString();
+    if (perPage != null) queryParams['per_page'] = perPage.toString();
+
     final response = await _apiClient.get(
       ApiConstants.instituteExpenses,
-      query: {'page': page.toString()},
+      query: queryParams,
     );
     if (response.status.hasError) {
       throw Exception('Failed to fetch expenses: ${response.statusText}');
@@ -1177,6 +1243,27 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<ExpenseCategory> updateExpenseCategory(int categoryId, Map<String, dynamic> data) async {
+    final response = await _apiClient.put(
+      '${ApiConstants.instituteExpenseCategories}/$categoryId',
+      data,
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to update category: ${response.statusText}');
+    }
+    return ExpenseCategory.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<void> deleteExpenseCategory(int categoryId) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteExpenseCategories}/$categoryId',
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to delete category: ${response.statusText}');
+    }
+  }
+  @override
   Future<ExpenseModel> createExpense(Map<String, dynamic> data) async {
     final Map<String, dynamic> fields = Map.from(data);
     final String? receiptPath = fields.remove('receipt_image');
@@ -1203,17 +1290,48 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
-  Future<ExpenseAnalysis> getExpenseAnalysis(String month, String year) async {
+  Future<bool> getIncludeSalaryInExpenses() async {
     final response = await _apiClient.get(
-      ApiConstants.instituteExpenseAnalysis,
-      query: {'month': month, 'year': year},
+      ApiConstants.instituteExpenseSalaryToggle,
     );
     if (response.status.hasError) {
-      throw Exception(
-        'Failed to fetch expense analysis: ${response.statusText}',
-      );
+      throw Exception('Failed to fetch salary setting: ${response.statusText}');
     }
-    return ExpenseAnalysis.fromJson(response.body);
+    return response.body?['include_salary_in_expenses'] == true;
+  }
+
+  @override
+  Future<bool> setIncludeSalaryInExpenses(bool include) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteExpenseSalaryToggle,
+      {'include_salary_in_expenses': include},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update salary setting');
+    }
+    return response.body?['include_salary_in_expenses'] == true;
+  }
+
+  @override
+  Future<List<ExpenseModel>> listSalaryExpenses({
+    required int month,
+    required int year,
+  }) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteExpenses,
+      query: {
+        'category_id': 'salary',
+        'month': month.toString(),
+        'year': year.toString(),
+      },
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch salary expenses: ${response.statusText}');
+    }
+    final items = (response.body['data']?['items'] as List?) ?? const [];
+    return items
+        .map((e) => ExpenseModel.fromSalaryJson(Map<String, dynamic>.from(e)))
+        .toList();
   }
 
   @override
@@ -1500,4 +1618,49 @@ class InstituteRepository implements InstituteRepositoryImpl {
       _handleError(response, 'Failed to delete device session');
     }
   }
+
+  @override
+  Future<List<NotificationPreferenceModule>> getNotificationPreferences() async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteNotificationPreferences,
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to load notification preferences');
+    }
+
+    final body = response.body;
+    if (body is Map && body['data'] is List) {
+      final list = body['data'] as List;
+      return list
+          .map((item) => NotificationPreferenceModule.fromJson(
+              Map<String, dynamic>.from(item as Map)))
+          .toList();
+    }
+    return <NotificationPreferenceModule>[];
+  }
+
+  @override
+  Future<List<NotificationPreferenceModule>> updateNotificationPreferences(
+    List<Map<String, dynamic>> modules,
+  ) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteNotificationPreferences,
+      {'modules': modules},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to save notification preferences');
+    }
+
+    final body = response.body;
+    if (body is Map && body['data'] is List) {
+      final list = body['data'] as List;
+      return list
+          .map((item) => NotificationPreferenceModule.fromJson(
+              Map<String, dynamic>.from(item as Map)))
+          .toList();
+    }
+    return <NotificationPreferenceModule>[];
+  }
 }
+
+

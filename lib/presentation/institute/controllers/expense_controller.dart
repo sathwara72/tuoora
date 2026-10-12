@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
-import 'package:intl/intl.dart';
 
 class ExpenseController extends GetxController {
   final InstituteRepositoryImpl _repository;
@@ -17,12 +16,36 @@ class ExpenseController extends GetxController {
   final expenses = <ExpenseModel>[].obs;
   final isLoading = false.obs;
   final isCategoriesLoading = false.obs;
+  final includeSalary = false.obs;
+  final isTogglingSalary = false.obs;
   final categories = <ExpenseCategory>[].obs;
 
-  // Analysis State
-  final expenseAnalysis = Rxn<ExpenseAnalysis>();
-  final isAnalysisLoading = false.obs;
-  final selectedAnalysisMonth = DateTime.now().obs;
+  // Filter States
+  final selectedCategoryFilter = Rxn<int>();
+  final selectedPaymentFilter = 'all'.obs;
+  final searchQuery = ''.obs;
+
+  void setCategoryFilter(int? categoryId) {
+    selectedCategoryFilter.value = categoryId;
+  }
+
+  void setPaymentFilter(String payment) {
+    selectedPaymentFilter.value = payment;
+  }
+
+  void setSearchQuery(String query) {
+    searchQuery.value = query;
+  }
+
+  void clearFilters() {
+    selectedCategoryFilter.value = null;
+    selectedPaymentFilter.value = 'all';
+    searchQuery.value = '';
+  }
+
+  // Expenses Month Filter State & Expanded Categories
+  final selectedExpensesMonth = DateTime.now().obs;
+  final expandedCategoryIds = <int>{}.obs;
 
   // Pagination
   final currentPage = 1.obs;
@@ -46,9 +69,7 @@ class ExpenseController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadExpenses();
-    loadCategories();
-    loadExpenseAnalysis();
+    _init();
 
     // Listeners to clear errors as user types
     amountController.addListener(() {
@@ -61,8 +82,15 @@ class ExpenseController extends GetxController {
       if (triedToSave.value) validateForm();
     });
 
-    // Auto-refresh analysis when month changes
-    ever(selectedAnalysisMonth, (_) => loadExpenseAnalysis());
+    // Auto-refresh expenses when month changes
+    ever(selectedExpensesMonth, (_) => loadExpenses());
+  }
+
+  /// The salary setting decides whether salary rows are part of the list, so
+  /// it has to be known before the first load.
+  Future<void> _init() async {
+    await loadSalaryToggle();
+    await Future.wait([loadExpenses(), loadCategories()]);
   }
 
   bool validateForm() {
@@ -76,13 +104,8 @@ class ExpenseController extends GetxController {
     amountError.value = amountVal;
     if (amountVal != null) isValid = false;
 
-    // Description validation
-    final descVal = ValidationUtils.validateRequired(
-      descriptionController.text,
-      'Description',
-    );
-    descriptionError.value = descVal;
-    if (descVal != null) isValid = false;
+    // Description is optional.
+    descriptionError.value = null;
 
     // Category validation
     final categoryVal = ValidationUtils.validateCategorySelection(
@@ -99,10 +122,30 @@ class ExpenseController extends GetxController {
 
     try {
       if (page == 1) isLoading.value = true;
-      final response = await _repository.listExpenses(page: page);
+      final response = await _repository.listExpenses(
+        page: page,
+        month: selectedExpensesMonth.value.month,
+        year: selectedExpensesMonth.value.year,
+        perPage: 100,
+      );
 
       if (page == 1) {
-        expenses.assignAll(response.items);
+        final items = [...response.items];
+        // Paid staff salaries live in their own table; show them as
+        // "Staff Salary" expenses when the institute has that turned on.
+        if (includeSalary.value) {
+          try {
+            items.addAll(
+              await _repository.listSalaryExpenses(
+                month: selectedExpensesMonth.value.month,
+                year: selectedExpensesMonth.value.year,
+              ),
+            );
+          } catch (e) {
+            debugPrint('Error loading salary expenses: $e');
+          }
+        }
+        expenses.assignAll(items);
       } else {
         expenses.addAll(response.items);
       }
@@ -120,6 +163,36 @@ class ExpenseController extends GetxController {
   Future<void> loadMoreExpenses() async {
     if (currentPage.value < lastPage.value) {
       await loadExpenses(page: currentPage.value + 1);
+    }
+  }
+
+  Future<void> loadSalaryToggle() async {
+    try {
+      includeSalary.value = await _repository.getIncludeSalaryInExpenses();
+    } catch (e) {
+      debugPrint('Error loading salary toggle: $e');
+    }
+  }
+
+  Future<void> toggleIncludeSalary(bool include) async {
+    final previous = includeSalary.value;
+    includeSalary.value = include;
+    try {
+      isTogglingSalary.value = true;
+      includeSalary.value = await _repository.setIncludeSalaryInExpenses(
+        include,
+      );
+      AppSnackBar.success(
+        includeSalary.value
+            ? 'Staff salary included in expenses'
+            : 'Staff salary excluded from expenses',
+      );
+      await Future.wait([loadCategories(), loadExpenses()]);
+    } catch (e) {
+      includeSalary.value = previous;
+      AppSnackBar.error('Failed to update salary setting: $e');
+    } finally {
+      isTogglingSalary.value = false;
     }
   }
 
@@ -147,30 +220,44 @@ class ExpenseController extends GetxController {
     }
   }
 
-  Future<void> loadExpenseAnalysis() async {
+  Future<void> updateCategory(int categoryId, String newName) async {
     try {
-      isAnalysisLoading.value = true;
-      final month = DateFormat('MM').format(selectedAnalysisMonth.value);
-      final year = DateFormat('yyyy').format(selectedAnalysisMonth.value);
-
-      final analysis = await _repository.getExpenseAnalysis(month, year);
-
-      // Sort categories by percentage descending (high first)
-      analysis.categories.sort((a, b) => b.percentage.compareTo(a.percentage));
-
-      expenseAnalysis.value = analysis;
+      final updated = await _repository.updateExpenseCategory(categoryId, {'name': newName});
+      final index = categories.indexWhere((c) => c.id == categoryId);
+      if (index != -1) {
+        categories[index] = updated;
+      }
+      if (selectedCategory.value?.id == categoryId) {
+        selectedCategory.value = updated;
+      }
+      AppSnackBar.success('Category updated successfully.');
+      await loadExpenses(page: 1);
+      await loadCategories();
     } catch (e) {
-      debugPrint('Error loading analysis: $e');
-      expenseAnalysis.value = null;
-    } finally {
-      isAnalysisLoading.value = false;
+      debugPrint('Error updating category: $e');
+      AppSnackBar.error('Failed to update category.');
     }
   }
 
-  bool get canGoToNextMonth {
+  Future<void> deleteCategory(int categoryId, String categoryName) async {
+    try {
+      await _repository.deleteExpenseCategory(categoryId);
+      categories.removeWhere((c) => c.id == categoryId);
+      if (selectedCategoryFilter.value == categoryId) {
+        selectedCategoryFilter.value = null;
+      }
+      AppSnackBar.success('Category "$categoryName" deleted successfully.');
+      await loadExpenses(page: 1);
+      await loadCategories();
+    } catch (e) {
+      debugPrint('Error deleting category: $e');
+      AppSnackBar.error('Failed to delete category.');
+    }
+  }
+
+  bool get canGoToNextExpensesMonth {
     final now = DateTime.now();
-    final currentView = selectedAnalysisMonth.value;
-    // Cannot go beyond current month
+    final currentView = selectedExpensesMonth.value;
     if (currentView.year < now.year) return true;
     if (currentView.year == now.year && currentView.month < now.month) {
       return true;
@@ -178,24 +265,96 @@ class ExpenseController extends GetxController {
     return false;
   }
 
-  void nextAnalysisMonth() {
-    if (!canGoToNextMonth) return;
-
-    selectedAnalysisMonth.value = DateTime(
-      selectedAnalysisMonth.value.year,
-      selectedAnalysisMonth.value.month + 1,
+  void nextExpensesMonth() {
+    if (!canGoToNextExpensesMonth) return;
+    selectedExpensesMonth.value = DateTime(
+      selectedExpensesMonth.value.year,
+      selectedExpensesMonth.value.month + 1,
     );
   }
 
-  void prevAnalysisMonth() {
-    selectedAnalysisMonth.value = DateTime(
-      selectedAnalysisMonth.value.year,
-      selectedAnalysisMonth.value.month - 1,
+  void prevExpensesMonth() {
+    selectedExpensesMonth.value = DateTime(
+      selectedExpensesMonth.value.year,
+      selectedExpensesMonth.value.month - 1,
     );
   }
 
-  void setAnalysisMonth(DateTime date) {
-    selectedAnalysisMonth.value = DateTime(date.year, date.month);
+  void setExpensesMonth(DateTime date) {
+    selectedExpensesMonth.value = DateTime(date.year, date.month);
+  }
+
+  void toggleCategoryExpanded(int categoryId) {
+    if (expandedCategoryIds.contains(categoryId)) {
+      expandedCategoryIds.remove(categoryId);
+    } else {
+      expandedCategoryIds.add(categoryId);
+    }
+  }
+
+  bool isCategoryExpanded(int categoryId) => expandedCategoryIds.contains(categoryId);
+
+  List<ExpenseCategoryGroup> get categoryGroups {
+    final Map<int, List<ExpenseModel>> grouped = {};
+    final Map<int, ExpenseCategory?> categoryMap = {};
+
+    for (final cat in categories) {
+      grouped[cat.id] = [];
+      categoryMap[cat.id] = cat;
+    }
+
+    for (final exp in expenses) {
+      final catId = exp.expenseCategoryId;
+      if (!grouped.containsKey(catId)) {
+        grouped[catId] = [];
+        categoryMap[catId] = exp.category;
+      }
+      grouped[catId]!.add(exp);
+    }
+
+    final List<ExpenseCategoryGroup> groups = [];
+    grouped.forEach((catId, items) {
+      if (selectedCategoryFilter.value != null && selectedCategoryFilter.value != catId) {
+        return;
+      }
+
+      final filteredItems = items.where((exp) {
+        final matchPay = selectedPaymentFilter.value == 'all' ||
+            exp.paymentMethod.toLowerCase() == selectedPaymentFilter.value.toLowerCase();
+        final search = searchQuery.value.trim().toLowerCase();
+        final matchSearch = search.isEmpty ||
+            exp.description.toLowerCase().contains(search) ||
+            exp.amount.toString().contains(search);
+        return matchPay && matchSearch;
+      }).toList();
+
+      if ((selectedPaymentFilter.value != 'all' || searchQuery.value.trim().isNotEmpty) && filteredItems.isEmpty) {
+        return;
+      }
+
+      final catName = categoryMap[catId]?.name ??
+          (items.isNotEmpty && items.first.category?.name != null
+              ? items.first.category!.name
+              : 'Uncategorized');
+      final double total = filteredItems.fold(0.0, (sum, item) => sum + item.amount);
+      groups.add(
+        ExpenseCategoryGroup(
+          categoryId: catId,
+          categoryName: catName,
+          totalAmount: total,
+          transactions: filteredItems,
+          category: categoryMap[catId],
+          isSalary: categoryMap[catId]?.isSalary ?? false,
+        ),
+      );
+    });
+
+    groups.sort((a, b) => b.totalAmount.compareTo(a.totalAmount));
+    return groups;
+  }
+
+  double get totalMonthlySpending {
+    return expenses.fold(0.0, (sum, item) => sum + item.amount);
   }
 
   void resetForm() {
@@ -237,7 +396,7 @@ class ExpenseController extends GetxController {
         'expense_category_id': selectedCategory.value!.id.toString(),
         'amount': amountController.text,
         'date': selectedDate.value.toIso8601String().split('T')[0],
-        'description': descriptionController.text,
+        'description': descriptionController.text.trim(),
         'payment_method': isOnlinePayment.value ? 'Online' : 'Cash',
       };
 
@@ -247,7 +406,6 @@ class ExpenseController extends GetxController {
       AppSnackBar.success(AppStrings.expenseAdded);
       resetForm();
       loadExpenses(page: 1);
-      loadExpenseAnalysis();
     } catch (e) {
       if (e is ValidationException) {
         _handleValidationErrors(e.errors);

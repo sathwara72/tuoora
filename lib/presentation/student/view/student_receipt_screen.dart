@@ -8,6 +8,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/student/controllers/fees_controller.dart';
+import 'package:tuoora/presentation/student/controllers/student_profile_controller.dart';
 import 'package:tuoora/presentation/student/models/fee_model.dart';
 import 'package:tuoora/presentation/student/widgets/student_app_bar.dart';
 
@@ -156,8 +157,8 @@ class _ReceiptCard extends StatelessWidget {
               value: receipt.studentName,
             ),
             _DetailRow(
-              label: AppStrings.studentReceiptRollNo,
-              value: receipt.rollNo,
+              label: AppStrings.studentReceiptEnrollmentId,
+              value: _resolveEnrollment(),
             ),
             _DetailRow(
               label: AppStrings.studentReceiptInstitute,
@@ -173,6 +174,27 @@ class _ReceiptCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _resolveEnrollment() {
+    if (receipt.enrollmentId.trim().isNotEmpty) {
+      return receipt.enrollmentId.trim();
+    }
+    if (Get.isRegistered<StudentProfileController>()) {
+      final enrollment = Get.find<StudentProfileController>()
+          .profileData
+          .value
+          ?.header
+          .enrollment
+          .trim();
+      if (enrollment != null && enrollment.isNotEmpty) {
+        return enrollment;
+      }
+    }
+    if (receipt.rollNo.trim().isNotEmpty) {
+      return receipt.rollNo.trim();
+    }
+    return '-';
   }
 }
 

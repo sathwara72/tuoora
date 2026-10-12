@@ -3,6 +3,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/url_launcher_utils.dart';
 import 'package:tuoora/core/widgets/status_badge.dart';
 import 'package:tuoora/presentation/institute/controllers/homework_rating_controller.dart';
 import 'package:tuoora/presentation/institute/models/homework_model.dart';
@@ -307,6 +308,84 @@ class HomeworkRatingScreen extends StatelessWidget {
               StatusBadge.fromLabel(sub.status),
             ],
           ),
+          if (sub.note != null && sub.note!.isNotEmpty) ...[
+            AppSpacing.v12,
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.scaffoldBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.borderGrey),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 14,
+                    color: AppColors.primaryBrand,
+                  ),
+                  AppSpacing.h8,
+                  Expanded(
+                    child: Text(
+                      sub.note!,
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (sub.attachmentUrl != null && sub.attachmentUrl!.isNotEmpty) ...[
+            AppSpacing.v12,
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () => UrlLauncherUtils.openExternal(sub.attachmentUrl!),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryBrandLight,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primaryBrand.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.attach_file_rounded,
+                        size: 16,
+                        color: AppColors.primaryBrand,
+                      ),
+                      AppSpacing.h6,
+                      Text(
+                        'View Attachment',
+                        style: AppTextStyles.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryBrand,
+                        ),
+                      ),
+                      AppSpacing.h6,
+                      const Icon(
+                        Icons.open_in_new_rounded,
+                        size: 14,
+                        color: AppColors.primaryBrand,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
           if (isSubmitted) ...[
             AppSpacing.v16,
             Row(

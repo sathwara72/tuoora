@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -10,6 +11,7 @@ import 'package:tuoora/core/api/api_client.dart';
 import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/services/notifications/notification_router.dart';
+import 'package:tuoora/core/services/branding_service.dart';
 
 /// Top-level background message handler.
 /// Required by FCM — must be a top-level (or static) function so the OS can
@@ -110,9 +112,32 @@ class PushNotificationService extends GetxService {
   static const String _consumedInitialFingerprintKey =
       'fcm_consumed_initial_fingerprint';
   static const String _androidChannelId = 'tuoora_default_channel';
-  static const String _androidChannelName = 'Tuoora Notifications';
-  static const String _androidChannelDesc =
-      'Default channel for Tuoora push notifications';
+
+  /// Returns a user-visible notification channel name, using the white-label
+  /// app name when the institute is white-labeled, otherwise 'Tuoora Notifications'.
+  static String get _androidChannelName {
+    if (BrandingService.instituteId > 0) {
+      try {
+        final svc = Get.find<BrandingService>();
+        if (svc.isWhiteLabeled) {
+          return '${svc.appName} Notifications';
+        }
+      } catch (_) {}
+    }
+    return 'Tuoora Notifications';
+  }
+
+  static String get _androidChannelDesc {
+    if (BrandingService.instituteId > 0) {
+      try {
+        final svc = Get.find<BrandingService>();
+        if (svc.isWhiteLabeled) {
+          return 'Default channel for ${svc.appName} push notifications';
+        }
+      } catch (_) {}
+    }
+    return 'Default channel for Tuoora push notifications';
+  }
 
   final RxnString _fcmToken = RxnString();
   String? get fcmToken => _fcmToken.value;
@@ -124,11 +149,21 @@ class PushNotificationService extends GetxService {
 
   Future<PushNotificationService> init() async {
     await _setupLocalNotifications();
-    await _requestPermissions();
     await _configureForegroundPresentation();
     await _registerListeners();
-    await _refreshToken();
-    await _checkInitialMessage();
+    // Not awaited: main() waits for init() before runApp(), and the iOS
+    // permission prompt blocks until the user answers it — awaiting it here
+    // leaves the app on a blank screen behind the dialog. The token refresh
+    // still runs only after the prompt is resolved (on iOS it may also poll
+    // for the APNs token for several seconds).
+    unawaited(_requestPermissions().then((_) => _refreshToken()));
+    // Also not awaited: on iOS getInitialMessage() does not return while the
+    // permission prompt is up, which would block runApp() the same way.
+    unawaited(
+      _checkInitialMessage().catchError((Object e) {
+        if (kDebugMode) print('[FCM] initial message check failed: $e');
+      }),
+    );
     return this;
   }
 
@@ -165,7 +200,7 @@ class PushNotificationService extends GetxService {
     );
 
     if (Platform.isAndroid) {
-      const channel = AndroidNotificationChannel(
+      final channel = AndroidNotificationChannel(
         _androidChannelId,
         _androidChannelName,
         description: _androidChannelDesc,
@@ -226,10 +261,23 @@ class PushNotificationService extends GetxService {
   Future<void> _refreshToken() async {
     try {
       // On iOS we must wait for the APNs token before requesting the FCM token.
+      // The APNs token is delivered asynchronously after registration, so poll
+      // briefly. If it never arrives (simulator, missing push capability),
+      // skip getToken(): it would throw, and onTokenRefresh delivers the FCM
+      // token once APNs registration completes.
       if (Platform.isIOS) {
-        final apnsToken = await _fcm.getAPNSToken();
+        String? apnsToken;
+        for (var i = 0; i < 10 && apnsToken == null; i++) {
+          apnsToken = await _fcm.getAPNSToken();
+          if (apnsToken == null) {
+            await Future<void>.delayed(const Duration(seconds: 1));
+          }
+        }
         if (apnsToken == null) {
-          if (kDebugMode) print('[FCM] APNs token not available yet');
+          if (kDebugMode) {
+            print('[FCM] APNs token not available; waiting for onTokenRefresh');
+          }
+          return;
         }
       }
       final token = await _fcm.getToken();
@@ -360,7 +408,13 @@ class PushNotificationService extends GetxService {
       if (Platform.isAndroid || Platform.isIOS) {
         _local.show(
           notification?.hashCode ?? message.hashCode,
-          title ?? 'Tuoora',
+          title ?? (() {
+            try {
+              return Get.find<BrandingService>().appName;
+            } catch (_) {
+              return 'Tuoora';
+            }
+          }()),
           body ?? '',
           NotificationDetails(
             android: AndroidNotificationDetails(
@@ -436,7 +490,7 @@ class PushNotificationService extends GetxService {
         id,
         title,
         body,
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
             _androidChannelId,
             _androidChannelName,
@@ -445,7 +499,7 @@ class PushNotificationService extends GetxService {
             importance: Importance.high,
             priority: Priority.high,
           ),
-          iOS: DarwinNotificationDetails(
+          iOS: const DarwinNotificationDetails(
             presentAlert: true,
             presentBadge: true,
             presentSound: true,

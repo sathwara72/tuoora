@@ -1,4 +1,6 @@
 import 'package:tuoora/core/api/api_client.dart';
+import 'package:tuoora/data/repositories/auth_repository.dart';
+import 'package:tuoora/data/repositories_impl/auth_repository_impl.dart';
 import 'package:tuoora/data/repositories_impl/chat_repository_impl.dart';
 import 'package:tuoora/presentation/institute/controllers/chat_controller.dart';
 import 'package:tuoora/core/services/chat_socket_service.dart';
@@ -23,6 +25,11 @@ import 'package:tuoora/presentation/student/controllers/student_notifications_co
 class StudentBinding extends Bindings {
   @override
   void dependencies() {
+    if (!Get.isRegistered<AuthRepository>()) {
+      final authRepo = AuthRepository(Get.find<ApiClient>());
+      Get.put<AuthRepositoryImpl>(authRepo, permanent: true);
+      Get.put<AuthRepository>(authRepo, permanent: true);
+    }
     Get.lazyPut<StudentController>(() => StudentController());
     Get.lazyPut<AssignmentsController>(
       () => AssignmentsController(),

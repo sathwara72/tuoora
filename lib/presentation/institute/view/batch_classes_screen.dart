@@ -38,7 +38,7 @@ class BatchClassesScreen extends StatelessWidget {
         child: Column(
           children: [
             InstituteAppBar(
-              title: 'Classes',
+              title: 'Subjects',
               subtitle: batch.title,
               onBackTap: () => Get.back(),
             ),
@@ -50,7 +50,7 @@ class BatchClassesScreen extends StatelessWidget {
                 if (controller.classes.isEmpty) {
                   return const AppEmptyView(
                     icon: Icons.class_outlined,
-                    title: 'No classes yet',
+                    title: 'No subjects yet',
                     message:
                         'Add subjects taught in this batch and assign teachers to them.',
                   );
@@ -136,7 +136,7 @@ class BatchClassesScreen extends StatelessWidget {
               ),
               IconButton(
                 onPressed: () => CommonDialog.showDeleteConfirmation(
-                  title: 'Delete Class',
+                  title: 'Delete Subject',
                   description:
                       'Are you sure you want to delete "${schoolClass.name}"?',
                   onConfirm: () => controller.deleteClass(schoolClass.id),
@@ -214,8 +214,8 @@ class BatchClassesScreen extends StatelessWidget {
   void _showClassDialog(BatchClassesController controller) {
     CommonDialog.show(
       title: controller.editingClassId.value != null
-          ? 'Edit Class'
-          : 'Add Class',
+          ? 'Edit Subject'
+          : 'Add Subject',
       confirmText: controller.editingClassId.value != null ? 'Update' : 'Add',
       onConfirm: () => controller.saveClass(),
       isLoading: controller.isSaving,
@@ -227,7 +227,7 @@ class BatchClassesScreen extends StatelessWidget {
         children: [
           Obx(
             () => AppInputField(
-              label: 'Class Name',
+              label: 'Subject Name',
               controller: controller.nameController,
               hint: 'e.g. Physics, Mathematics',
               errorText: controller.triedToSave.value

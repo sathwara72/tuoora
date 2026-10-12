@@ -14,24 +14,68 @@ class TeacherBatchExamsController extends GetxController {
 
   late final TeacherBatch batch;
   final isLoading = true.obs;
+  final isLoadingMore = false.obs;
   final exams = <TeacherExam>[].obs;
+  final total = 0.obs;
+
+  /// 'all' | 'scheduled' | 'completed'
+  final filter = 'all'.obs;
+  final searchQuery = ''.obs;
+
+  int _page = 1;
+  int _lastPage = 1;
+  bool get hasMore => _page < _lastPage;
 
   @override
   void onInit() {
     super.onInit();
     batch = Get.arguments as TeacherBatch;
     fetchExams();
+    debounce(searchQuery, (_) => fetchExams(), time: const Duration(milliseconds: 400));
+  }
+
+  void setFilter(String value) {
+    if (filter.value == value) return;
+    filter.value = value;
+    fetchExams();
   }
 
   Future<void> fetchExams() async {
     try {
       isLoading.value = true;
-      final page = await _repository.getExams(batchId: batch.id);
+      final page = await _repository.getExams(
+        batchId: batch.id,
+        status: filter.value == 'all' ? null : filter.value,
+        search: searchQuery.value.trim(),
+      );
       exams.value = page.items;
+      total.value = page.total;
+      _page = page.currentPage;
+      _lastPage = page.lastPage;
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (isLoadingMore.value || !hasMore) return;
+    try {
+      isLoadingMore.value = true;
+      final page = await _repository.getExams(
+        batchId: batch.id,
+        status: filter.value == 'all' ? null : filter.value,
+        search: searchQuery.value.trim(),
+        page: _page + 1,
+      );
+      exams.addAll(page.items);
+      _page = page.currentPage;
+      _lastPage = page.lastPage;
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 
@@ -53,7 +97,7 @@ class TeacherBatchExamsController extends GetxController {
         ),
         title: const Text('Delete Exam'),
         content: Text(
-          'Are you sure you want to delete "${exam.title}"? Any marks already entered may be lost.',
+          'Are you sure you want to delete "${exam.title}"? All student marks for this exam will be permanently removed.',
         ),
         actions: [
           TextButton(

@@ -34,16 +34,21 @@ class BatchStudentsScreen extends StatelessWidget {
           children: [
             const InstituteAppBar(title: AppStrings.batchStudents),
             Expanded(
-              child: SingleChildScrollView(
-                padding: AppSpacing.x16.add(AppSpacing.y16),
-                child: Column(
-                  children: [
-                    _buildEnrolledHeader(controller),
-                    AppSpacing.v24,
-                    _buildSearchBar(controller),
-                    AppSpacing.v24,
-                    _buildAssignedStudentList(controller, context),
-                  ],
+              child: RefreshIndicator(
+                color: AppColors.primaryBrand,
+                onRefresh: controller.refreshStudents,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: AppSpacing.x16.add(AppSpacing.y16),
+                  child: Column(
+                    children: [
+                      _buildEnrolledHeader(controller),
+                      AppSpacing.v24,
+                      _buildSearchBar(controller),
+                      AppSpacing.v24,
+                      _buildAssignedStudentList(controller, context),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -262,25 +267,37 @@ class BatchStudentsScreen extends StatelessWidget {
                 ),
                 AppSpacing.h16,
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        bs.student.name,
-                        style: AppTextStyles.outfit(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Get.toNamed(
+                        AppRoutes.instituteStudentProfile,
+                        arguments: {
+                          'studentId': bs.student.id,
+                          'student': bs.student,
+                        },
+                      );
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bs.student.name,
+                          style: AppTextStyles.outfit(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _getEnrollmentText(bs.student),
-                        style: AppTextStyles.outfit(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
+                        Text(
+                          _getEnrollmentText(bs.student),
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 IconButton(
@@ -362,13 +379,6 @@ class BatchStudentsScreen extends StatelessWidget {
   }
 
   String _getEnrollmentText(Student student) {
-    final enrollmentId = student.enrollmentID?.toString().trim() ?? '';
-    if (enrollmentId.isNotEmpty) {
-      return 'Enrollment ID: $enrollmentId';
-    }
-    if (student.idHash.isNotEmpty) {
-      return 'Enrollment ID: ${student.idHash}';
-    }
-    return 'Enrollment ID: ${student.id}';
+    return 'Enrollment ID: ${student.displayEnrollmentId}';
   }
 }

@@ -17,7 +17,8 @@ class AppStrings {
   static const String hintEnterEmailAddress = 'Enter your email address';
   static const String hintEnterPassword = 'Enter your password';
   static const String smartInstituteErp = 'SMART INSTITUTE ERP';
-  static const String splashTagline = 'Manage Today.\nBuild Brighter Tomorrows.';
+  static const String splashTagline =
+      'Manage Today.\nBuild Brighter Tomorrows.';
   static const String learnManageGrow = 'Learn\nManage\nGrow';
   static const String chooseHowToContinue = 'Choose how you want to continue';
   static const String educationTodayBrighterTomorrow =
@@ -113,6 +114,9 @@ class AppStrings {
   static const String instInstructionDetailsLabel = 'Instruction Details';
   static const String instInstructionDetailsHint = 'Enter instruction detail';
   static const String instResourceMaterialsLabel = 'Resource Materials';
+  static const String instAllowLateSubmissionLabel = 'Allow Late Submission';
+  static const String instAllowLateSubmissionDesc =
+      'Students can still submit after the due date passes.';
   static const String instAddAttachmentBtn = 'Add Attachment';
   static const String instAddAttachmentDesc = 'Image or PDF documents';
   static const String instCreateHomeworkBtn = 'Create Homework';
@@ -239,7 +243,9 @@ class AppStrings {
   static const String studentDonePill = 'Done';
 
   // Student — Assignment detail screen
+  static const String studentAssignmentDetailTitle = 'Assignment Detail';
   static const String studentAssignmentDetailDueLabel = 'DUE';
+  static const String studentAssignmentDetailDescription = 'DESCRIPTION';
   static const String studentAssignmentDetailInstructions = 'INSTRUCTIONS';
   static const String studentAssignmentDetailAttachments = 'ATTACHMENTS';
   static const String studentAssignmentDetailAssignedBy = 'Assigned by:';
@@ -266,7 +272,8 @@ class AppStrings {
   // Student — Receipt screen.
   static const String studentReceiptTitle = 'Receipt';
   static const String studentReceiptStudent = 'Student';
-  static const String studentReceiptRollNo = 'Roll no.';
+  static const String studentReceiptEnrollmentId = 'Enrollment ID';
+  static const String studentReceiptRollNo = 'Enrollment ID';
   static const String studentReceiptInstitute = 'Institute';
   static const String studentReceiptInvoiceNo = 'Invoice no.';
   static const String studentReceiptContact = 'Contact';
@@ -335,9 +342,6 @@ class AppStrings {
   static const String feeHistory = 'Fee History';
   static const String instituteAccountBlocked = 'Institute Account Blocked';
   static const String logout = 'Logout';
-  static const String yourRenewalRequestIsUnderReview =
-      'Your renewal request is under review. Adding new records will be ';
-  static const String renewalUnderReview = 'Renewal Under Review';
   static const String subscriptionExpired = 'Subscription Expired';
   static const String yourSubscriptionHasExpiredSoAdding =
       'Your subscription has expired, so adding new records is disabled. ';
@@ -674,8 +678,6 @@ class AppStrings {
   static const String studentIdentityCard = 'STUDENT IDENTITY CARD';
   static const String deleteStudent = 'Delete Student';
   static const String export = 'Export';
-  static const String renewalRequestPendingReview =
-      'Renewal Request Pending Review';
   static const String yourSubscriptionHasBeenExpired =
       'Your subscription has been expired.';
   static const String loginFailed = 'Login Failed';
@@ -705,6 +707,11 @@ class AppStrings {
       'A new version of Tuoora has been downloaded. Restart to apply.';
   static const String updateRestartButton = 'Restart';
   static const String updateLaterButton = 'Later';
+  static const String updateAvailableTitle = 'Update available';
+  static String updateAvailableMessage(String? version) => version == null
+      ? 'A new version of Tuoora is available with improvements and fixes.'
+      : 'Version $version of Tuoora is available with improvements and fixes.';
+  static const String updateNowButton = 'Update';
 
   static const String password = 'Password';
   static const String recoveryForThisRoleWillBe =
@@ -764,6 +771,15 @@ class AppStrings {
   static const String todaySAttendance = 'TODAY\'S ATTENDANCE';
   static const String studyMaterialThisWeek = 'STUDY MATERIAL THIS WEEK';
   static const String pendingFees = 'PENDING FEES';
+
+  // Student — Home dashboard (redesign)
+  static const String homeGreetingSubtitle = 'Let\'s make today productive!';
+  static const String homeTodaysTasks = 'Today\'s Tasks';
+  static const String homeRecentStudyMaterial = 'Recent Study Material';
+  static const String homeTodaysAttendance = 'Today\'s Attendance';
+  static const String homeStudyMaterialCardTitle = 'Study Material';
+  static const String homeFeeReminderCardTitle = 'Fee Reminder';
+  static const String homeTasksTitle = 'Tasks';
   static const String theIndustrialRevolutionSocioEconomicImpacts =
       'The Industrial Revolution: Socio-Economic Impacts';
   static const String quantumMechanicsParticleInABox =

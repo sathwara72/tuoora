@@ -8,7 +8,6 @@ class DailyUpdate {
   final int? studentId;
   final UpdateCategory category;
   final UpdateTargetType targetType;
-  final String? standard;
   final String description;
   final String? attachment;
   final DateTime? date;
@@ -27,7 +26,6 @@ class DailyUpdate {
     this.studentId,
     required this.category,
     required this.targetType,
-    this.standard,
     required this.description,
     this.attachment,
     this.date,
@@ -64,7 +62,6 @@ class DailyUpdate {
         (e) => e.name == json['target_type'],
         orElse: () => UpdateTargetType.all,
       ),
-      standard: json['standard']?.toString(),
       description: json['description']?.toString() ?? '',
       attachment: json['attachment']?.toString(),
       date: parseDate(json['date']),

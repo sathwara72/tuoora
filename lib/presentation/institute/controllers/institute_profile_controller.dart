@@ -279,6 +279,9 @@ class InstituteProfileController extends GetxController {
                 }
                 final XFile? image = await _picker.pickImage(
                   source: ImageSource.camera,
+                  imageQuality: 75,
+                  maxWidth: 1080,
+                  maxHeight: 1080,
                 );
                 if (image != null) {
                   profileImagePath.value = image.path;
@@ -319,6 +322,9 @@ class InstituteProfileController extends GetxController {
                 }
                 final XFile? image = await _picker.pickImage(
                   source: ImageSource.gallery,
+                  imageQuality: 75,
+                  maxWidth: 1080,
+                  maxHeight: 1080,
                 );
                 if (image != null) {
                   profileImagePath.value = image.path;

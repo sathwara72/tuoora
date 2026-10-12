@@ -9,6 +9,7 @@ import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/data/models/user_model.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batches_controller.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_dashboard_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_profile_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_self_attendance_controller.dart';
 
@@ -54,6 +55,9 @@ class _TeacherInstituteSwitcherSheetState
       }
       if (Get.isRegistered<TeacherProfileController>()) {
         Get.find<TeacherProfileController>().fetchProfile();
+      }
+      if (Get.isRegistered<TeacherDashboardController>()) {
+        Get.find<TeacherDashboardController>().fetchToday();
       }
       if (Get.isRegistered<TeacherSelfAttendanceController>()) {
         Get.find<TeacherSelfAttendanceController>().initLoad();

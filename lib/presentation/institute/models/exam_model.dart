@@ -84,6 +84,8 @@ class ExamModel {
   final String id;
   final String batchId;
   final String? batchName;
+  final int? classId;
+  final String? className;
   final String title;
   final String? subject;
   final String examType;
@@ -98,6 +100,8 @@ class ExamModel {
     required this.id,
     required this.batchId,
     this.batchName,
+    this.classId,
+    this.className,
     required this.title,
     this.subject,
     required this.examType,
@@ -111,8 +115,15 @@ class ExamModel {
 
   String get examTypeLabel => ExamType.labelFor(examType);
   String get formattedDate => DateFormat('dd MMM, yyyy').format(examDate);
-  bool get isScheduled => status == 'scheduled';
-  bool get isCompleted => status == 'completed';
+
+  bool get _datePassed {
+    final today = DateTime.now();
+    return examDate.isBefore(DateTime(today.year, today.month, today.day));
+  }
+
+  bool get isScheduled => status == 'scheduled' && !_datePassed;
+  bool get isCompleted =>
+      status == 'completed' || (status == 'scheduled' && _datePassed);
   bool get isCancelled => status == 'cancelled';
 
   factory ExamModel.fromJson(Map<String, dynamic> json) {
@@ -120,6 +131,8 @@ class ExamModel {
       id: json['id'].toString(),
       batchId: json['batch_id'].toString(),
       batchName: json['batch']?['name'],
+      classId: json['class_id'] != null ? int.tryParse(json['class_id'].toString()) : null,
+      className: json['school_class']?['name'] ?? json['class']?['name'],
       title: json['title'] ?? '',
       subject: json['subject'],
       examType: json['exam_type'] ?? ExamType.other,

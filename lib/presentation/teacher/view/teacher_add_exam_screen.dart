@@ -231,6 +231,46 @@ class TeacherAddExamScreen extends GetView<TeacherAddExamController> {
                         ),
                       ],
                     ),
+                    if (controller.isEditing) ...[
+                      AppSpacing.v16,
+                      _label('Status'),
+                      Obx(
+                        () => Row(
+                          children: [
+                            for (final st in TeacherAddExamController.statuses) ...[
+                              GestureDetector(
+                                onTap: () => controller.status.value = st,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: controller.status.value == st
+                                        ? AppColors.primaryBrand
+                                        : AppColors.fieldBg,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: controller.status.value == st
+                                          ? AppColors.primaryBrand
+                                          : AppColors.fieldBorder,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${st[0].toUpperCase()}${st.substring(1)}',
+                                    style: AppTextStyles.outfit(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: controller.status.value == st
+                                          ? AppColors.white
+                                          : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              AppSpacing.h8,
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                     AppSpacing.v16,
                     _label('Description (optional)'),
                     _field(

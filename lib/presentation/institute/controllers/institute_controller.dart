@@ -34,6 +34,15 @@ class InstituteController extends GetxController {
   final feeRecords = <FeeRecord>[].obs;
   final isLoadingFees = false.obs;
   final currentMonthTotal = 0.0.obs;
+  final totalCollected = 0.0.obs;
+  final totalPending = 0.0.obs;
+  final pendingStudentsCount = 0.obs;
+  final pendingStudents = <PendingFeeStudent>[].obs;
+  final isLoadingPendingFees = false.obs;
+  final selectedFeeTab = 'collected'.obs; // 'collected' or 'pending'
+  final isSendingReminders = false.obs;
+  final sendingReminderStudentIds = <int>{}.obs;
+  bool isSendingReminderTo(int id) => sendingReminderStudentIds.contains(id);
   final feesCurrentPage = 1.obs;
   final feesHasMore = true.obs;
 
@@ -75,20 +84,78 @@ class InstituteController extends GetxController {
       }
 
       currentMonthTotal.value = result.currentMonthTotal;
+      totalCollected.value = result.totalCollected;
+      totalPending.value = result.totalPending;
+      pendingStudentsCount.value = result.pendingStudentsCount;
 
       if (result.items.isEmpty || result.items.length < 10) {
         feesHasMore.value = false;
       } else {
         feesCurrentPage.value++;
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('fetchFees failed: $e\n$st');
       AppSnackBar.error(AppStrings.errFailedLoadFees);
     } finally {
       isLoadingFees.value = false;
     }
   }
 
-  Future<void> refreshFees() => fetchFees(reset: true);
+  Future<void> fetchPendingFees({String? search, int? batchId}) async {
+    try {
+      isLoadingPendingFees.value = true;
+      final result = await _instituteRepository.getPendingFees(
+        search: search,
+        batchId: batchId,
+      );
+      pendingStudents.assignAll(result.items);
+      totalPending.value = result.totalPending;
+      pendingStudentsCount.value = result.pendingStudentsCount;
+    } catch (e, st) {
+      debugPrint('fetchPendingFees failed: $e\n$st');
+      AppSnackBar.error('Failed to load pending fees');
+    } finally {
+      isLoadingPendingFees.value = false;
+    }
+  }
+
+  Future<void> sendFeeReminderToStudent(int studentId, String studentName) async {
+    if (sendingReminderStudentIds.contains(studentId)) return;
+    try {
+      sendingReminderStudentIds.add(studentId);
+      final res = await _instituteRepository.sendFeeReminders(studentId: studentId);
+      AppSnackBar.success(res['message']?.toString() ?? 'Reminder sent to ');
+    } catch (e) {
+      AppSnackBar.error('Failed to send reminder');
+    } finally {
+      sendingReminderStudentIds.remove(studentId);
+    }
+  }
+
+  Future<void> sendFeeReminderToAll({int? batchId}) async {
+    if (pendingStudents.isEmpty) {
+      AppSnackBar.info('No students with pending fees found');
+      return;
+    }
+    try {
+      isSendingReminders.value = true;
+      final res = await _instituteRepository.sendFeeReminders(batchId: batchId);
+      AppSnackBar.success(res['message']?.toString() ?? 'Fee reminders sent successfully to all pending students!');
+      await fetchPendingFees(batchId: batchId);
+    } catch (e) {
+      AppSnackBar.error('Failed to send reminders');
+    } finally {
+      isSendingReminders.value = false;
+    }
+  }
+
+  Future<void> refreshFees() async {
+    if (selectedFeeTab.value == 'pending') {
+      await fetchPendingFees();
+    } else {
+      await fetchFees(reset: true);
+    }
+  }
 
   Future<void> downloadFeeReport() async {
     final fileName = 'Fee_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';

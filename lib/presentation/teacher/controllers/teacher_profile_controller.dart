@@ -2,14 +2,13 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:tuoora/config/app_routes.dart';
+import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
-import 'package:tuoora/data/repositories_impl/teacher_batch_repository_impl.dart';
 import 'package:tuoora/data/repositories_impl/teacher_profile_repository_impl.dart';
-import 'package:tuoora/presentation/teacher/models/teacher_batch_model.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_profile_model.dart';
 
 class TeacherProfileController extends GetxController {
@@ -20,7 +19,6 @@ class TeacherProfileController extends GetxController {
   final isLoading = true.obs;
   final isUploadingAvatar = false.obs;
   final Rxn<TeacherProfile> profile = Rxn<TeacherProfile>();
-  final batches = <TeacherBatch>[].obs;
 
   @override
   void onInit() {
@@ -31,12 +29,7 @@ class TeacherProfileController extends GetxController {
   Future<void> fetchProfile() async {
     try {
       isLoading.value = true;
-      final results = await Future.wait([
-        _repository.getProfile(),
-        Get.find<TeacherBatchRepositoryImpl>().getBatches().catchError((_) => <TeacherBatch>[]),
-      ]);
-      profile.value = results[0] as TeacherProfile;
-      batches.value = results[1] as List<TeacherBatch>;
+      profile.value = await _repository.getProfile();
     } catch (e) {
       AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
     } finally {
@@ -48,24 +41,39 @@ class TeacherProfileController extends GetxController {
     try {
       final picked = await ImagePicker().pickImage(
         source: ImageSource.gallery,
-        imageQuality: 85,
+        imageQuality: 75,
+        maxWidth: 1080,
+        maxHeight: 1080,
       );
       if (picked == null) return;
       isUploadingAvatar.value = true;
       profile.value = await _repository.updateAvatar(picked.path);
       AppSnackBar.success('Profile photo updated');
     } catch (e) {
-      AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      if (e is ValidationException && e.errors.isNotEmpty) {
+        final firstError = e.errors.values.first;
+        final message = firstError is List
+            ? firstError.first.toString()
+            : firstError.toString();
+        AppSnackBar.error(message);
+      } else {
+        AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       isUploadingAvatar.value = false;
     }
   }
 
   Future<void> logout() async {
+    CommonLoading.show();
     try {
-      await Get.find<AuthRepository>().logout('TEACHER');
-    } catch (_) {}
-    await Get.find<AuthService>().clearSession();
+      try {
+        await Get.find<AuthRepository>().logout('TEACHER');
+      } catch (_) {}
+      await Get.find<AuthService>().clearSession();
+    } finally {
+      CommonLoading.dismiss();
+    }
     Get.offAllNamed(AppRoutes.roleSelection);
   }
 

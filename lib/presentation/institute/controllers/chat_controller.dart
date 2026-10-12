@@ -175,8 +175,6 @@ class ChatController extends GetxController {
       //   return 'Staff';
       case 'STUDENT':
         return 'Student';
-      // case 'PARENT':
-      //   return 'StudentParent';
       default:
         return role;
     }

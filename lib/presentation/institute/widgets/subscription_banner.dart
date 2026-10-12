@@ -71,9 +71,9 @@ class SubscriptionBanner extends StatelessWidget {
           icon: Icons.autorenew_rounded,
           accent: AppColors.warningAmber,
           background: AppColors.warningBg,
-          title: 'Renewal Request Pending Review',
+          title: 'Subscription Pending',
           message:
-              'We have received your payment proof and transaction reference. Our billing team will verify it shortly.',
+              'Your subscription is awaiting activation. Adding new records will be enabled once it is active.',
         );
       }
 
@@ -82,9 +82,9 @@ class SubscriptionBanner extends StatelessWidget {
           icon: Icons.cancel_outlined,
           accent: AppColors.errorRed,
           background: AppColors.errorBg,
-          title: 'Renewal Request Rejected',
+          title: 'Subscription Rejected',
           message:
-              'Your previous renewal request was rejected. Please review your payment details and submit again.',
+              'Your last subscription payment was rejected. Please choose a plan and try again.',
           action: 'Try Again',
           onAction: _handleRenewAction,
         );

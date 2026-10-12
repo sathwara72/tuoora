@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:tuoora/data/models/user_model.dart';
 import 'package:tuoora/data/models/subscription_model.dart';
 import 'package:tuoora/core/services/push_notification_service.dart';
@@ -28,13 +29,25 @@ class AuthService extends GetxService {
       _storage.read('stay_authenticated') ?? false;
   bool get isLoggedIn => _storage.read('logged_in') ?? false;
 
+  String? get userRoleFromStorage {
+    try {
+      final userData = _storage.read('user');
+      if (userData is Map && userData['role'] != null) {
+        return userData['role'].toString();
+      }
+    } catch (_) {}
+    return null;
+  }
+
   void _loadSession() {
     try {
       final userData = _storage.read('user');
       final savedToken = _storage.read('token');
       final savedRefresh = _storage.read('refresh_token') ?? '';
 
-      print('AuthService: Loading session. Token: $savedToken');
+      if (kDebugMode) {
+        debugPrint('AuthService: Loading session. Token: $savedToken');
+      }
 
       if (userData != null && savedToken != null) {
         _token.value = savedToken;
@@ -53,12 +66,18 @@ class AuthService extends GetxService {
             Map<String, dynamic>.from(subData),
           );
         }
-        print('AuthService: Session loaded for role: $role');
+        if (kDebugMode) {
+          debugPrint('AuthService: Session loaded for role: $role');
+        }
       } else {
-        print('AuthService: No session found.');
+        if (kDebugMode) {
+          debugPrint('AuthService: No session found.');
+        }
       }
     } catch (e) {
-      print('AuthService: Error loading session: $e');
+      if (kDebugMode) {
+        debugPrint('AuthService: Error loading session: $e');
+      }
     }
   }
 
@@ -95,6 +114,14 @@ class AuthService extends GetxService {
     }
   }
 
+  Future<void> updateProfileImage(String url) async {
+    if (_currentUser.value != null) {
+      final updated = _currentUser.value!.copyWith(profileImage: url);
+      _currentUser.value = updated;
+      await _storage.write('user', updated.toJson());
+    }
+  }
+
   Future<void> setSubscription(Subscription? subscription) async {
     _subscription.value = subscription;
     if (subscription == null) {
@@ -118,23 +145,29 @@ class AuthService extends GetxService {
     _refreshToken.value = '';
     _subscription.value = null;
 
-    try {
-      if (Get.isRegistered<PushNotificationService>()) {
-        await Get.find<PushNotificationService>().deleteToken();
-      }
-    } catch (e) {
-      print('AuthService: Failed to delete FCM token: $e');
-    }
-
     await _storage.remove('user');
     await _storage.remove('token');
     await _storage.remove('refresh_token');
     await _storage.remove('logged_in');
     await _storage.remove('subscription');
 
-    print(
-      'AuthService: Session cleared (user and token removed). Preferences preserved.',
-    );
+    try {
+      if (Get.isRegistered<PushNotificationService>()) {
+        await Get.find<PushNotificationService>()
+            .deleteToken()
+            .timeout(const Duration(seconds: 2), onTimeout: () {});
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('AuthService: Failed to delete FCM token: $e');
+      }
+    }
+
+    if (kDebugMode) {
+      debugPrint(
+        'AuthService: Session cleared (user and token removed). Preferences preserved.',
+      );
+    }
   }
 
   Future<void> updateTokens({

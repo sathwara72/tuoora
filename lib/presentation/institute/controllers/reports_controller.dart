@@ -29,6 +29,7 @@ class ReportsController extends GetxController {
   final isStudentReportLoading = false.obs;
   final isBatchStudentsLoading = false.obs;
   final currentStudentReportTab = 0.obs;
+  final selectedStudentReportBatchId = Rxn<int>();
 
   // Fee Data
   final feeReport = Rxn<FeeReportResponse>();
@@ -157,7 +158,8 @@ class ReportsController extends GetxController {
       await batchController.loadBatches(isRefresh: true);
     }
     if (batchController.batchesList.isNotEmpty) {
-      final initialBatch = selectedBatchForStudentReport.value ??
+      final initialBatch =
+          selectedBatchForStudentReport.value ??
           batchController.batchesList.first;
       await selectBatchForStudentReport(initialBatch);
     }
@@ -184,12 +186,75 @@ class ReportsController extends GetxController {
     }
   }
 
-  Future<void> selectStudentForReport(StudentBatchItem student) async {
+  Future<void> selectStudentForReport(
+    StudentBatchItem student, {
+    int? batchId,
+  }) async {
     selectedStudentForReport.value = student;
     try {
       isStudentReportLoading.value = true;
-      final data = await _repository.getStudentWiseReport(student.id);
+      final data = await _repository.getStudentWiseReport(
+        student.id,
+        batchId: batchId,
+      );
       studentWiseReport.value = data;
+      selectedStudentReportBatchId.value =
+          data.selectedBatchId ?? data.activeBatchId;
+    } catch (e) {
+      AppSnackBar.error('Failed to load student report: $e');
+    } finally {
+      isStudentReportLoading.value = false;
+    }
+  }
+
+  Future<void> changeStudentReportBatch(int batchId) async {
+    final student = selectedStudentForReport.value;
+    if (student == null) return;
+    try {
+      isStudentReportLoading.value = true;
+      selectedStudentReportBatchId.value = batchId;
+      final data = await _repository.getStudentWiseReport(
+        student.id,
+        batchId: batchId,
+      );
+      studentWiseReport.value = data;
+    } catch (e) {
+      AppSnackBar.error('Failed to change report batch: $e');
+    } finally {
+      isStudentReportLoading.value = false;
+    }
+  }
+
+  Future<void> loadReportForStudentId(int studentId, {int? batchId}) async {
+    try {
+      isStudentReportLoading.value = true;
+      final data = await _repository.getStudentWiseReport(
+        studentId,
+        batchId: batchId,
+      );
+      studentWiseReport.value = data;
+      selectedStudentReportBatchId.value =
+          data.selectedBatchId ?? data.activeBatchId;
+
+      final studentItem = StudentBatchItem(
+        id: data.student.id,
+        name: data.student.name,
+        enrollmentId: data.student.enrollmentId,
+        batchId: data.student.batchId,
+        phone: data.student.phone,
+        email: data.student.email,
+      );
+      selectedStudentForReport.value = studentItem;
+
+      if (data.student.batchId != null &&
+          batchController.batchesList.isNotEmpty) {
+        final matchedBatch = batchController.batchesList.firstWhereOrNull(
+          (b) => b.id == data.student.batchId.toString(),
+        );
+        if (matchedBatch != null) {
+          selectedBatchForStudentReport.value = matchedBatch;
+        }
+      }
     } catch (e) {
       AppSnackBar.error('Failed to load student report: $e');
     } finally {
@@ -209,7 +274,10 @@ class ReportsController extends GetxController {
       label: 'Preparing Student Report PDF…',
       fileName: fileName,
       successMessage: 'Student report downloaded successfully',
-      fetch: () => _repository.exportStudentWiseReport(student.id),
+      fetch: () => _repository.exportStudentWiseReport(
+        student.id,
+        batchId: selectedStudentReportBatchId.value,
+      ),
     );
   }
 
@@ -267,4 +335,3 @@ class ReportsController extends GetxController {
     return batchPerformances.firstWhereOrNull((b) => b.batchId == batchId);
   }
 }
-

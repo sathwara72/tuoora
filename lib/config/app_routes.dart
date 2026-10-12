@@ -28,8 +28,6 @@ class AppRoutes {
   static const String studentHolidayDetail = '/student/holiday-detail';
   static const String studentReports = '/student/reports';
   static const String studentReceiptsList = '/student/receipts-list';
-  static const String studentNotificationPreferences =
-      '/student/notification-preferences';
   static const String studentStudyMaterial = '/student/study-material';
   static const String studentStudyMaterialDetail =
       '/student/study-material/detail';
@@ -43,7 +41,6 @@ class AppRoutes {
   static const String teacherBatches = '/teacher/batches';
   static const String teacherBatchDetails = '/teacher/batches/details';
   static const String teacherBatchStudents = '/teacher/batches/students';
-  static const String teacherAssignStudents = '/teacher/batches/students/assign';
   static const String teacherMarkAttendance = '/teacher/batches/attendance';
   static const String teacherAttendanceQrScan = '/teacher/batches/attendance/qr-scan';
   static const String teacherSelfAttendance = '/teacher/self-attendance';
@@ -81,6 +78,8 @@ class AppRoutes {
   static const String instituteWhiteLabel = '/institute/profile/white-label';
   static const String instituteAddOns = '/institute/profile/add-ons';
   static const String instituteWhatsApp = '/institute/profile/whatsapp';
+  static const String instituteNotificationPreferences =
+      '/institute/profile/notification-preferences';
   static const String instituteUpiPaymentSettings =
       '/institute/profile/upi-payment';
   static const String instituteFeeReport = '/institute/reports/fee-main';
@@ -92,6 +91,7 @@ class AppRoutes {
   static const String instituteUpdates = '/institute/updates';
   static const String instituteCreateUpdate = '/institute/updates/create';
   static const String instituteNotifications = '/institute/notifications';
+  static const String instituteComposeNotification = '/institute/notifications/compose';
   static const String instituteMain = '/institute/main';
   static const String instituteAddBatch = '/institute/batches/add';
   static const String instituteEditBatch = '/institute/batches/edit';
@@ -101,8 +101,6 @@ class AppRoutes {
   static const String instituteOtp = '/institute/otp';
   static const String instituteProfileSetup = '/institute/profile-setup';
   static const String instituteBatchReportDetail = '/institute/reports/detail';
-  static const String instituteStudentWiseReport =
-      '/institute/reports/student-wise';
   static const String instituteReports = '/institute/reports';
   static const String instituteForgotPassword = '/institute/forgot-password';
   static const String instituteResetPassword = '/institute/reset-password';
@@ -142,5 +140,4 @@ class AppRoutes {
   static const String instituteAddSalary = '/institute/staffs/add-salary';
   static const String instituteExpenses = '/institute/expenses';
   static const String instituteAddExpense = '/institute/expenses/add';
-  static const String instituteExpenseAnalysis = '/institute/expenses/analysis';
 }

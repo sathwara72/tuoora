@@ -11,13 +11,20 @@ class StudentRepository implements StudentRepositoryImpl {
   StudentRepository(this._apiClient);
 
   @override
-  Future<List<Student>> listStudents({String? search, int? page}) async {
+  Future<List<Student>> listStudents({
+    String? search,
+    int? page,
+    bool unassigned = false,
+  }) async {
     final Map<String, dynamic> query = {};
     if (search != null && search.isNotEmpty) {
       query['search'] = search;
     }
     if (page != null) {
       query['page'] = page.toString();
+    }
+    if (unassigned) {
+      query['unassigned'] = '1';
     }
 
     final response = await _apiClient.get(
@@ -33,24 +40,44 @@ class StudentRepository implements StudentRepositoryImpl {
     return items.map((json) => Student.fromJson(json)).toList();
   }
 
+  FormData _buildStudentFormData(Map<String, dynamic> data) {
+    final formData = FormData({});
+
+    data.forEach((key, value) {
+      if (key == 'profile_image_url' &&
+          value != null &&
+          value.toString().isNotEmpty &&
+          !value.toString().startsWith('http')) {
+        formData.files.add(
+          MapEntry(
+            'profile_image_url',
+            MultipartFile(
+              value,
+              filename: 'student_profile.jpg',
+            ),
+          ),
+        );
+      } else if (key == 'optional_phones') {
+        if (value is List) {
+          for (final phone in value) {
+            if (phone != null && phone.toString().trim().isNotEmpty) {
+              formData.fields.add(MapEntry('optional_phones[]', phone.toString().trim()));
+            }
+          }
+        } else if (value != null && value.toString().trim().isNotEmpty) {
+          formData.fields.add(MapEntry('optional_phones[]', value.toString().trim()));
+        }
+      } else if (value != null) {
+        formData.fields.add(MapEntry(key, value.toString()));
+      }
+    });
+
+    return formData;
+  }
+
   @override
   Future<Student> createStudent(Map<String, dynamic> data) async {
-    final formData = FormData(data);
-
-    if (data['profile_image_url'] != null &&
-        data['profile_image_url'].toString().isNotEmpty &&
-        !data['profile_image_url'].toString().startsWith('http')) {
-      formData.files.add(
-        MapEntry(
-          'profile_image_url',
-          MultipartFile(
-            data['profile_image_url'],
-            filename: 'student_profile.jpg',
-          ),
-        ),
-      );
-      data.remove('profile_image_url');
-    }
+    final formData = _buildStudentFormData(data);
 
     final response = await _apiClient.post(
       ApiConstants.instituteStudents,
@@ -63,9 +90,14 @@ class StudentRepository implements StudentRepositoryImpl {
   }
 
   @override
-  Future<Student> getStudentById(dynamic id) async {
+  Future<Student> getStudentById(dynamic id, {dynamic batchId}) async {
+    final Map<String, dynamic> query = {};
+    if (batchId != null) {
+      query['batch_id'] = batchId.toString();
+    }
     final response = await _apiClient.get(
       '${ApiConstants.instituteStudents}/$id',
+      query: query.isNotEmpty ? query : null,
     );
     if (response.status.hasError) {
       throw Exception('Failed to get student: ${response.statusText}');
@@ -75,23 +107,7 @@ class StudentRepository implements StudentRepositoryImpl {
 
   @override
   Future<Student> updateStudent(dynamic id, Map<String, dynamic> data) async {
-    final formData = FormData(data);
-
-    if (data['profile_image_url'] != null &&
-        data['profile_image_url'].toString().isNotEmpty &&
-        !data['profile_image_url'].toString().startsWith('http')) {
-      formData.files.add(
-        MapEntry(
-          'profile_image_url',
-          MultipartFile(
-            data['profile_image_url'],
-            filename: 'student_profile.jpg',
-          ),
-        ),
-      );
-      data.remove('profile_image_url');
-    }
-
+    final formData = _buildStudentFormData(data);
     formData.fields.add(const MapEntry('_method', 'PUT'));
 
     final response = await _apiClient.post(
@@ -146,6 +162,48 @@ class StudentRepository implements StudentRepositoryImpl {
     );
     if (response.status.hasError) {
       _handleError(response, 'Failed to reset password');
+    }
+  }
+
+  @override
+  Future<bool> toggleBlock(dynamic id, bool blocked) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStudents}/$id/toggle-block',
+      {'blocked': blocked},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update student login access');
+    }
+    return response.body?['is_login_blocked'] == true;
+  }
+
+  @override
+  Future<bool> toggleFeeReminderMute(dynamic id, bool muted) async {
+    final response = await _apiClient.post(
+      '${ApiConstants.instituteStudents}/$id/toggle-fee-reminder-mute',
+      {'muted': muted},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update fee reminder setting');
+    }
+    return response.body?['do_not_send_fee_reminders'] == true;
+  }
+
+  @override
+  Future<void> payInstallment(
+    int installmentId, {
+    required double amount,
+    String paymentMethod = 'Cash',
+  }) async {
+    final response = await _apiClient.post(
+      ApiConstants.institutePayInstallment(installmentId),
+      {
+        'amount': amount,
+        'payment_method': paymentMethod,
+      },
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to pay installment');
     }
   }
 

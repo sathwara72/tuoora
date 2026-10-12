@@ -64,7 +64,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         child: Column(
           children: [
             InstituteAppBar(
-              title: controller.isEditing ? 'Edit Class Schedule' : 'Add Class Schedule',
+              title: controller.isEditing ? 'Edit Subject Schedule' : 'Add Subject Schedule',
               onBackTap: () => Get.back(),
             ),
             Expanded(
@@ -95,27 +95,14 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     }),
                     AppSpacing.v20,
 
-                    // 2. Class / Subject Dropdown (if batch has classes)
-                    _buildClassDropdown(),
+                    // 2. Class / Subject Section
+                    _buildClassOrSubjectSection(context),
 
-                    // 3. Subject Name Input
-                    Obx(
-                      () => AppInputField(
-                        label: 'SUBJECT NAME *',
-                        controller: controller.subjectController,
-                        hint: 'e.g. Mathematics, Physics, Accounts',
-                        errorText: controller.subjectError.value,
-                      ),
-                    ),
+                    // 3. Day Dropdown with All Days
+                    _buildDaySection(),
                     AppSpacing.v20,
 
-                    // 4. Day Dropdown
-                    const InstituteLabel('DAY *'),
-                    AppSpacing.v8,
-                    _buildDayDropdown(),
-                    AppSpacing.v20,
-
-                    // 5. Start and End Time
+                    // 4. Start and End Time
                     Row(
                       children: [
                         Expanded(
@@ -153,13 +140,13 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     }),
                     AppSpacing.v20,
 
-                    // 6. Assign Faculty / Staff
-                    const InstituteLabel('ASSIGN FACULTY / TEACHER'),
+                    // 5. Status (Active / Cancelled)
+                    const InstituteLabel('STATUS'),
                     AppSpacing.v8,
-                    _buildStaffDropdown(),
+                    _buildStatusSelector(),
                     AppSpacing.v20,
 
-                    // 7. Room / Classroom
+                    // 6. Room / Classroom
                     AppInputField(
                       label: 'ROOM / CLASSROOM (OPTIONAL)',
                       controller: controller.roomNoController,
@@ -167,7 +154,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     ),
                     AppSpacing.v20,
 
-                    // 8. Description / Notes
+                    // 7. Description / Notes
                     AppInputField(
                       label: 'DESCRIPTION (OPTIONAL)',
                       controller: controller.descriptionController,
@@ -176,7 +163,7 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
                     ),
                     AppSpacing.v32,
 
-                    // 9. Save Button
+                    // 8. Save Button
                     _buildSaveButton(),
                   ],
                 ),
@@ -301,183 +288,23 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
     });
   }
 
-  bool get _isFromBatchTimetable {
-    final args = Get.arguments;
-    if (args is BatchModel) return true;
-    if (args is Map && args['batch'] != null) return true;
-    if (controller.isBatchLocked.value) return true;
-    if (controller.currentBatch.value != null) return true;
-    return false;
-  }
-
-  Widget _buildClassDropdown() {
-    if (!_isFromBatchTimetable) {
-      return const SizedBox.shrink();
-    }
-
+  Widget _buildClassOrSubjectSection(BuildContext context) {
     return Obx(() {
       final batch = controller.batchesList.firstWhereOrNull(
             (b) => b.id == controller.selectedFormBatchId.value,
           ) ??
           controller.currentBatch.value;
-
-      final items = <DropdownMenuItem<String?>>[];
-
-      // 1. Placeholder
-      items.add(
-        DropdownMenuItem<String?>(
-          value: null,
-          child: Text(
-            'Select Class / Subject',
-            style: AppTextStyles.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textMuted,
-            ),
-          ),
-        ),
-      );
-
-      // 2. Batch Subject (if available)
-      if (batch != null && batch.subject.trim().isNotEmpty) {
-        final teacherName = batch.staffName != null && batch.staffName!.trim().isNotEmpty
-            ? ' (${batch.staffName})'
-            : '';
-        items.add(
-          DropdownMenuItem<String?>(
-            value: '__batch_subject__',
-            child: Text(
-              '${batch.subject.trim()}$teacherName',
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        );
-      }
-
-      // 3. Batch Classes (from controller.batchClasses)
-      for (final cls in controller.batchClasses) {
-        if (batch != null &&
-            batch.subject.trim().toLowerCase() == cls.name.trim().toLowerCase()) {
-          continue;
-        }
-        final teacherInfo = cls.teachers.isNotEmpty
-            ? ' (${cls.teachers.first.fullName})'
-            : '';
-        items.add(
-          DropdownMenuItem<String?>(
-            value: cls.id.toString(),
-            child: Text(
-              '${cls.name.trim()}$teacherInfo',
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        );
-      }
-
-      // 4. Custom option
-      items.add(
-        DropdownMenuItem<String?>(
-          value: '__custom__',
-          child: Text(
-            'Custom Subject (Type below)',
-            style: AppTextStyles.outfit(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.primaryBrand,
-            ),
-          ),
-        ),
-      );
-
-      final currentSubject = controller.subjectController.text.trim();
-
-      // If slot has a subject and it's not in the dropdown items yet, add it
-      final bool alreadyHasCurrent = items.any((it) {
-        if (it.value == null || it.value == '__custom__') return false;
-        if (it.value == '__batch_subject__' &&
-            batch != null &&
-            batch.subject.trim().toLowerCase() == currentSubject.toLowerCase()) {
-          return true;
-        }
-        final cls = controller.batchClasses.firstWhereOrNull(
-          (c) => c.id.toString() == it.value,
-        );
-        if (cls != null &&
-            cls.name.trim().toLowerCase() == currentSubject.toLowerCase()) {
-          return true;
-        }
-        if (it.value?.toLowerCase() == currentSubject.toLowerCase()) {
-          return true;
-        }
-        return false;
-      });
-
-      if (currentSubject.isNotEmpty && !alreadyHasCurrent) {
-        items.insert(
-          items.length - 1,
-          DropdownMenuItem<String?>(
-            value: currentSubject,
-            child: Text(
-              currentSubject,
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        );
-      }
-
-      String? selectedVal = controller.selectedClassId.value;
-
-      // In edit mode or when a subject exists, find its matching option
-      if ((selectedVal == null || selectedVal == '__custom__') && currentSubject.isNotEmpty) {
-        final matchingItem = items.firstWhereOrNull((it) {
-          if (it.value == null || it.value == '__custom__') return false;
-          if (it.value == '__batch_subject__' &&
-              batch != null &&
-              batch.subject.trim().toLowerCase() == currentSubject.toLowerCase()) {
-            return true;
-          }
-          final cls = controller.batchClasses.firstWhereOrNull(
-            (c) => c.id.toString() == it.value,
-          );
-          if (cls != null &&
-              cls.name.trim().toLowerCase() == currentSubject.toLowerCase()) {
-            return true;
-          }
-          if (it.value == currentSubject) return true;
-          return false;
-        });
-        if (matchingItem != null) {
-          selectedVal = matchingItem.value;
-        }
-      }
-
-      final isValidValue = items.any((it) => it.value == selectedVal);
-      final finalValue = isValidValue ? selectedVal : null;
+      final hasBatch = controller.selectedFormBatchId.value != null;
+      final hasClasses = controller.batchClasses.isNotEmpty;
+      final hasBatchSubject = batch != null && batch.subject.trim().isNotEmpty;
+      final hasAnySubject = hasClasses || hasBatchSubject;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const InstituteLabel('SELECT CLASS / SUBJECT'),
+              const InstituteLabel('SELECT SUBJECT *'),
               if (controller.isLoadingClasses.value) ...[
                 AppSpacing.h8,
                 const SizedBox(
@@ -492,49 +319,500 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
             ],
           ),
           AppSpacing.v8,
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: AppColors.fieldBg,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.fieldBorder,
-                width: 1.0,
+          _buildClassDropdown(),
+          if (controller.subjectError.value != null) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 6.0, left: 4.0),
+              child: Text(
+                controller.subjectError.value!,
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  color: Colors.redAccent,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String?>(
-                isExpanded: true,
-                value: finalValue,
-                hint: Text(
-                  'Select Class / Subject',
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    color: AppColors.textMuted,
-                  ),
+          ],
+          if (hasBatch && !controller.isLoadingClasses.value && !hasAnySubject) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 6.0, left: 4.0),
+              child: Text(
+                'No subjects found for this batch.',
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  color: const Color(0xFFD97706),
+                  fontWeight: FontWeight.w500,
                 ),
-                icon: const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: AppColors.textMuted,
-                ),
-                items: items,
-                onChanged: (newVal) {
-                  controller.selectClass(newVal);
-                },
               ),
             ),
-          ),
+          ],
+          AppSpacing.v12,
+          _buildAssignedFacultyCard(),
           AppSpacing.v20,
         ],
       );
     });
   }
 
+  Widget _buildClassDropdown() {
+    return Obx(() {
+      final batch = controller.batchesList.firstWhereOrNull(
+            (b) => b.id == controller.selectedFormBatchId.value,
+          ) ??
+          controller.currentBatch.value;
+
+      final items = <DropdownMenuItem<String?>>[];
+
+      // 1. Placeholder
+      items.add(
+        DropdownMenuItem<String?>(
+          value: null,
+          child: Text(
+            '-- Select Subject --',
+            style: AppTextStyles.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ),
+      );
+
+      // 2. Batch Classes
+      for (final cls in controller.batchClasses) {
+        final teacherInfo = cls.teachers.isNotEmpty
+            ? ' (${cls.teachers.map((t) => t.fullName).join(', ')})'
+            : '';
+        items.add(
+          DropdownMenuItem<String?>(
+            value: cls.id.toString(),
+            child: Text(
+              cls.name.trim() + teacherInfo,
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+      }
+
+      // 3. Batch Subject (if available and not duplicated)
+      if (batch != null && batch.subject.trim().isNotEmpty) {
+        final alreadyIn = controller.batchClasses.any(
+          (c) => c.name.trim().toLowerCase() == batch.subject.trim().toLowerCase(),
+        );
+        if (!alreadyIn) {
+          final teacherName = batch.staffName != null && batch.staffName!.trim().isNotEmpty
+              ? ' (${batch.staffName!.trim()})'
+              : '';
+          items.add(
+            DropdownMenuItem<String?>(
+              value: '__batch_subject__',
+              child: Text(
+                batch.subject.trim() + teacherName,
+                style: AppTextStyles.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          );
+        }
+      }
+
+      // 4. Existing Subject if editing
+      if (controller.isEditing && controller.selectedClassId.value == '__existing__') {
+        items.add(
+          DropdownMenuItem<String?>(
+            value: '__existing__',
+            child: Text(
+              controller.subjectController.text,
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        );
+      }
+
+      final selectedVal = controller.selectedClassId.value;
+      final isValidValue = items.any((it) => it.value == selectedVal);
+      final finalValue = isValidValue ? selectedVal : null;
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.fieldBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: controller.subjectError.value != null
+                ? Colors.redAccent
+                : AppColors.fieldBorder,
+            width: 1.0,
+          ),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String?>(
+            isExpanded: true,
+            value: finalValue,
+            hint: Text(
+              '-- Select Subject --',
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                color: AppColors.textMuted,
+              ),
+            ),
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: AppColors.textMuted,
+            ),
+            items: items,
+            onChanged: (newVal) {
+              controller.selectClass(newVal);
+            },
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildAssignedFacultyCard() {
+    return Obx(() {
+      final selectedId = controller.selectedClassId.value;
+      if (selectedId == null || selectedId.isEmpty || selectedId == '__custom__') {
+        return const SizedBox.shrink();
+      }
+
+      final cls = controller.batchClasses.firstWhereOrNull(
+        (c) => c.id.toString() == selectedId,
+      );
+
+      final batch = controller.batchesList.firstWhereOrNull(
+            (b) => b.id == controller.selectedFormBatchId.value,
+          ) ??
+          controller.currentBatch.value;
+
+      if (cls != null) {
+        final teachers = cls.teachers;
+        if (teachers.length == 1) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF16A34A),
+                  size: 18,
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Assigned Faculty: ',
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            color: const Color(0xFF166534),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        TextSpan(
+                          text: teachers.first.fullName,
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            color: const Color(0xFF14532D),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else if (teachers.length > 1) {
+          final isTeacherInList = teachers.any((t) => t.id == controller.selectedStaffId.value);
+          final currentTeacherId = isTeacherInList ? controller.selectedStaffId.value : teachers.first.id;
+
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.fieldBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.fieldBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select Lecture Faculty:',
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                AppSpacing.v6,
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: currentTeacherId,
+                    items: teachers.map((t) {
+                      return DropdownMenuItem<int>(
+                        value: t.id,
+                        child: Text(
+                          t.fullName,
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (id) {
+                      if (id != null) controller.selectedStaffId.value = id;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.fieldBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.fieldBorder),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'No faculty assigned to this class. Assign faculty (Optional):',
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.amber[800],
+                  ),
+                ),
+                AppSpacing.v6,
+                _buildStaffDropdown(),
+              ],
+            ),
+          );
+        }
+      }
+
+      if (selectedId == '__batch_subject__' && batch != null) {
+        final teacherName = batch.staffName?.trim();
+        if (teacherName != null && teacherName.isNotEmpty) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBBF7D0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF16A34A),
+                  size: 18,
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  child: Text(
+                    'Assigned Faculty: $teacherName',
+                    style: AppTextStyles.outfit(
+                      fontSize: 13,
+                      color: const Color(0xFF14532D),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+
+      return const SizedBox.shrink();
+    });
+  }
+
+  Widget _buildDaySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const InstituteLabel('DAY *'),
+            if (!controller.isEditing)
+              Obx(
+                () => GestureDetector(
+                  onTap: () => controller.toggleAllDays(),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: Checkbox(
+                          value: controller.isAllDays.value,
+                          onChanged: (val) => controller.toggleAllDays(val),
+                          activeColor: AppColors.primaryBrand,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      AppSpacing.h6,
+                      Text(
+                        'All Days',
+                        style: AppTextStyles.outfit(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryBrand,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+        AppSpacing.v8,
+        _buildDayDropdown(),
+        Obx(() {
+          if (controller.isEditing ||
+              (!controller.isAllDays.value && controller.formDay.value != 'all')) {
+            return const SizedBox.shrink();
+          }
+          final daysList = controller.availableDays
+              .map((d) => DayOfWeek.labelFor(d))
+              .join(', ');
+          return Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFFFEDD5)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: Color(0xFFC2410C),
+                  size: 16,
+                ),
+                AppSpacing.h8,
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'This lecture will be scheduled across all days: ',
+                          style: AppTextStyles.outfit(
+                            fontSize: 11,
+                            color: const Color(0xFF9A3412),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        TextSpan(
+                          text: daysList,
+                          style: AppTextStyles.outfit(
+                            fontSize: 11,
+                            color: const Color(0xFF7C2D12),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   Widget _buildDayDropdown() {
     return Obx(() {
+      final isEdit = controller.isEditing;
       final available = controller.availableDays;
       final currentDay = controller.formDay.value.toLowerCase();
-      final days = {currentDay, ...available.map((d) => d.toLowerCase())}.toList();
+      final isAll = controller.isAllDays.value || currentDay == 'all';
+
+      final items = <DropdownMenuItem<String>>[];
+
+      if (!isEdit) {
+        items.add(
+          DropdownMenuItem<String>(
+            value: 'all',
+            child: Text(
+              'All Days',
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryBrand,
+              ),
+            ),
+          ),
+        );
+      }
+
+      final dayValues = {
+        if (currentDay != 'all') currentDay,
+        ...available.map((d) => d.toLowerCase())
+      }.toList();
+
+      for (final day in dayValues) {
+        items.add(
+          DropdownMenuItem<String>(
+            value: day,
+            child: Text(
+              DayOfWeek.labelFor(day),
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        );
+      }
+
+      final selectedValue = isAll
+          ? 'all'
+          : (items.any((i) => i.value == currentDay)
+              ? currentDay
+              : (items.isNotEmpty ? items.first.value : null));
 
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -546,26 +824,21 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             isExpanded: true,
-            value: days.contains(currentDay) ? currentDay : days.first,
+            value: selectedValue,
             icon: const Icon(
               Icons.keyboard_arrow_down_rounded,
               color: AppColors.textMuted,
             ),
-            items: days.map((day) {
-              return DropdownMenuItem<String>(
-                value: day,
-                child: Text(
-                  DayOfWeek.labelFor(day),
-                  style: AppTextStyles.outfit(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              );
-            }).toList(),
+            items: items,
             onChanged: (day) {
-              if (day != null) controller.formDay.value = day;
+              if (day != null) {
+                if (day == 'all') {
+                  controller.toggleAllDays(true);
+                } else {
+                  controller.isAllDays.value = false;
+                  controller.formDay.value = day;
+                }
+              }
             },
           ),
         ),
@@ -706,13 +979,104 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
     });
   }
 
+  Widget _buildStatusSelector() {
+    return Obx(() {
+      final status = controller.formStatus.value;
+      final isActive = status == 'active';
+
+      return Row(
+        children: [
+          // Active
+          Expanded(
+            child: GestureDetector(
+              onTap: () => controller.formStatus.value = 'active',
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isActive ? const Color(0xFFECFDF5) : AppColors.fieldBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isActive ? const Color(0xFF6EE7B7) : AppColors.fieldBorder,
+                    width: isActive ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isActive ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    AppSpacing.h8,
+                    Text(
+                      'Active',
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                        color: isActive ? const Color(0xFF047857) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          AppSpacing.h12,
+          // Cancelled
+          Expanded(
+            child: GestureDetector(
+              onTap: () => controller.formStatus.value = 'cancelled',
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: !isActive ? const Color(0xFFFFF1F2) : AppColors.fieldBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: !isActive ? const Color(0xFFFDA4AF) : AppColors.fieldBorder,
+                    width: !isActive ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: !isActive ? const Color(0xFFF43F5E) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                    AppSpacing.h8,
+                    Text(
+                      'Cancelled',
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        fontWeight: !isActive ? FontWeight.w700 : FontWeight.w500,
+                        color: !isActive ? const Color(0xFFBE123C) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
   Widget _buildSaveButton() {
     return SafeArea(
       top: false,
       minimum: const EdgeInsets.only(bottom: 16),
       child: Obx(
         () => AppButton(
-          label: controller.isEditing ? 'Save Changes' : 'Add Class Schedule',
+          label: controller.isEditing ? 'Save Changes' : 'Add Subject Schedule',
           isLoading: controller.isSaving.value,
           onPressed: () => controller.submitForm(),
         ),

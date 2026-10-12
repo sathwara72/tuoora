@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -12,29 +13,25 @@ import 'package:tuoora/presentation/teacher/controllers/teacher_self_attendance_
 import 'package:tuoora/presentation/teacher/models/teacher_attendance_model.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_app_bar.dart';
 
-class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceController> {
+class TeacherSelfAttendanceScreen
+    extends GetView<TeacherSelfAttendanceController> {
   const TeacherSelfAttendanceScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Column(
           children: [
             const TeacherAppBar(title: 'My Attendance & Leaves'),
-            _buildTabSelector(),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const Center(child: CommonLoading());
                 }
 
-                if (controller.selectedTab.value == 0) {
-                  return _buildCalendarAndCheckInTab(context);
-                } else {
-                  return _buildLeavesTab(context);
-                }
+                return _buildCalendarAndCheckInTab(context);
               }),
             ),
           ],
@@ -43,99 +40,21 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
     );
   }
 
-  Widget _buildTabSelector() {
-    return Container(
-      color: AppColors.white,
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.scaffoldBg,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        padding: const EdgeInsets.all(4),
-        child: Obx(() {
-          final tab = controller.selectedTab.value;
-          return Row(
-            children: [
-              Expanded(
-                child: _tabButton(
-                  title: 'Calendar & Check-in',
-                  icon: Icons.calendar_month_rounded,
-                  isActive: tab == 0,
-                  onTap: () => controller.selectedTab.value = 0,
-                ),
-              ),
-              Expanded(
-                child: _tabButton(
-                  title: 'Leave Applications',
-                  icon: Icons.beach_access_rounded,
-                  isActive: tab == 1,
-                  onTap: () => controller.selectedTab.value = 1,
-                ),
-              ),
-            ],
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _tabButton({
-    required String title,
-    required IconData icon,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isActive ? AppColors.primaryBrand : AppColors.textSecondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              title,
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? AppColors.primaryBrand : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ==========================================
-  // TAB 1: CALENDAR & TODAY'S CHECK-IN
+  // CALENDAR, TODAY'S CHECK-IN & LEAVE APPLICATIONS
   // ==========================================
 
   Widget _buildCalendarAndCheckInTab(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () => controller.fetchCalendar(
-        month: controller.currentMonth.value,
-        year: controller.currentYear.value,
+      onRefresh: () => PullRefresh.run(
+        () => Future.wait([
+          controller.fetchToday(),
+          controller.fetchCalendar(
+            month: controller.currentMonth.value,
+            year: controller.currentYear.value,
+          ),
+          controller.fetchLeaves(),
+        ]),
       ),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -148,7 +67,9 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
           AppSpacing.v16,
           _buildMonthlyCalendarGrid(),
           AppSpacing.v16,
-          _buildSelectedDayDetailCard(),
+          _buildSelectedDayDetailCard(context),
+          AppSpacing.v24,
+          _buildLeavesSection(context),
           AppSpacing.v20,
         ],
       ),
@@ -198,7 +119,10 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
           AppSpacing.v16,
           Text(
             'Tap status to mark attendance:',
-            style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textSecondary),
+            style: AppTextStyles.outfit(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
           ),
           AppSpacing.v8,
           Obx(() {
@@ -213,12 +137,19 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                       ? null
                       : () => _promptMarkToday(context, status),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primaryBrand : const Color(0xFFF8FAFC),
+                      color: isSelected
+                          ? AppColors.primaryBrand
+                          : const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isSelected ? AppColors.primaryBrand : AppColors.borderGrey,
+                        color: isSelected
+                            ? AppColors.primaryBrand
+                            : AppColors.borderGrey,
                       ),
                     ),
                     child: Text(
@@ -226,7 +157,9 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                       style: AppTextStyles.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isSelected ? AppColors.white : AppColors.textPrimary,
+                        color: isSelected
+                            ? AppColors.white
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ),
@@ -246,7 +179,10 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Mark as $status?',
-          style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
+          style: AppTextStyles.outfit(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -254,16 +190,27 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
           children: [
             Text(
               'Confirm marking your attendance for today as "$status".',
-              style: AppTextStyles.outfit(fontSize: 13, color: AppColors.textSecondary),
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
             AppSpacing.v12,
             TextField(
               controller: noteCtrl,
               decoration: InputDecoration(
                 hintText: 'Add an optional note or remark...',
-                hintStyle: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                hintStyle: AppTextStyles.outfit(
+                  fontSize: 12,
+                  color: AppColors.textTertiary,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
               ),
             ),
           ],
@@ -271,7 +218,10 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Cancel', style: AppTextStyles.outfit(color: AppColors.textSecondary)),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.outfit(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -280,9 +230,17 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryBrand,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            child: Text('Confirm', style: AppTextStyles.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Confirm',
+              style: AppTextStyles.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -312,7 +270,11 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
             ),
             Row(
               children: [
-                const Icon(Icons.event_note_rounded, size: 18, color: AppColors.primaryBrand),
+                const Icon(
+                  Icons.event_note_rounded,
+                  size: 18,
+                  color: AppColors.primaryBrand,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   monthLabel,
@@ -347,15 +309,40 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _metricPill('Present', p, const Color(0xFF059669), const Color(0xFFECFDF5)),
+            _metricPill(
+              'Present',
+              p,
+              const Color(0xFF059669),
+              const Color(0xFFECFDF5),
+            ),
             const SizedBox(width: 8),
-            _metricPill('Absent', a, const Color(0xFFDC2626), const Color(0xFFFEF2F2)),
+            _metricPill(
+              'Absent',
+              a,
+              const Color(0xFFDC2626),
+              const Color(0xFFFEF2F2),
+            ),
             const SizedBox(width: 8),
-            _metricPill('Half Day', h, const Color(0xFFD97706), const Color(0xFFFFFBEB)),
+            _metricPill(
+              'Half Day',
+              h,
+              const Color(0xFFD97706),
+              const Color(0xFFFFFBEB),
+            ),
             const SizedBox(width: 8),
-            _metricPill('Late', l, const Color(0xFFEA580C), const Color(0xFFFFF7ED)),
+            _metricPill(
+              'Late',
+              l,
+              const Color(0xFFEA580C),
+              const Color(0xFFFFF7ED),
+            ),
             const SizedBox(width: 8),
-            _metricPill('Leave', lv, const Color(0xFF7C3AED), const Color(0xFFF5F3FF)),
+            _metricPill(
+              'Leave',
+              lv,
+              const Color(0xFF7C3AED),
+              const Color(0xFFF5F3FF),
+            ),
           ],
         ),
       );
@@ -397,7 +384,9 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
   Widget _buildMonthlyCalendarGrid() {
     return Obx(() {
       if (controller.isLoadingCalendar.value) {
-        return const Center(child: Padding(padding: EdgeInsets.all(24), child: CommonLoading()));
+        return const Center(
+          child: Padding(padding: EdgeInsets.all(24), child: CommonLoading()),
+        );
       }
 
       final year = controller.currentYear.value;
@@ -454,12 +443,17 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                 final dayNumber = index - (startingWeekday - 1) + 1;
                 final date = DateTime(year, month, dayNumber);
                 final dateStr = DateFormat('yyyy-MM-dd').format(date);
-                final dayData = controller.calendarData.value?.days[dateStr] ??
+                final dayData =
+                    controller.calendarData.value?.days[dateStr] ??
                     controller.calendarData.value?.days[dayNumber.toString()] ??
-                    controller.calendarData.value?.days[dayNumber.toString().padLeft(2, '0')];
+                    controller.calendarData.value?.days[dayNumber
+                        .toString()
+                        .padLeft(2, '0')];
                 final isSunday = date.weekday == DateTime.sunday;
-                final isToday = DateFormat('yyyy-MM-dd').format(DateTime.now()) == dateStr;
-                final isSelected = controller.selectedDay.value?.date == dateStr;
+                final isToday =
+                    DateFormat('yyyy-MM-dd').format(DateTime.now()) == dateStr;
+                final isSelected =
+                    controller.selectedDay.value?.date == dateStr;
 
                 return _calendarDayTile(
                   dayNumber: dayNumber,
@@ -490,9 +484,22 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
     Color? dotColor;
 
     final status = (dayData?.status ?? '').trim().toLowerCase();
-    final isPresent = status == 'present' || status == 'p' || status == '1' || status.contains('present');
-    final isAbsent = status == 'absent' || status == 'a' || status == '0' || status.contains('absent');
-    final isHalfDay = status == 'half day' || status == 'halfday' || status == 'half_day' || status == 'h' || status.contains('half');
+    final isPresent =
+        status == 'present' ||
+        status == 'p' ||
+        status == '1' ||
+        status.contains('present');
+    final isAbsent =
+        status == 'absent' ||
+        status == 'a' ||
+        status == '0' ||
+        status.contains('absent');
+    final isHalfDay =
+        status == 'half day' ||
+        status == 'halfday' ||
+        status == 'half_day' ||
+        status == 'h' ||
+        status.contains('half');
     final isLate = status == 'late' || status == 'l' || status.contains('late');
     final isLeave = status == 'leave' || status.contains('leave');
 
@@ -539,7 +546,9 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
             '$dayNumber',
             style: AppTextStyles.outfit(
               fontSize: 12,
-              fontWeight: isToday || isSelected ? FontWeight.w700 : FontWeight.w500,
+              fontWeight: isToday || isSelected
+                  ? FontWeight.w700
+                  : FontWeight.w500,
               color: textColor,
             ),
           ),
@@ -548,7 +557,16 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
     );
   }
 
-  Widget _buildSelectedDayDetailCard() {
+  bool _isPastDay(DateTime d) {
+    final now = DateTime.now();
+    return DateTime(
+      d.year,
+      d.month,
+      d.day,
+    ).isBefore(DateTime(now.year, now.month, now.day));
+  }
+
+  Widget _buildSelectedDayDetailCard(BuildContext context) {
     return Obx(() {
       final day = controller.selectedDay.value;
       if (day == null) return const SizedBox.shrink();
@@ -577,7 +595,10 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
               children: [
                 Text(
                   formatted,
-                  style: AppTextStyles.outfit(fontSize: 13, fontWeight: FontWeight.w600),
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 _statusBadge(day.status),
               ],
@@ -589,14 +610,23 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                   if (day.inTime != null)
                     Text(
                       'In: ${day.inTime}',
-                      style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textSecondary),
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   if (day.inTime != null && day.outTime != null)
-                    const Text('  ·  ', style: TextStyle(color: AppColors.textTertiary)),
+                    const Text(
+                      '  ·  ',
+                      style: TextStyle(color: AppColors.textTertiary),
+                    ),
                   if (day.outTime != null)
                     Text(
                       'Out: ${day.outTime}',
-                      style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textSecondary),
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                 ],
               ),
@@ -611,15 +641,80 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.note_alt_outlined, size: 14, color: AppColors.textTertiary),
+                    const Icon(
+                      Icons.note_alt_outlined,
+                      size: 14,
+                      color: AppColors.textTertiary,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         day.note!,
-                        style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textPrimary),
+                        style: AppTextStyles.outfit(
+                          fontSize: 12,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
+            if (day.status.toLowerCase() == 'leave') ...[
+              if (day.id != null) ...[
+                AppSpacing.v12,
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        _confirmCancelLeaveDay(context, day, formatted),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      side: const BorderSide(color: Colors.redAccent),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel Leave',
+                      style: AppTextStyles.outfit(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                ),
+              ],
+            ] else if (parsedDate != null && _isPastDay(parsedDate)) ...[
+              AppSpacing.v8,
+              Text(
+                'Leave can only be taken for today or upcoming days.',
+                style: AppTextStyles.outfit(
+                  fontSize: 11.5,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+            ] else ...[
+              AppSpacing.v12,
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _showApplyLeaveBottomSheet(
+                    context,
+                    initialDate: parsedDate,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBrand,
+                    foregroundColor: AppColors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    'Take Leave',
+                    style: AppTextStyles.outfit(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.white,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -630,98 +725,126 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
   }
 
   // ==========================================
-  // TAB 2: LEAVE APPLICATIONS
+  // LEAVE APPLICATIONS (below the calendar)
   // ==========================================
 
-  Widget _buildLeavesTab(BuildContext context) {
+  Widget _buildLeavesSection(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          color: AppColors.white,
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
+        Row(
+          children: [
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Leave Requests',
-                    style: AppTextStyles.outfit(fontSize: 16, fontWeight: FontWeight.w700),
+                    'Leave Applications',
+                    style: AppTextStyles.outfit(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   Text(
                     'Apply and manage your leave requests',
-                    style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
+                    style: AppTextStyles.outfit(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
                   ),
                 ],
               ),
-              ElevatedButton.icon(
-                onPressed: () => _showApplyLeaveBottomSheet(context),
-                icon: const Icon(Icons.add_rounded, size: 16),
-                label: Text(
-                  'Apply Leave',
-                  style: AppTextStyles.outfit(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBrand,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  elevation: 0,
+            ),
+            ElevatedButton.icon(
+              onPressed: () => _showApplyLeaveBottomSheet(context),
+              icon: const Icon(Icons.add_rounded, size: 16),
+              label: Text(
+                'Apply Leave',
+                style: AppTextStyles.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
               ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: Obx(() {
-            if (controller.isLoadingLeaves.value && controller.leaves.isEmpty) {
-              return const Center(child: CommonLoading());
-            }
-
-            if (controller.leaves.isEmpty) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.beach_access_outlined, size: 64, color: AppColors.textTertiary.withValues(alpha: 0.5)),
-                      AppSpacing.v12,
-                      Text(
-                        'No leave applications found.',
-                        style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryBrand,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
                 ),
-              );
-            }
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
+        AppSpacing.v12,
+        Obx(() {
+          if (controller.isLoadingLeaves.value && controller.leaves.isEmpty) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CommonLoading()),
+            );
+          }
 
-            return RefreshIndicator(
-              onRefresh: controller.fetchLeaves,
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: controller.leaves.length,
-                separatorBuilder: (context, index) => AppSpacing.v12,
-                itemBuilder: (context, index) {
-                  final leave = controller.leaves[index];
-                  return _LeaveCard(
-                    leave: leave,
-                    onCancel: () => _confirmCancelLeave(context, leave),
-                  );
-                },
+          if (controller.leaves.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderGrey),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.beach_access_outlined,
+                    size: 40,
+                    color: AppColors.textTertiary.withValues(alpha: 0.5),
+                  ),
+                  AppSpacing.v8,
+                  Text(
+                    'No leave applications found.',
+                    style: AppTextStyles.outfit(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             );
-          }),
-        ),
+          }
+
+          return Column(
+            children: [
+              for (final leave in controller.leaves) ...[
+                _LeaveCard(
+                  leave: leave,
+                  onCancel: () => _confirmCancelLeave(context, leave),
+                ),
+                AppSpacing.v12,
+              ],
+            ],
+          );
+        }),
       ],
     );
   }
 
-  void _showApplyLeaveBottomSheet(BuildContext context) {
-    final startCtrl = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
-    final endCtrl = TextEditingController(text: DateFormat('yyyy-MM-dd').format(DateTime.now()));
+  void _showApplyLeaveBottomSheet(
+    BuildContext context, {
+    DateTime? initialDate,
+  }) {
+    final nowDay = DateTime.now();
+    final todayOnly = DateTime(nowDay.year, nowDay.month, nowDay.day);
+    final start = (initialDate == null || _isPastDay(initialDate))
+        ? todayOnly
+        : initialDate;
+    final initialText = DateFormat('yyyy-MM-dd').format(start);
+    final startCtrl = TextEditingController(text: initialText);
+    final endCtrl = TextEditingController(text: initialText);
     final reasonCtrl = TextEditingController();
     final skipSundays = true.obs;
 
@@ -741,7 +864,10 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
               children: [
                 Text(
                   'Apply for Leave',
-                  style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: AppTextStyles.outfit(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close_rounded),
@@ -756,14 +882,22 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
+                      final now = DateTime.now();
+                      final firstDay = DateTime(now.year, now.month, now.day);
+                      final parsed =
+                          DateTime.tryParse(startCtrl.text) ?? firstDay;
                       final picked = await showDatePicker(
                         context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime.now().subtract(const Duration(days: 7)),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                        initialDate: parsed.isBefore(firstDay)
+                            ? firstDay
+                            : parsed,
+                        firstDate: firstDay,
+                        lastDate: now.add(const Duration(days: 365)),
                       );
                       if (picked != null) {
-                        startCtrl.text = DateFormat('yyyy-MM-dd').format(picked);
+                        startCtrl.text = DateFormat(
+                          'yyyy-MM-dd',
+                        ).format(picked);
                         if (DateTime.parse(endCtrl.text).isBefore(picked)) {
                           endCtrl.text = startCtrl.text;
                         }
@@ -774,8 +908,13 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                         controller: startCtrl,
                         decoration: InputDecoration(
                           labelText: 'Start Date',
-                          prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 18,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
                     ),
@@ -785,7 +924,8 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                 Expanded(
                   child: GestureDetector(
                     onTap: () async {
-                      final initial = DateTime.tryParse(startCtrl.text) ?? DateTime.now();
+                      final initial =
+                          DateTime.tryParse(startCtrl.text) ?? DateTime.now();
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: initial,
@@ -801,8 +941,13 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                         controller: endCtrl,
                         decoration: InputDecoration(
                           labelText: 'End Date',
-                          prefixIcon: const Icon(Icons.calendar_today_outlined, size: 18),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          prefixIcon: const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 18,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
                     ),
@@ -816,11 +961,17 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   'Skip Sundays',
-                  style: AppTextStyles.outfit(fontSize: 14, fontWeight: FontWeight.w500),
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 subtitle: Text(
                   'Do not count Sundays in total leave days',
-                  style: AppTextStyles.outfit(fontSize: 12, color: AppColors.textTertiary),
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
                 value: skipSundays.value,
                 activeThumbColor: AppColors.primaryBrand,
@@ -836,7 +987,9 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
                 labelText: 'Reason for Leave *',
                 hintText: 'Provide details for your leave request...',
                 alignLabelWithHint: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
             AppSpacing.v16,
@@ -867,22 +1020,85 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
     );
   }
 
+  void _confirmCancelLeaveDay(
+    BuildContext context,
+    TeacherCalendarDay day,
+    String formattedDate,
+  ) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Cancel Leave?',
+          style: AppTextStyles.outfit(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to cancel your leave on $formattedDate?',
+          style: AppTextStyles.outfit(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Keep',
+              style: AppTextStyles.outfit(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Get.back();
+              await controller.cancelLeave(day.id!);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              'Cancel Leave',
+              style: AppTextStyles.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmCancelLeave(BuildContext context, TeacherLeaveItem leave) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Cancel Leave?',
-          style: AppTextStyles.outfit(fontSize: 18, fontWeight: FontWeight.w700),
+          style: AppTextStyles.outfit(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         content: Text(
           'Are you sure you want to cancel your leave application for ${leave.startDate} to ${leave.endDate}?',
-          style: AppTextStyles.outfit(fontSize: 14, color: AppColors.textSecondary),
+          style: AppTextStyles.outfit(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Keep', style: AppTextStyles.outfit(color: AppColors.textSecondary)),
+            child: Text(
+              'Keep',
+              style: AppTextStyles.outfit(color: AppColors.textSecondary),
+            ),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -891,9 +1107,17 @@ class TeacherSelfAttendanceScreen extends GetView<TeacherSelfAttendanceControlle
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            child: Text('Cancel Leave', style: AppTextStyles.outfit(color: Colors.white, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Cancel Leave',
+              style: AppTextStyles.outfit(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -947,10 +1171,7 @@ class _LeaveCard extends StatelessWidget {
   final TeacherLeaveItem leave;
   final VoidCallback onCancel;
 
-  const _LeaveCard({
-    required this.leave,
-    required this.onCancel,
-  });
+  const _LeaveCard({required this.leave, required this.onCancel});
 
   @override
   Widget build(BuildContext context) {
@@ -987,7 +1208,11 @@ class _LeaveCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.date_range_rounded, size: 16, color: AppColors.primaryBrand),
+                  const Icon(
+                    Icons.date_range_rounded,
+                    size: 16,
+                    color: AppColors.primaryBrand,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     leave.startDate == leave.endDate
@@ -1018,14 +1243,16 @@ class _LeaveCard extends StatelessWidget {
               ),
             ],
           ),
-          AppSpacing.v8,
-          Text(
-            leave.reason,
-            style: AppTextStyles.outfit(
-              fontSize: 13,
-              color: AppColors.textSecondary,
+          if (leave.reason.isNotEmpty) ...[
+            AppSpacing.v8,
+            Text(
+              leave.reason,
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
+          ],
           AppSpacing.v10,
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1033,7 +1260,10 @@ class _LeaveCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(6),
@@ -1060,12 +1290,15 @@ class _LeaveCard extends StatelessWidget {
                   ],
                 ],
               ),
-              if (leave.isPending)
+              if (leave.canCancel)
                 TextButton(
                   onPressed: onCancel,
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),

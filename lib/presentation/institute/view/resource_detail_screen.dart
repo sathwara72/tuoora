@@ -2,6 +2,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/enums/app_enums.dart';
+import 'package:tuoora/core/utils/url_launcher_utils.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_network_image.dart';
 import 'package:tuoora/presentation/institute/models/resource_model.dart';
@@ -79,23 +80,32 @@ class ResourceDetailScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: Obx(
-        () => InstituteBottomButton(
-          label: controller.isDownloading.value
-              ? 'Downloading (${(controller.downloadProgress.value * 100).toInt()}%)'
-              : AppStrings.instDownloadResourceBtn,
-          icon: controller.isDownloading.value ? null : Icons.download_rounded,
-          onTap: controller.isDownloading.value
-              ? null
-              : () => controller.downloadResource(
-                  int.parse(resource.id),
-                  resource.displayFileName,
-                  resource.fileName.contains('.')
-                      ? resource.fileName.split('.').last
-                      : null,
-                ),
-        ),
-      ),
+      bottomNavigationBar: resource.type == ResourceType.youtube
+          // A link has nothing to download — the action is to open it.
+          ? InstituteBottomButton(
+              label: 'Open Link',
+              icon: Icons.open_in_new_rounded,
+              onTap: () => _openViewer(resource),
+            )
+          : Obx(
+              () => InstituteBottomButton(
+                label: controller.isDownloading.value
+                    ? 'Downloading (${(controller.downloadProgress.value * 100).toInt()}%)'
+                    : AppStrings.instDownloadResourceBtn,
+                icon: controller.isDownloading.value
+                    ? null
+                    : Icons.download_rounded,
+                onTap: controller.isDownloading.value
+                    ? null
+                    : () => controller.downloadResource(
+                        int.parse(resource.id),
+                        resource.displayFileName,
+                        resource.fileName.contains('.')
+                            ? resource.fileName.split('.').last
+                            : null,
+                      ),
+              ),
+            ),
     );
   }
 
@@ -104,8 +114,7 @@ class ResourceDetailScreen extends StatelessWidget {
   // Tapping opens the right player in the in-app viewer (see [_openViewer]).
   Widget _buildPreviewThumbnail(ResourceModel resource) {
     final Color accent = _accentFor(resource.type);
-    final bool hasUrl =
-        resource.fileUrl != null && resource.fileUrl!.isNotEmpty;
+    final bool hasUrl = (_viewUrlFor(resource) ?? '').isNotEmpty;
 
     return GestureDetector(
       onTap: hasUrl ? () => _openViewer(resource) : null,
@@ -202,11 +211,25 @@ class ResourceDetailScreen extends StatelessWidget {
     );
   }
 
+  // YouTube/link resources keep their URL in `youtubeUrl` (no uploaded file),
+  // so `fileUrl` is empty for them.
+  String? _viewUrlFor(ResourceModel resource) {
+    if (resource.type == ResourceType.youtube) {
+      final link = resource.youtubeUrl;
+      return (link != null && link.isNotEmpty) ? link : resource.fileUrl;
+    }
+    return resource.fileUrl;
+  }
+
   void _openViewer(ResourceModel resource) {
-    final url = resource.type == ResourceType.youtube
-        ? (resource.youtubeUrl ?? resource.fileUrl)
-        : resource.fileUrl;
+    final url = _viewUrlFor(resource);
     if (url == null || url.isEmpty) return;
+    // YouTube doesn't play reliably inside an embedded WebView; hand it to
+    // the YouTube app / browser like the student side does.
+    if (resource.type == ResourceType.youtube) {
+      UrlLauncherUtils.openExternal(url.trim());
+      return;
+    }
     Widget viewer;
     switch (resource.type) {
       case ResourceType.image:

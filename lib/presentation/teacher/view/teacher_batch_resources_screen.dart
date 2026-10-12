@@ -131,8 +131,9 @@ class TeacherBatchResourcesScreen
                   size: 20,
                 ),
                 suffixIcon: Obx(() {
-                  if (controller.searchQuery.value.isEmpty)
+                  if (controller.searchQuery.value.isEmpty) {
                     return const SizedBox.shrink();
+                  }
                   return IconButton(
                     icon: const Icon(Icons.clear_rounded, size: 18),
                     onPressed: () => controller.searchQuery.value = '',
@@ -794,7 +795,7 @@ class _ResourceCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: AppColors.borderGrey),
       ),
       padding: const EdgeInsets.all(14),

@@ -19,6 +19,7 @@ class InstituteSignupScreen extends GetView<SignupController> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       body: LoginBackdrop(
         image: AppImages.roleInstitute,
         tagline: 'Manage\nGrow\nSucceed',

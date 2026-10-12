@@ -162,12 +162,17 @@ class LoginBackdrop extends StatelessWidget {
   final String tagline;
   final String quote;
 
+  /// The faded round illustration on the left edge. Turn off on screens that
+  /// already show the same illustration in their header.
+  final bool showLeftBadge;
+
   const LoginBackdrop({
     super.key,
     required this.child,
     required this.image,
     required this.tagline,
     required this.quote,
+    this.showLeftBadge = true,
   });
 
   @override
@@ -179,25 +184,26 @@ class LoginBackdrop extends StatelessWidget {
             child: CustomPaint(painter: _LoginBackdropPainter()),
           ),
         ),
-        Positioned(
-          left: -18,
-          top: 142,
-          child: IgnorePointer(
-            child: Container(
-              width: 118,
-              height: 118,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFDEBD8),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: Opacity(
-                opacity: 0.45,
-                child: Image.asset(image, width: 96, fit: BoxFit.contain),
+        if (showLeftBadge)
+          Positioned(
+            left: -18,
+            top: 142,
+            child: IgnorePointer(
+              child: Container(
+                width: 118,
+                height: 118,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFDEBD8),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Opacity(
+                  opacity: 0.45,
+                  child: Image.asset(image, width: 96, fit: BoxFit.contain),
+                ),
               ),
             ),
           ),
-        ),
         Positioned(
           right: -14,
           bottom: 40,
@@ -217,7 +223,7 @@ class LoginBackdrop extends StatelessWidget {
               children: [
                 Text(
                   quote,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.baloo2(
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                     color: const Color(0xFF6B7280),
@@ -386,7 +392,7 @@ class RoleLoginBackdrop extends StatelessWidget {
                   Text(
                     'Your Learning\nJourney Starts Here',
                     textAlign: TextAlign.end,
-                    style: GoogleFonts.outfit(
+                    style: GoogleFonts.baloo2(
                       fontSize: 12,
                       color: const Color(0xFF9AA5B8),
                       height: 1.35,

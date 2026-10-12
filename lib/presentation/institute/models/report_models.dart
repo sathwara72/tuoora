@@ -52,13 +52,61 @@ class FeeReportBatch {
   }
 }
 
+class FeeReportStudent {
+  final int studentId;
+  final String name;
+  final String enrollmentId;
+  final int? batchId;
+  final String batchName;
+  final double totalAmount;
+  final double paidAmount;
+  final double dueAmount;
+  final String status;
+  final String lastPaymentDate;
+  final bool isPending;
+
+  FeeReportStudent({
+    required this.studentId,
+    required this.name,
+    required this.enrollmentId,
+    this.batchId,
+    required this.batchName,
+    required this.totalAmount,
+    required this.paidAmount,
+    required this.dueAmount,
+    required this.status,
+    required this.lastPaymentDate,
+    required this.isPending,
+  });
+
+  factory FeeReportStudent.fromJson(Map<String, dynamic> json) {
+    return FeeReportStudent(
+      studentId: FeeRecord.safeInt(json['student_id']),
+      name: FeeRecord.safeString(json['name']),
+      enrollmentId: FeeRecord.safeString(json['enrollment_id']),
+      batchId: json['batch_id'] != null
+          ? FeeRecord.safeInt(json['batch_id'])
+          : null,
+      batchName: FeeRecord.safeString(json['batch_name']),
+      totalAmount: FeeRecord.safeDouble(json['total_amount']),
+      paidAmount: FeeRecord.safeDouble(json['paid_amount']),
+      dueAmount: FeeRecord.safeDouble(json['due_amount']),
+      status: FeeRecord.safeString(json['status']),
+      lastPaymentDate: FeeRecord.safeString(json['last_payment_date']),
+      isPending: json['is_pending'] == 1 || json['is_pending'] == true,
+    );
+  }
+}
+
 class FeeReportResponse {
   final FeeReportSummary summary;
   final List<FeeReportBatch> batches;
+  final List<FeeReportStudent> students;
 
   FeeReportResponse({
     required this.summary,
     required this.batches,
+    this.students = const [],
   });
 
   factory FeeReportResponse.fromJson(Map<String, dynamic> json) {
@@ -66,6 +114,9 @@ class FeeReportResponse {
       summary: FeeReportSummary.fromJson(json['summary'] ?? {}),
       batches: (json['batches'] as List? ?? [])
           .map((i) => FeeReportBatch.fromJson(i))
+          .toList(),
+      students: (json['students'] as List? ?? [])
+          .map((i) => FeeReportStudent.fromJson(i))
           .toList(),
     );
   }
@@ -75,10 +126,7 @@ class BatchFeeDetailResponse {
   final FeeReportSummary summary;
   final List<FeeRecord> fees;
 
-  BatchFeeDetailResponse({
-    required this.summary,
-    required this.fees,
-  });
+  BatchFeeDetailResponse({required this.summary, required this.fees});
 
   factory BatchFeeDetailResponse.fromJson(Map<String, dynamic> json) {
     return BatchFeeDetailResponse(
@@ -141,10 +189,7 @@ class AttendanceReportResponse {
   final AttendanceReportSummary summary;
   final List<AttendanceReportBatch> batches;
 
-  AttendanceReportResponse({
-    required this.summary,
-    required this.batches,
-  });
+  AttendanceReportResponse({required this.summary, required this.batches});
 
   factory AttendanceReportResponse.fromJson(Map<String, dynamic> json) {
     return AttendanceReportResponse(
@@ -241,10 +286,7 @@ class PerformanceReportResponse {
   final PerformanceReportSummary summary;
   final List<PerformanceReportBatch> batches;
 
-  PerformanceReportResponse({
-    required this.summary,
-    required this.batches,
-  });
+  PerformanceReportResponse({required this.summary, required this.batches});
 
   factory PerformanceReportResponse.fromJson(Map<String, dynamic> json) {
     return PerformanceReportResponse(
@@ -438,8 +480,9 @@ class AnalyticsAttendance {
 
   factory AnalyticsAttendance.fromJson(Map<String, dynamic> json) {
     return AnalyticsAttendance(
-      overallPercentThisMonth:
-          FeeRecord.safeDouble(json['overall_percent_this_month']),
+      overallPercentThisMonth: FeeRecord.safeDouble(
+        json['overall_percent_this_month'],
+      ),
       batches: (json['batches'] as List? ?? [])
           .map((i) => AnalyticsAttendanceBatch.fromJson(i))
           .toList(),
@@ -517,10 +560,31 @@ class AnalyticsResponse {
   factory AnalyticsResponse.fromJson(Map<String, dynamic> json) {
     return AnalyticsResponse(
       revenue: AnalyticsRevenue.fromJson(json['revenue'] ?? {}),
-      feeCollection:
-          AnalyticsFeeCollection.fromJson(json['fee_collection'] ?? {}),
+      feeCollection: AnalyticsFeeCollection.fromJson(
+        json['fee_collection'] ?? {},
+      ),
       attendance: AnalyticsAttendance.fromJson(json['attendance'] ?? {}),
       dropout: AnalyticsDropout.fromJson(json['dropout'] ?? {}),
+    );
+  }
+}
+
+class StudentReportBatchItem {
+  final int id;
+  final String name;
+  final bool isActive;
+
+  StudentReportBatchItem({
+    required this.id,
+    required this.name,
+    required this.isActive,
+  });
+
+  factory StudentReportBatchItem.fromJson(Map<String, dynamic> json) {
+    return StudentReportBatchItem(
+      id: FeeRecord.safeInt(json['id']),
+      name: FeeRecord.safeString(json['name']),
+      isActive: json['is_active'] == true,
     );
   }
 }
@@ -531,6 +595,9 @@ class StudentWiseReportData {
   final StudentReportAttendance attendance;
   final StudentReportExams exams;
   final StudentReportHomework homework;
+  final List<StudentReportBatchItem> allBatches;
+  final int? activeBatchId;
+  final int? selectedBatchId;
 
   StudentWiseReportData({
     required this.student,
@@ -538,9 +605,21 @@ class StudentWiseReportData {
     required this.attendance,
     required this.exams,
     required this.homework,
+    this.allBatches = const [],
+    this.activeBatchId,
+    this.selectedBatchId,
   });
 
   factory StudentWiseReportData.fromJson(Map<String, dynamic> json) {
+    final rawBatches = json['all_batches'] ?? json['student']?['all_batches'];
+    final allBatches = (rawBatches as List? ?? [])
+        .map(
+          (e) => StudentReportBatchItem.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
+
     return StudentWiseReportData(
       student: StudentReportProfile.fromJson(
         Map<String, dynamic>.from(json['student'] ?? {}),
@@ -557,6 +636,17 @@ class StudentWiseReportData {
       homework: StudentReportHomework.fromJson(
         Map<String, dynamic>.from(json['homework'] ?? {}),
       ),
+      allBatches: allBatches,
+      activeBatchId: json['active_batch_id'] != null
+          ? FeeRecord.safeInt(json['active_batch_id'])
+          : (json['student']?['active_batch_id'] != null
+                ? FeeRecord.safeInt(json['student']['active_batch_id'])
+                : null),
+      selectedBatchId: json['selected_batch_id'] != null
+          ? FeeRecord.safeInt(json['selected_batch_id'])
+          : (json['student']?['selected_batch_id'] != null
+                ? FeeRecord.safeInt(json['student']['selected_batch_id'])
+                : null),
     );
   }
 }
@@ -567,7 +657,6 @@ class StudentReportProfile {
   final String enrollmentId;
   final String email;
   final String phone;
-  final String standard;
   final double monthlyFee;
   final String guardianName;
   final String dob;
@@ -576,6 +665,11 @@ class StudentReportProfile {
   final String address;
   final int? batchId;
   final String batchName;
+  final List<StudentReportBatchItem> allBatches;
+  final int? activeBatchId;
+  final int? selectedBatchId;
+  final String? schoolName;
+  final List<String> optionalPhones;
 
   StudentReportProfile({
     required this.id,
@@ -583,7 +677,6 @@ class StudentReportProfile {
     required this.enrollmentId,
     required this.email,
     required this.phone,
-    required this.standard,
     required this.monthlyFee,
     required this.guardianName,
     required this.dob,
@@ -592,16 +685,47 @@ class StudentReportProfile {
     required this.address,
     this.batchId,
     required this.batchName,
+    this.allBatches = const [],
+    this.activeBatchId,
+    this.selectedBatchId,
+    this.schoolName,
+    this.optionalPhones = const [],
   });
 
   factory StudentReportProfile.fromJson(Map<String, dynamic> json) {
+    final rawBatches = json['all_batches'];
+    final allBatches = (rawBatches as List? ?? [])
+        .map(
+          (e) => StudentReportBatchItem.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
+
+    List<String> parseOptionalPhones(dynamic val) {
+      if (val is List) {
+        return val.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+      } else if (val is String && val.trim().isNotEmpty) {
+        return [val.trim()];
+      }
+      return const [];
+    }
+
+    final rawSchool = json['school_name']?.toString() ?? json['school']?.toString();
+    final cleanSchool = (rawSchool != null &&
+            rawSchool.trim().isNotEmpty &&
+            rawSchool.trim().toLowerCase() != 'null')
+        ? rawSchool.trim()
+        : null;
+
+    final optPhones = parseOptionalPhones(json['optional_phones']);
+
     return StudentReportProfile(
       id: FeeRecord.safeInt(json['id']),
       name: FeeRecord.safeString(json['name']),
       enrollmentId: FeeRecord.safeString(json['enrollment_id']),
       email: FeeRecord.safeString(json['email']),
       phone: FeeRecord.safeString(json['phone']),
-      standard: FeeRecord.safeString(json['standard']),
       monthlyFee: FeeRecord.safeDouble(json['monthly_fee']),
       guardianName: FeeRecord.safeString(json['guardian_name']).isNotEmpty
           ? FeeRecord.safeString(json['guardian_name'])
@@ -622,6 +746,15 @@ class StudentReportProfile {
       batchName: FeeRecord.safeString(json['batch_name']).isNotEmpty
           ? FeeRecord.safeString(json['batch_name'])
           : 'Unassigned',
+      allBatches: allBatches,
+      activeBatchId: json['active_batch_id'] != null
+          ? FeeRecord.safeInt(json['active_batch_id'])
+          : null,
+      selectedBatchId: json['selected_batch_id'] != null
+          ? FeeRecord.safeInt(json['selected_batch_id'])
+          : null,
+      schoolName: cleanSchool,
+      optionalPhones: optPhones,
     );
   }
 }
@@ -900,9 +1033,7 @@ class StudentReportHomeworkItem {
       subject: FeeRecord.safeString(json['subject']),
       dueDate: FeeRecord.safeString(json['due_date']),
       status: FeeRecord.safeString(json['status']),
-      score: json['score'] != null
-          ? FeeRecord.safeDouble(json['score'])
-          : null,
+      score: json['score'] != null ? FeeRecord.safeDouble(json['score']) : null,
       feedback: FeeRecord.safeString(json['feedback']),
     );
   }
@@ -913,7 +1044,6 @@ class StudentBatchItem {
   final String name;
   final String enrollmentId;
   final int? batchId;
-  final String standard;
   final String phone;
   final String email;
 
@@ -922,7 +1052,6 @@ class StudentBatchItem {
     required this.name,
     required this.enrollmentId,
     this.batchId,
-    required this.standard,
     required this.phone,
     required this.email,
   });
@@ -935,11 +1064,8 @@ class StudentBatchItem {
       batchId: json['batch_id'] != null
           ? FeeRecord.safeInt(json['batch_id'])
           : null,
-      standard: FeeRecord.safeString(json['standard']),
       phone: FeeRecord.safeString(json['phone']),
       email: FeeRecord.safeString(json['email']),
     );
   }
 }
-
-

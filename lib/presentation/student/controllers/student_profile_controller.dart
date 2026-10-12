@@ -1,3 +1,4 @@
+import 'package:tuoora/data/repositories/student_exam_repository.dart';
 import 'dart:io';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
@@ -9,9 +10,11 @@ import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/api/api_client.dart';
+import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/data/models/student_profile_model.dart';
 import 'package:tuoora/data/repositories/student_profile_repository.dart';
+import 'package:tuoora/presentation/student/controllers/student_dashboard_controller.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 
 class StudentProfileController extends GetxController {
@@ -33,8 +36,35 @@ class StudentProfileController extends GetxController {
   Future<void> fetchProfile() async {
     try {
       isLoading.value = true;
-      final data = await _repository.getProfile();
+      var data = await _repository.getProfile();
+
+      // If examPct is 0 or unpopulated, fetch from StudentExamRepository as fallback
+      if (data.stats.examPct == 0) {
+        try {
+          final examRepo = StudentExamRepository(Get.find<ApiClient>());
+          final examData = await examRepo.getExams();
+          final examAvg = examData.overallStats.averagePercentage.round();
+          if (examAvg > 0) {
+            final updatedPerf = ((data.stats.attendancePct + data.stats.homeworkPct + examAvg) / 3).round();
+            data = data.copyWithStats(
+              data.stats.copyWith(
+                examPct: examAvg,
+                performanceScore: updatedPerf > 0 ? updatedPerf : data.stats.performanceScore,
+              ),
+            );
+          }
+        } catch (_) {}
+      }
+
       profileData.value = data;
+      if (data.header.avatarUrl.isNotEmpty) {
+        if (Get.isRegistered<AuthService>()) {
+          Get.find<AuthService>().updateProfileImage(data.header.avatarUrl);
+        }
+        if (Get.isRegistered<StudentDashboardController>()) {
+          Get.find<StudentDashboardController>().updateAvatarUrl(data.header.avatarUrl);
+        }
+      }
     } catch (e) {
       AppSnackBar.error(AppStrings.errFailedLoadProfile);
     } finally {
@@ -61,7 +91,12 @@ class StudentProfileController extends GetxController {
   }
 
   Future<void> pickImage(ImageSource source) async {
-    final XFile? image = await _picker.pickImage(source: source);
+    final XFile? image = await _picker.pickImage(
+      source: source,
+      imageQuality: 75,
+      maxWidth: 1080,
+      maxHeight: 1080,
+    );
     if (image == null) return;
 
     final previousLocalPath = profileImagePath.value;
@@ -75,13 +110,25 @@ class StudentProfileController extends GetxController {
       if (existing != null) {
         profileData.value = existing.copyWithAvatarUrl(newAvatarUrl);
       }
+      if (Get.isRegistered<AuthService>()) {
+        Get.find<AuthService>().updateProfileImage(newAvatarUrl);
+      }
+      if (Get.isRegistered<StudentDashboardController>()) {
+        Get.find<StudentDashboardController>().updateAvatarUrl(newAvatarUrl);
+      }
       AppSnackBar.success(AppStrings.profilePhotoUpdated);
     } catch (e) {
       profileImagePath.value = previousLocalPath;
-      AppSnackBar.error(
-        e.toString().replaceAll('Exception: ', ''),
-        title: AppStrings.uploadFailed,
-      );
+      String message;
+      if (e is ValidationException && e.errors.isNotEmpty) {
+        final firstError = e.errors.values.first;
+        message = firstError is List
+            ? firstError.first.toString()
+            : firstError.toString();
+      } else {
+        message = e.toString().replaceAll('Exception: ', '');
+      }
+      AppSnackBar.error(message, title: AppStrings.uploadFailed);
     } finally {
       isUploadingAvatar.value = false;
     }

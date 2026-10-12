@@ -103,8 +103,8 @@ class BatchController extends GetxController {
     return isValid;
   }
 
-  Future<void> loadBatches({bool isRefresh = true}) async {
-    if (isLoading.value || isMoreLoading.value) return;
+  Future<void> loadBatches({bool isRefresh = true, bool force = false}) async {
+    if (!force && (isLoading.value || isMoreLoading.value)) return;
 
     if (isRefresh) {
       currentPage.value = 1;

@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/branding_service.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/url_constants.dart';
@@ -85,12 +86,12 @@ class AddOnsController extends GetxController {
         'amount': order['amount'],
         'currency': order['currency'] ?? 'INR',
         'order_id': order['order_id'],
-        'name': 'Tuoora',
+        'name': Get.isRegistered<BrandingService>() ? Get.find<BrandingService>().appName : 'Tuoora',
         'description': addOn.title,
         'theme': {'color': '#F97316'},
         'prefill': {
-          if (_prefillName != null) 'name': _prefillName!,
-          if (_prefillPhone != null) 'contact': _prefillPhone!,
+          'name': ?_prefillName,
+          'contact': ?_prefillPhone,
         },
       };
 

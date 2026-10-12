@@ -13,6 +13,10 @@ class TeacherExamMarksController extends GetxController {
   final isLoading = true.obs;
   final isSaving = false.obs;
   final rows = <TeacherExamMarkRow>[].obs;
+  final searchQuery = ''.obs;
+
+  /// Bumped when marks are changed in bulk so the text fields rebuild.
+  final resetTick = 0.obs;
 
   @override
   void onInit() {
@@ -38,6 +42,46 @@ class TeacherExamMarksController extends GetxController {
   int get presentCount => rows.where((r) => !r.isAbsent).length;
   int get enteredCount =>
       rows.where((r) => r.isAbsent || r.marksObtained != null).length;
+
+  int get passedCount => rows
+      .where((r) =>
+          !r.isAbsent &&
+          r.marksObtained != null &&
+          r.marksObtained! >= exam.passingMarks)
+      .length;
+  int get markedPresentCount =>
+      rows.where((r) => !r.isAbsent && r.marksObtained != null).length;
+  int get passRate =>
+      markedPresentCount == 0 ? 0 : (passedCount * 100 / markedPresentCount).round();
+
+  List<TeacherExamMarkRow> get filteredRows {
+    final q = searchQuery.value.trim().toLowerCase();
+    if (q.isEmpty) return rows.toList();
+    return rows
+        .where((r) =>
+            r.studentName.toLowerCase().contains(q) ||
+            (r.enrollmentId ?? '').toLowerCase().contains(q))
+        .toList();
+  }
+
+  void fillPassingMarks() {
+    for (final r in rows) {
+      if (!r.isAbsent) r.marksObtained = exam.passingMarks;
+    }
+    resetTick.value++;
+    rows.refresh();
+    AppSnackBar.success('Filled passing marks (${exam.passingMarks.toInt()})');
+  }
+
+  void clearAll() {
+    for (final r in rows) {
+      r.marksObtained = null;
+      r.isAbsent = false;
+      r.remarks = null;
+    }
+    resetTick.value++;
+    rows.refresh();
+  }
 
   void updateMarks(TeacherExamMarkRow row, String value) {
     row.marksObtained = double.tryParse(value.trim());

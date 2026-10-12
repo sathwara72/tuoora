@@ -25,6 +25,8 @@ class FeesController extends GetxController {
   ).obs;
 
   final RxList<FeeStatement> statements = <FeeStatement>[].obs;
+  final Rxn<dynamic> selectedBatchId = Rxn<dynamic>();
+  final RxList<dynamic> allBatches = <dynamic>[].obs;
   final Rxn<FeeStatement> selectedStatement = Rxn<FeeStatement>();
   final Rxn<StudentReceipt> currentReceipt = Rxn<StudentReceipt>();
 
@@ -47,17 +49,29 @@ class FeesController extends GetxController {
     _loadBillingProfile();
   }
 
-  Future<void> loadFees() async {
+  Future<void> loadFees({dynamic batchId}) async {
     try {
       isLoading.value = true;
-      final data = await _repository.getFees();
+      if (batchId != null) {
+        selectedBatchId.value = batchId;
+      }
+      final data = await _repository.getFees(batchId: selectedBatchId.value);
       statements.assignAll(data.fees);
       summary.value = data.summary;
+      allBatches.assignAll(data.allBatches);
+      if (selectedBatchId.value == null && data.selectedBatchId != null) {
+        selectedBatchId.value = data.selectedBatchId;
+      }
     } catch (_) {
       AppSnackBar.error(AppStrings.errFailedLoadFees);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> switchBatch(dynamic batchId) async {
+    selectedBatchId.value = batchId;
+    await loadFees(batchId: batchId);
   }
 
   Future<void> _loadBillingProfile() async {
@@ -88,6 +102,20 @@ class FeesController extends GetxController {
     await _fetchReceipt(feeId);
   }
 
+  Future<void> openReceiptDirect(StudentReceipt receipt) async {
+    selectedStatement.value = null;
+    currentReceipt.value = receipt;
+    Get.toNamed(AppRoutes.studentFeeReceipt);
+    if (receipt.id > 0) {
+      try {
+        final updated = await _repository.getReceipt(receipt.id);
+        currentReceipt.value = updated;
+      } catch (_) {
+        // Keep existing receipt data in currentReceipt
+      }
+    }
+  }
+
   Future<void> _fetchReceipt(int feeId) async {
     try {
       isReceiptLoading.value = true;
@@ -101,8 +129,25 @@ class FeesController extends GetxController {
 
   Future<void> downloadCurrentReceipt() async {
     final receipt = currentReceipt.value;
-    if (receipt == null) return;
-    await _downloadReceipt(receipt);
+    if (receipt != null) {
+      await _downloadReceipt(receipt);
+      return;
+    }
+    final statement = selectedStatement.value;
+    if (statement != null) {
+      final fallbackReceipt = StudentReceipt(
+        id: statement.feeId,
+        receiptNumber: statement.id,
+        amount: statement.amountInRupees.toString(),
+        paymentMethod: '',
+        date: statement.dateLabel,
+        studentName: '',
+        rollNo: '',
+        instituteName: '',
+        feeId: statement.feeId,
+      );
+      await _downloadReceipt(fallbackReceipt);
+    }
   }
 
   Future<void> _downloadReceipt(StudentReceipt receipt) async {
@@ -117,8 +162,8 @@ class FeesController extends GetxController {
         label: AppStrings.pleaseWaitYourReceiptIsBeing,
         fileName: fileName,
         fetch: () async => Uint8List.fromList(
-          await _repository.downloadFeeReceipt(
-            receipt.id,
+          await _repository.downloadReceipt(
+            receipt,
             onProgress: (p) => downloadProgress.value = p,
           ),
         ),

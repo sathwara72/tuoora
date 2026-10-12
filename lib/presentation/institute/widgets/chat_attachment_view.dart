@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/services/media_cache_service.dart';
+import 'package:tuoora/core/widgets/audio_player_popup.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/pdf_viewer_popup.dart';
 import 'package:tuoora/presentation/institute/view/in_app_resource_viewer.dart';
@@ -109,6 +110,26 @@ class ChatAttachmentView extends StatelessWidget {
   // ------------------------------------------------ video / audio / document
 
   Widget _buildMedia(_MediaKind kind) {
+    // Audio plays straight away in a popup: no download step, no progress
+    // ring. A copy already in the cache is used, otherwise it streams.
+    if (kind == _MediaKind.audio) {
+      return Obx(() {
+        String source = url;
+        if (!_isLocal) {
+          final st = _cache.stateFor(url).value;
+          if (st.status == MediaDownloadStatus.done && st.localPath != null) {
+            source = st.localPath!;
+          }
+        }
+        return _shell(
+          kind,
+          _Affordance.ready,
+          1,
+          onTap: () => _playAudio(source),
+        );
+      });
+    }
+
     // Local file (e.g. sender's optimistic attachment) — already available,
     // open directly with a ready/play affordance.
     if (_isLocal) {
@@ -282,7 +303,7 @@ class ChatAttachmentView extends StatelessWidget {
         _open(InAppResourceViewer.video(url: path, title: AppStrings.studentAssignmentAttachmentVideo));
         break;
       case _MediaKind.audio:
-        _open(InAppResourceViewer.audio(url: path, title: AppStrings.studentAssignmentAttachmentAudio));
+        _playAudio(path);
         break;
       case _MediaKind.document:
         if (path.toLowerCase().endsWith('.pdf')) {
@@ -297,6 +318,10 @@ class ChatAttachmentView extends StatelessWidget {
         }
         break;
     }
+  }
+
+  void _playAudio(String source) {
+    AudioPlayerPopup.show(source: source, title: _displayFilename(url));
   }
 
   void _open(Widget viewer) {

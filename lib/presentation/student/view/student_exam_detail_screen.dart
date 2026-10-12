@@ -3,9 +3,13 @@ import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/student/controllers/student_exams_controller.dart';
 import 'package:tuoora/presentation/student/models/student_exam_model.dart';
 import 'package:tuoora/presentation/student/widgets/student_app_bar.dart';
+import 'package:tuoora/presentation/student/widgets/student_description_card.dart';
+import 'package:tuoora/presentation/student/widgets/student_info_tile.dart';
+import 'package:tuoora/presentation/student/widgets/student_status_badge.dart';
 
 class StudentExamDetailScreen extends GetView<StudentExamsController> {
   const StudentExamDetailScreen({super.key});
@@ -15,6 +19,7 @@ class StudentExamDetailScreen extends GetView<StudentExamsController> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             const StudentAppBar(
@@ -25,27 +30,11 @@ class StudentExamDetailScreen extends GetView<StudentExamsController> {
               child: Obx(() {
                 if (controller.isDetailLoading.value ||
                     controller.selectedExam.value == null) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primaryBrand,
-                    ),
-                  );
+                  return const CommonLoading(color: AppColors.primaryBrand);
                 }
 
                 final exam = controller.selectedExam.value!;
-                return SingleChildScrollView(
-                  padding: AppSpacing.x16.add(AppSpacing.y16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildHeader(exam),
-                      AppSpacing.v24,
-                      if (exam.isCompleted) _buildResultCard(exam),
-                      if (exam.isCompleted) AppSpacing.v24,
-                      if (exam.isCompleted) _buildClassStatsCard(exam),
-                    ],
-                  ),
-                );
+                return _DetailBody(exam: exam);
               }),
             ),
           ],
@@ -53,267 +42,467 @@ class StudentExamDetailScreen extends GetView<StudentExamsController> {
       ),
     );
   }
+}
 
-  Widget _buildHeader(StudentExamDetail exam) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              (exam.subject ?? exam.examTypeLabel).toUpperCase(),
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textTertiary,
-                letterSpacing: 1,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.primaryBrandLight,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                exam.examTypeLabel.toUpperCase(),
-                style: AppTextStyles.outfit(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primaryBrand,
-                ),
-              ),
+class _DetailBody extends StatelessWidget {
+  final StudentExamDetail exam;
+
+  const _DetailBody({required this.exam});
+
+  @override
+  Widget build(BuildContext context) {
+    final result = exam.result;
+    final showResultCard =
+        exam.isCompleted && result.hasResult && !result.isAbsent;
+    final description = exam.description?.trim();
+
+    return SingleChildScrollView(
+      padding: AppSpacing.screenPaddingTop,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ExamHeaderCard(exam: exam),
+          const SizedBox(height: AppSpacing.s12),
+          _InfoGridSection(exam: exam),
+          if (exam.isCompleted) ...[
+            const SizedBox(height: AppSpacing.s12),
+            if (!result.hasResult)
+              const _PlainNoticeCard(
+                icon: Icons.hourglass_empty_rounded,
+                text: 'Marks have not been entered for this exam yet.',
+              )
+            else if (result.isAbsent)
+              const _AbsentBanner()
+            else
+              _StatsCard(exam: exam, result: result),
+          ] else ...[
+            const SizedBox(height: AppSpacing.s12),
+            const _PlainNoticeCard(
+              icon: Icons.hourglass_empty_rounded,
+              text: 'Results will appear here once the exam is graded.',
             ),
           ],
-        ),
-        AppSpacing.v8,
-        Text(
-          exam.title,
-          style: AppTextStyles.outfit(
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+          if (description != null && description.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s12),
+            StudentDescriptionCard(title: 'DESCRIPTION', text: description),
+          ],
+          if (showResultCard) ...[
+            const SizedBox(height: AppSpacing.s16),
+            _ResultBanner(exam: exam, result: result),
+          ],
+          const SizedBox(height: AppSpacing.s16),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExamHeaderCard extends StatelessWidget {
+  final StudentExamDetail exam;
+
+  const _ExamHeaderCard({required this.exam});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        ),
-        AppSpacing.v8,
-        Text(
-          '${exam.formattedDate ?? ''} · Total ${exam.totalMarks.toStringAsFixed(0)} · Pass ${exam.passingMarks.toStringAsFixed(0)}',
-          style: AppTextStyles.outfit(
-            fontSize: 14,
-            color: AppColors.textTertiary,
-          ),
-        ),
-        if (!exam.isCompleted) ...[
-          AppSpacing.v24,
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Container(
-            padding: AppSpacing.all20,
+            width: AppSpacing.s44,
+            height: AppSpacing.s44,
             decoration: BoxDecoration(
-              color: AppColors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.fieldBorder),
+              color: AppColors.violetSoft,
+              borderRadius: BorderRadius.circular(AppSpacing.s12),
             ),
-            child: Row(
+            child: const Icon(
+              Icons.fact_check_rounded,
+              color: AppColors.violet,
+              size: 22,
+            ),
+          ),
+          AppSpacing.h12,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.hourglass_empty_rounded,
-                  color: AppColors.textTertiary,
+                Text(
+                  exam.title,
+                  style: AppTextStyles.outfit(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                AppSpacing.h12,
-                Expanded(
-                  child: Text(
-                    'Results will appear here once the exam is graded.',
-                    style: AppTextStyles.outfit(
-                      fontSize: 13,
-                      color: AppColors.textTertiary,
-                    ),
+                const SizedBox(height: 2),
+                Text(
+                  exam.subject != null
+                      ? '${exam.subject} · ${exam.examTypeLabel}'
+                      : exam.examTypeLabel,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
             ),
           ),
+          AppSpacing.h8,
+          if (exam.isCompleted)
+            const StudentStatusBadge(
+              icon: Icons.check_circle_rounded,
+              label: 'Completed',
+              background: AppColors.successBg,
+              foreground: AppColors.successGreen,
+            )
+          else
+            const StudentStatusBadge(
+              icon: Icons.schedule_rounded,
+              label: 'Upcoming',
+              background: AppColors.studentUpdateIconBg,
+              foreground: AppColors.studentUpdateIconColor,
+            ),
         ],
+      ),
+    );
+  }
+}
+
+class _InfoGridSection extends StatelessWidget {
+  final StudentExamDetail exam;
+
+  const _InfoGridSection({required this.exam});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: StudentInfoTile(
+                icon: Icons.calendar_today_outlined,
+                label: 'Date',
+                value: exam.formattedDate ?? '—',
+              ),
+            ),
+            AppSpacing.h10,
+            Expanded(
+              child: StudentInfoTile(
+                icon: Icons.access_time_rounded,
+                label: 'Time',
+                value: exam.timeRangeLabel ?? '—',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s10),
+        Row(
+          children: [
+            Expanded(
+              child: StudentInfoTile(
+                icon: Icons.menu_book_outlined,
+                label: 'Subject',
+                value: exam.subject ?? '—',
+              ),
+            ),
+            AppSpacing.h10,
+            Expanded(
+              child: StudentInfoTile(
+                icon: Icons.assignment_outlined,
+                label: 'Exam Type',
+                value: exam.examTypeLabel,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
+}
 
-  Widget _buildResultCard(StudentExamDetail exam) {
-    final result = exam.result;
-    if (!result.hasResult) {
-      return Container(
-        padding: AppSpacing.all20,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.fieldBorder),
-        ),
-        child: Text(
-          'Marks have not been entered for this exam yet.',
-          style: AppTextStyles.outfit(
-            fontSize: 13,
-            color: AppColors.textTertiary,
-          ),
-        ),
-      );
-    }
+class _StatsCard extends StatelessWidget {
+  final StudentExamDetail exam;
+  final StudentExamResult result;
 
-    if (result.isAbsent) {
-      return Container(
-        padding: AppSpacing.all20,
-        decoration: BoxDecoration(
-          color: AppColors.errorBg,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.event_busy_rounded, color: AppColors.error),
-            AppSpacing.h12,
-            Text(
-              'Marked absent for this exam',
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.error,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+  const _StatsCard({required this.exam, required this.result});
 
-    final isPass = result.isPass ?? false;
+  @override
+  Widget build(BuildContext context) {
+    final isPass = result.isPass ?? true;
+    final scoreColor = isPass ? AppColors.textPrimary : AppColors.bohoRed;
+
+    final avg = exam.classStats.averageMarks;
+    final avgPct = exam.totalMarks > 0 ? (avg / exam.totalMarks) * 100 : 0;
+
     return Container(
-      padding: AppSpacing.all20,
+      padding: AppSpacing.cardPadding,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isPass
-              ? [AppColors.successGreen, AppColors.primaryBrand]
-              : [AppColors.error, AppColors.bohoRed],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isPass ? 'PASSED' : 'FAILED',
-            style: AppTextStyles.outfit(
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-              color: AppColors.white,
-              letterSpacing: 1,
-            ),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          AppSpacing.v12,
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                result.marksObtained!.toStringAsFixed(0),
-                style: AppTextStyles.outfit(
-                  fontSize: 40,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.white,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 4),
-                child: Text(
-                  '/ ${exam.totalMarks.toStringAsFixed(0)}',
-                  style: AppTextStyles.outfit(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              if (result.grade != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    result.grade!,
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: _statColumn(
+              label: 'Score',
+              value: Column(
+                children: [
+                  Text(
+                    '${result.marksObtained!.toStringAsFixed(0)}/${exam.totalMarks.toStringAsFixed(0)}',
                     style: AppTextStyles.outfit(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.white,
+                      color: scoreColor,
                     ),
                   ),
-                ),
-            ],
-          ),
-          if (result.percentage != null) ...[
-            AppSpacing.v8,
-            Text(
-              '${result.percentage!.toStringAsFixed(1)}%',
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                color: Colors.white70,
+                  if (result.percentage != null)
+                    Text(
+                      '${result.percentage!.toStringAsFixed(0)}%',
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                ],
               ),
             ),
-          ],
-          if (result.remarks != null && result.remarks!.trim().isNotEmpty) ...[
-            AppSpacing.v16,
-            Divider(color: AppColors.white.withValues(alpha: 0.3), height: 1),
-            AppSpacing.v12,
-            Text(
-              result.remarks!,
-              style: AppTextStyles.outfit(fontSize: 13, color: AppColors.white),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildClassStatsCard(StudentExamDetail exam) {
-    final stats = exam.classStats;
-    return Container(
-      padding: AppSpacing.all20,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.successBg),
-      ),
-      child: Row(
-        children: [
-          _statTile(
-            stats.highestMarks?.toStringAsFixed(0) ?? '—',
-            'Highest',
           ),
-          _statTile(stats.averageMarks.toStringAsFixed(1), 'Class Average'),
-          _statTile('${stats.passPercentage.toStringAsFixed(0)}%', 'Pass %'),
+          _divider(),
+          Expanded(
+            child: _statColumn(
+              label: 'Rank',
+              value: Column(
+                children: [
+                  const Icon(
+                    Icons.emoji_events_rounded,
+                    color: AppColors.warningAmber,
+                    size: 20,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    result.rank != null ? 'Rank ${result.rank}' : '—',
+                    style: AppTextStyles.outfit(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _divider(),
+          Expanded(
+            child: _statColumn(
+              label: 'Class Average',
+              value: Column(
+                children: [
+                  Text(
+                    '${avg.toStringAsFixed(0)}/${exam.totalMarks.toStringAsFixed(0)}',
+                    style: AppTextStyles.outfit(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '${avgPct.toStringAsFixed(0)}%',
+                    style: AppTextStyles.outfit(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _statTile(String value, String label) {
-    return Expanded(
+  Widget _divider() {
+    return Container(
+      width: 1,
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.s8),
+      color: AppColors.borderGrey,
+    );
+  }
+
+  Widget _statColumn({required String label, required Widget value}) {
+    return Column(
+      children: [
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.outfit(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s8),
+        value,
+      ],
+    );
+  }
+}
+
+class _ResultBanner extends StatelessWidget {
+  final StudentExamDetail exam;
+  final StudentExamResult result;
+
+  const _ResultBanner({required this.exam, required this.result});
+
+  @override
+  Widget build(BuildContext context) {
+    final isPass = result.isPass ?? true;
+    final bg = isPass ? AppColors.warningBg : AppColors.errorBg;
+    final iconBg = isPass ? AppColors.warningAmber : AppColors.bohoRed;
+    final textColor = isPass ? AppColors.textPrimary : AppColors.bohoRed;
+    final title = isPass ? 'Excellent!' : 'Keep Trying!';
+
+    final buffer = StringBuffer(
+      'You scored ${result.marksObtained!.toStringAsFixed(0)}/${exam.totalMarks.toStringAsFixed(0)}.',
+    );
+    if (isPass && result.rank != null) {
+      buffer.write(' You secured Rank ${result.rank} in your class!');
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.s24,
+        horizontal: AppSpacing.s16,
+      ),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
       child: Column(
         children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+            child: const Icon(
+              Icons.emoji_events_rounded,
+              color: AppColors.white,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s12),
           Text(
-            value,
+            title,
             style: AppTextStyles.outfit(
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: FontWeight.w800,
               color: AppColors.textPrimary,
             ),
           ),
-          AppSpacing.v4,
+          const SizedBox(height: 4),
           Text(
-            label,
+            buffer.toString(),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: AppTextStyles.outfit(
-              fontSize: 11,
-              color: AppColors.textTertiary,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AbsentBanner extends StatelessWidget {
+  const _AbsentBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.errorBg,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.event_busy_rounded, color: AppColors.bohoRed),
+          AppSpacing.h12,
+          Text(
+            'Marked absent for this exam',
+            style: AppTextStyles.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.bohoRed,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlainNoticeCard extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _PlainNoticeCard({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.textTertiary),
+          AppSpacing.h12,
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                color: AppColors.textTertiary,
+              ),
             ),
           ),
         ],

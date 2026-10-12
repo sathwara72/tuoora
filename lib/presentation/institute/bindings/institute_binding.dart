@@ -18,6 +18,8 @@ import 'package:tuoora/presentation/institute/controllers/institute_profile_cont
 import 'package:tuoora/presentation/institute/controllers/leads_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/notes_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/notification_controller.dart';
+import 'package:tuoora/presentation/institute/controllers/notification_preferences_controller.dart';
+import 'package:tuoora/presentation/institute/controllers/compose_notification_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/record_fee_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
 import 'package:tuoora/presentation/institute/controllers/security_controller.dart';
@@ -43,9 +45,13 @@ class InstituteBinding extends Bindings {
     Get.lazyPut<StudentRepositoryImpl>(
       () => StudentRepository(Get.find<ApiClient>()),
     );
-    Get.lazyPut<AuthRepositoryImpl>(
-      () => AuthRepository(Get.find<ApiClient>()),
-    );
+    if (!Get.isRegistered<AuthRepository>()) {
+      final authRepo = AuthRepository(Get.find<ApiClient>());
+      Get.put<AuthRepositoryImpl>(authRepo, permanent: true);
+      Get.put<AuthRepository>(authRepo, permanent: true);
+    } else if (!Get.isRegistered<AuthRepositoryImpl>()) {
+      Get.put<AuthRepositoryImpl>(Get.find<AuthRepository>(), permanent: true);
+    }
     Get.lazyPut<InstituteRepositoryImpl>(
       () => InstituteRepository(Get.find<ApiClient>()),
     );
@@ -120,6 +126,18 @@ class InstituteBinding extends Bindings {
     Get.lazyPut<WhatsAppController>(() => WhatsAppController(), fenix: true);
     Get.lazyPut<NotificationController>(
       () => NotificationController(
+        Get.find<InstituteRepositoryImpl>() as InstituteRepository,
+      ),
+      fenix: true,
+    );
+    Get.lazyPut<NotificationPreferencesController>(
+      () => NotificationPreferencesController(
+        Get.find<InstituteRepositoryImpl>(),
+      ),
+      fenix: true,
+    );
+    Get.lazyPut<ComposeNotificationController>(
+      () => ComposeNotificationController(
         Get.find<InstituteRepositoryImpl>() as InstituteRepository,
       ),
       fenix: true,

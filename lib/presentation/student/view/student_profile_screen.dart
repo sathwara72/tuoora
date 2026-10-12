@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/url_constants.dart';
 import 'package:get/get.dart';
@@ -11,7 +12,6 @@ import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/utils/url_launcher_utils.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
-import 'package:tuoora/core/widgets/app_empty_view.dart';
 import 'package:tuoora/core/widgets/app_version_label.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/student_bottom_nav.dart';
@@ -34,16 +34,87 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
       backgroundColor: AppColors.scaffoldBg,
       body: SafeArea(
         child: Obx(() {
-          if (controller.isLoading.value) {
+          if (controller.isLoading.value && !PullRefresh.active.value) {
             return const CommonLoading(color: AppColors.primaryBrand);
           }
           final profile = controller.profileData.value;
           if (profile == null) {
-            return const AppEmptyView(
-              icon: Icons.person_off_outlined,
-              title: AppStrings.profileUnavailable,
-              message:
-                  'We couldn\'t load your profile right now. Please try again later.',
+            return Center(
+              child: Padding(
+                padding: AppSpacing.all24,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.person_off_outlined,
+                      size: 44,
+                      color: AppColors.primaryBrand,
+                    ),
+                    AppSpacing.v16,
+                    Text(
+                      AppStrings.profileUnavailable,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.outfit(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    AppSpacing.v8,
+                    Text(
+                      'We couldn\'t load your profile right now. Please try again later.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                    AppSpacing.v20,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: controller.fetchProfile,
+                          icon: const Icon(Icons.refresh_rounded, size: 16),
+                          label: const Text('Retry'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryBrand,
+                            side: const BorderSide(
+                              color: AppColors.primaryBrand,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        AppSpacing.h12,
+                        TextButton.icon(
+                          onPressed: () async {
+                            await Get.find<AuthService>().clearSession();
+                            Get.offAllNamed(
+                              AppRoutes.login,
+                              arguments: 'STUDENT',
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.logout_rounded,
+                            size: 16,
+                            color: AppColors.bohoRed,
+                          ),
+                          label: Text(
+                            AppStrings.logout,
+                            style: AppTextStyles.outfit(
+                              fontSize: 13,
+                              color: AppColors.bohoRed,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             );
           }
 
@@ -53,7 +124,7 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
               Expanded(
                 child: RefreshIndicator(
                   color: AppColors.primaryBrand,
-                  onRefresh: controller.fetchProfile,
+                  onRefresh: () => PullRefresh.run(controller.fetchProfile),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: AppSpacing.screenPaddingTop,
@@ -62,22 +133,22 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                       children: [
                         _buildHeroCard(profile.header),
                         const SizedBox(height: 12),
-                        _buildPerformanceScoreCard(profile.stats),
-                        const SizedBox(height: 12),
-                        _buildStatsRow(profile.stats),
-                        const SizedBox(height: 12),
-                        _buildGridActions(),
-                        const SizedBox(height: 16),
-                        _buildSectionTitle('YOUR INFO'),
-                        const SizedBox(height: 8),
+                        _buildPerformanceScoreCard(context, profile.stats),
+                        const SizedBox(height: 20),
+                        _buildSectionHeader('Academic'),
+                        const SizedBox(height: 10),
+                        _buildAcademicGrid(),
+                        const SizedBox(height: 20),
+                        _buildSectionHeader('Services'),
+                        const SizedBox(height: 10),
+                        _buildServicesGrid(),
+                        const SizedBox(height: 20),
+                        _buildSectionHeader('Your Information'),
+                        const SizedBox(height: 10),
                         _buildYourInfoCard(profile.info),
-                        const SizedBox(height: 16),
-                        _buildSectionTitle('SETTINGS'),
-                        const SizedBox(height: 8),
-                        _buildSettingsCard(),
-                        const SizedBox(height: 16),
-                        _buildSectionTitle('HELP & INFO'),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 20),
+                        _buildSectionHeader('Help & Info'),
+                        const SizedBox(height: 10),
                         _buildHelpCard(),
                         const SizedBox(height: 16),
                         Row(
@@ -124,70 +195,175 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: AppTextStyles.outfit(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textSecondary,
-      ),
+  Widget _buildSectionHeader(String title) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 4,
+          height: 16,
+          decoration: BoxDecoration(
+            color: AppColors.primaryBrand,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: AppTextStyles.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildHeroCard(StudentProfileHeader header) {
+    final enrollmentVal = header.enrollment.isNotEmpty
+        ? header.enrollment
+        : header.rollNo;
+    final List<String> details = [];
+    final subjectOrBatch = header.subject.trim().isNotEmpty
+        ? header.subject.trim()
+        : header.batchName.trim();
+    if (subjectOrBatch.isNotEmpty) {
+      details.add(subjectOrBatch);
+    }
+    if (enrollmentVal.trim().isNotEmpty) {
+      details.add('Enrollment: ${enrollmentVal.trim()}');
+    }
+    final subtitleText = details.join(' • ');
+
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        gradient: const LinearGradient(
+          colors: [AppColors.instBrandOrange, AppColors.primaryBrand],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(100, 14, 16, 4),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.instBrandOrange, AppColors.primaryBrand],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Obx(() {
+                    final imagePath = controller.profileImagePath.value;
+                    return Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.white, width: 3),
+                      ),
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: double.infinity,
+                          child: imagePath.isNotEmpty
+                              ? Image.file(
+                                  File(imagePath),
+                                  fit: BoxFit.cover,
+                                  width: 72,
+                                  height: 72,
+                                  errorBuilder: (_, _, _) =>
+                                      const _AvatarPersonFallback(),
+                                )
+                              : (header.avatarUrl.isNotEmpty &&
+                                        header.avatarUrl.startsWith('http')
+                                    ? AppNetworkImage(
+                                        url: header.avatarUrl,
+                                        fit: BoxFit.cover,
+                                        width: 72,
+                                        height: 72,
+                                        placeholder:
+                                            const _AvatarPersonFallback(),
+                                        errorWidget:
+                                            const _AvatarPersonFallback(),
+                                      )
+                                    : Center(
+                                        child: Text(
+                                          header.initials,
+                                          style: AppTextStyles.outfit(
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.w900,
+                                            color: AppColors.primaryBrand,
+                                          ),
+                                        ),
+                                      )),
+                        ),
+                      ),
+                    );
+                  }),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: GestureDetector(
+                      onTap: () {
+                        controller.showImagePickerOptions();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryBrand,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          size: 12,
+                          color: AppColors.white,
+                        ),
+                      ),
+                    ),
                   ),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-                ),
-                child: Text(
-                  header.name,
-                  style: AppTextStyles.outfit(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.white,
-                  ),
-                ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(100, 12, 16, 16),
+              const SizedBox(width: 14),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Class ${header.standard} • ${header.subject} • Roll ${header.rollNo}',
+                      header.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.white,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    if (subtitleText.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitleText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.white.withValues(alpha: 0.92),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.insights_rounded,
-                          size: 14,
-                          color: AppColors.textTertiary,
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 12,
+                          color: AppColors.white.withValues(alpha: 0.85),
                         ),
                         const SizedBox(width: 6),
                         Expanded(
@@ -197,7 +373,7 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.outfit(
                               fontSize: 12,
-                              color: AppColors.textSecondary,
+                              color: AppColors.white.withValues(alpha: 0.85),
                             ),
                           ),
                         ),
@@ -208,185 +384,474 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
               ),
             ],
           ),
-          Positioned(
-            top: 30,
-            left: 16,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Obx(() {
-                  final controller = Get.find<StudentProfileController>();
-                  final imagePath = controller.profileImagePath.value;
-                  return Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBrandLight,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.white, width: 3),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: imagePath.isNotEmpty
-                        ? Image.file(
-                            File(imagePath),
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                const _AvatarPersonFallback(),
-                          )
-                        : (header.avatarUrl.isNotEmpty &&
-                                  header.avatarUrl.startsWith('http')
-                              ? AppNetworkImage(
-                                  url: header.avatarUrl,
-                                  fit: BoxFit.cover,
-                                  errorWidget: const _AvatarPersonFallback(),
-                                )
-                              : Center(
-                                  child: Text(
-                                    header.initials,
-                                    style: AppTextStyles.outfit(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w900,
-                                      color: AppColors.primaryBrand,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPerformanceScoreCard(
+    BuildContext context,
+    StudentProfileStats stats,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showPerformanceBreakdownSheet(context, stats),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(
+              color: AppColors.borderGrey.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  PerformanceGauge(score: stats.performanceScore, size: 108),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Academic Performance',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.outfit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                const Text(
+                                  '🎓',
+                                  style: TextStyle(fontSize: 22),
+                                ),
+                                Positioned(
+                                  left: -5,
+                                  top: -3,
+                                  child: Icon(
+                                    Icons.auto_awesome_rounded,
+                                    size: 10,
+                                    color: AppColors.primaryBrand.withValues(
+                                      alpha: 0.7,
                                     ),
                                   ),
-                                )),
-                  );
-                }),
-                Positioned(
-                  right: -4,
-                  bottom: -4,
-                  child: GestureDetector(
-                    onTap: () {
-                      controller.showImagePickerOptions();
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Your overall performance',
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBrandLight,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.bar_chart_rounded,
+                      size: 14,
+                      color: AppColors.primaryBrand,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'Tap to view 3-way average breakdown',
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primaryBrand,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 10,
+                      color: AppColors.primaryBrand,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPerformanceBreakdownSheet(
+    BuildContext context,
+    StudentProfileStats stats,
+  ) {
+    final hw = stats.homeworkPct;
+    final att = stats.attendancePct;
+    final exam = stats.examPct;
+    final avgScore = stats.performanceScore > 0
+        ? stats.performanceScore
+        : ((hw + att + exam) / 3).round();
+    final statusColor = PerformanceGauge.statusColor(avgScore);
+    final statusLabel = PerformanceGauge.statusLabel(avgScore);
+
+    Get.bottomSheet(
+      SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s20,
+            AppSpacing.s12,
+            AppSpacing.s20,
+            AppSpacing.s20,
+          ),
+          decoration: const BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.s16),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderGrey,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+
+                // Title row
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(
-                        color: AppColors.white,
+                        color: AppColors.primaryBrandLight,
                         shape: BoxShape.circle,
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                          color: AppColors.primaryBrand,
-                          shape: BoxShape.circle,
+                      child: const Icon(
+                        Icons.analytics_rounded,
+                        color: AppColors.primaryBrand,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Academic Performance',
+                            style: AppTextStyles.outfit(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Average of Homework, Attendance & Exam',
+                            style: AppTextStyles.outfit(
+                              fontSize: 12,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      color: AppColors.textSecondary,
+                      splashRadius: 20,
+                      onPressed: () => Get.back(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Overall Combined Average Card
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
                         ),
-                        child: const Icon(
-                          Icons.add,
-                          size: 14,
-                          color: AppColors.white,
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '$avgScore%',
+                          style: AppTextStyles.outfit(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.white,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$statusLabel Performance',
+                              style: AppTextStyles.outfit(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: statusColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Combined 3-way academic average',
+                              style: AppTextStyles.outfit(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 3 Metrics Breakdown List
+                _buildBreakdownItem(
+                  icon: Icons.assignment_outlined,
+                  iconBg: const Color(0xFFFEF4E8),
+                  iconColor: AppColors.instBrandOrange,
+                  title: 'Homework',
+                  subtitle: 'Completion rate (${stats.assignmentsLabel})',
+                  percentage: hw,
+                ),
+                const SizedBox(height: 10),
+                _buildBreakdownItem(
+                  icon: Icons.calendar_today_outlined,
+                  iconBg: const Color(0xFFECFDF5),
+                  iconColor: AppColors.green,
+                  title: 'Attendance',
+                  subtitle: 'Monthly attendance (${stats.attendanceLabel})',
+                  percentage: att,
+                ),
+                const SizedBox(height: 10),
+                _buildBreakdownItem(
+                  icon: Icons.school_outlined,
+                  iconBg: const Color(0xFFEFF6FF),
+                  iconColor: AppColors.studentProgressBlue,
+                  title: 'Exam',
+                  subtitle: 'Average exam marks',
+                  percentage: exam,
+                ),
+                const SizedBox(height: 16),
+
+                // Calculation formula summary
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.borderGrey.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.functions_rounded,
+                        size: 20,
+                        color: AppColors.primaryBrand,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Average = ($hw% + $att% + $exam%) ÷ 3 = $avgScore%',
+                          style: AppTextStyles.outfit(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // Done Button
+                ElevatedButton(
+                  onPressed: () => Get.back(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBrand,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.cardRadius,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    'Close',
+                    style: AppTextStyles.outfit(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.white,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceScoreCard(StudentProfileStats stats) {
-    return Container(
-      padding: AppSpacing.cardPadding,
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
-      ),
-      child: Center(
-        child: PerformanceGauge(score: stats.performanceScore, size: 180),
-      ),
-    );
-  }
-
-  Widget _buildStatsRow(StudentProfileStats stats) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            label: AppStrings.attendance,
-            value: '${stats.attendancePct}%',
-            subValue: stats.attendanceLabel,
-            valueColor: AppColors.primaryBrand,
-          ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildStatCard(
-            label: AppStrings.assignment,
-            value: '${stats.assignmentsPct}%',
-            subValue: stats.assignmentsLabel,
-            valueColor: AppColors.primaryBrand,
-          ),
-        ),
-      ],
+      ),
+      isScrollControlled: true,
     );
   }
 
-  Widget _buildStatCard({
-    required String label,
-    required String value,
-    required String subValue,
-    Color? valueColor,
+  Widget _buildBreakdownItem({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required int percentage,
   }) {
+    final clamped = percentage.clamp(0, 100);
     return Container(
-      padding: AppSpacing.cardPadding,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.outfit(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textTertiary,
-            ),
-          ),
-          const SizedBox(height: 6),
           Row(
             children: [
-              Text(
-                value,
-                style: AppTextStyles.outfit(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor ?? AppColors.textPrimary,
-                  height: 1,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: iconColor, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textTertiary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 6),
               Text(
-                subValue,
+                '$clamped%',
                 style: AppTextStyles.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                  height: 1,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: iconColor,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: clamped / 100,
+              minHeight: 6,
+              backgroundColor: AppColors.borderGrey.withValues(alpha: 0.4),
+              valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildGridActions() {
+  Widget _buildAcademicGrid() {
     return Column(
       children: [
         Row(
           children: [
             Expanded(
               child: ProfileGridAction(
-                icon: Icons.show_chart_rounded,
+                icon: Icons.bar_chart_rounded,
                 label: AppStrings.labelReports,
                 iconBgColor: AppColors.primaryBrandLight,
                 iconColor: AppColors.primaryBrand,
@@ -396,7 +861,7 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
             const SizedBox(width: 8),
             Expanded(
               child: ProfileGridAction(
-                icon: Icons.book_outlined,
+                icon: Icons.menu_book_rounded,
                 label: AppStrings.labelStudyMaterial,
                 iconBgColor: AppColors.successBg,
                 iconColor: AppColors.successGreen,
@@ -410,17 +875,47 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
           children: [
             Expanded(
               child: ProfileGridAction(
+                icon: Icons.calendar_month_rounded,
+                label: AppStrings.labelTimetable,
+                iconBgColor: AppColors.skyBlueLight,
+                iconColor: AppColors.studentProgressBlue,
+                onTap: () => Get.toNamed(AppRoutes.studentTimetable),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ProfileGridAction(
+                icon: Icons.fact_check_outlined,
+                label: AppStrings.labelExams,
+                iconBgColor: AppColors.violetSoft,
+                iconColor: AppColors.violet,
+                onTap: () => Get.toNamed(AppRoutes.studentExams),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildServicesGrid() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ProfileGridAction(
                 icon: Icons.domain_rounded,
                 label: AppStrings.studentReceiptInstitute,
-                iconBgColor: AppColors.subjectPhysicsSoft,
-                iconColor: AppColors.subjectPhysics,
+                iconBgColor: AppColors.skyBlueLight,
+                iconColor: AppColors.studentProgressBlue,
                 onTap: () => Get.toNamed(AppRoutes.studentInstitute),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: ProfileGridAction(
-                icon: Icons.chat_bubble_outline_rounded,
+                icon: Icons.chat_bubble_rounded,
                 label: AppStrings.chat,
                 iconBgColor: AppColors.errorBg,
                 iconColor: AppColors.bohoRed,
@@ -444,44 +939,6 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
             const SizedBox(width: 8),
             Expanded(
               child: ProfileGridAction(
-                icon: Icons.fact_check_outlined,
-                label: AppStrings.labelExams,
-                iconBgColor: AppColors.successBg,
-                iconColor: AppColors.successGreen,
-                onTap: () => Get.toNamed(AppRoutes.studentExams),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: ProfileGridAction(
-                icon: Icons.calendar_view_week_rounded,
-                label: AppStrings.labelTimetable,
-                iconBgColor: AppColors.skyBlueLight,
-                iconColor: AppColors.studentProgressBlue,
-                onTap: () => Get.toNamed(AppRoutes.studentTimetable),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ProfileGridAction(
-                icon: Icons.cake_outlined,
-                label: AppStrings.labelBirthdays,
-                iconBgColor: AppColors.primaryBrandLight,
-                iconColor: AppColors.primaryBrand,
-                onTap: () => Get.toNamed(AppRoutes.studentBirthdays),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: ProfileGridAction(
                 icon: Icons.badge_outlined,
                 label: AppStrings.labelIdCard,
                 iconBgColor: AppColors.successBg,
@@ -489,8 +946,6 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
                 onTap: () => Get.toNamed(AppRoutes.studentIdCard),
               ),
             ),
-            const SizedBox(width: 8),
-            const Expanded(child: SizedBox()),
           ],
         ),
       ],
@@ -501,7 +956,7 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: AppColors.borderGrey.withValues(alpha: 0.5)),
       ),
       child: Column(children: children),
@@ -511,75 +966,89 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
   Widget _buildYourInfoCard(StudentProfileInfo info) {
     return _buildCardWrap(
       children: [
-        _buildInfoRow('Phone', info.phone),
-        Divider(height: 1, color: AppColors.borderGrey.withValues(alpha: 0.5)),
-        _buildInfoRow('Email', info.email),
-        if (info.parentName != null) ...[
+        if (info.phone.isNotEmpty)
+          _buildInfoRow(Icons.call_outlined, 'Phone', info.phone),
+        if (info.optionalPhones.isNotEmpty) ...[
+          for (int i = 0; i < info.optionalPhones.length; i++) ...[
+            Divider(
+              height: 1,
+              color: AppColors.borderGrey.withValues(alpha: 0.5),
+            ),
+            _buildInfoRow(
+              Icons.call_outlined,
+              info.optionalPhones.length == 1
+                  ? 'Alt Phone'
+                  : 'Alt Phone ${i + 1}',
+              info.optionalPhones[i],
+            ),
+          ],
+        ],
+        if (info.email.isNotEmpty) ...[
+          Divider(
+            height: 1,
+            color: AppColors.borderGrey.withValues(alpha: 0.5),
+          ),
+          _buildInfoRow(Icons.email_outlined, 'Email', info.email),
+        ],
+        if (info.schoolName != null && info.schoolName!.isNotEmpty) ...[
+          Divider(
+            height: 1,
+            color: AppColors.borderGrey.withValues(alpha: 0.5),
+          ),
+          _buildInfoRow(Icons.school_outlined, 'School', info.schoolName!),
+        ],
+        if (info.parentName != null && info.parentName!.isNotEmpty) ...[
           Divider(
             height: 1,
             color: AppColors.borderGrey.withValues(alpha: 0.5),
           ),
           _buildInfoRow(
-            info.parentRelation,
-            '${info.parentName} • ${info.parentPhone ?? ''}',
+            Icons.person_outline_rounded,
+            info.parentRelation.isNotEmpty ? info.parentRelation : 'Guardian',
+            info.parentPhone != null && info.parentPhone!.isNotEmpty
+                ? '${info.parentName} • ${info.parentPhone}'
+                : info.parentName!,
           ),
         ],
       ],
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
       padding: AppSpacing.cardPadding,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 60,
-            child: Text(
-              label,
-              style: AppTextStyles.outfit(
-                fontSize: 14,
-                color: AppColors.textTertiary,
-              ),
+          Icon(icon, size: 18, color: AppColors.textPrimary),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: AppTextStyles.outfit(
+              fontSize: 14,
+              color: AppColors.textTertiary,
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
               style: AppTextStyles.outfit(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
               ),
             ),
           ),
+          const SizedBox(width: 6),
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 16,
+            color: AppColors.textTertiary,
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSettingsCard() {
-    return _buildCardWrap(
-      children: [
-        ProfileMenuTile(
-          icon: Icons.notifications_none_rounded,
-          title: AppStrings.notificationPreferences,
-          onTap: () => Get.toNamed(AppRoutes.studentNotificationPreferences),
-        ),
-        // Divider(height: 1, color: AppColors.borderGrey.withValues(alpha: 0.5)),
-        // const ProfileMenuTile(
-        //   icon: Icons.article_outlined,
-        //   title: AppStrings.language,
-        //   trailingText: 'English',
-        // ),
-        // Divider(height: 1, color: AppColors.borderGrey.withValues(alpha: 0.5)),
-        // const ProfileMenuTile(
-        //   icon: Icons.brightness_auto_rounded,
-        //   title: AppStrings.theme,
-        //   trailingText: 'Light',
-        // ),
-      ],
     );
   }
 
@@ -722,11 +1191,15 @@ class StudentProfileScreen extends GetView<StudentProfileController> {
           ElevatedButton(
             onPressed: () async {
               Get.back();
+              CommonLoading.show();
               try {
-                await Get.find<AuthRepository>().logout('STUDENT');
-              } catch (_) {}
-              final authService = Get.find<AuthService>();
-              await authService.clearSession();
+                try {
+                  await Get.find<AuthRepository>().logout('STUDENT');
+                } catch (_) {}
+                await Get.find<AuthService>().clearSession();
+              } finally {
+                CommonLoading.dismiss();
+              }
               Get.offAllNamed(AppRoutes.roleSelection);
             },
             style: ElevatedButton.styleFrom(

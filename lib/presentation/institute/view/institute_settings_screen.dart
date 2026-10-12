@@ -1,4 +1,5 @@
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -8,9 +9,9 @@ import 'package:tuoora/data/models/institute_profile_model.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_profile_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
-import 'package:tuoora/core/constants/app_images.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/widgets/app_whatsapp_icon.dart';
 
 class InstituteSettingsScreen extends StatelessWidget {
   const InstituteSettingsScreen({super.key});
@@ -67,7 +68,7 @@ class InstituteSettingsScreen extends StatelessWidget {
                         _buildActiveSessionsCard(context, controller),
                         AppSpacing.v16,
                         _buildAccountCard(context),
-                        AppSpacing.v12,
+                        AppSpacing.v16,
                       ],
                     ),
                   ),
@@ -111,8 +112,6 @@ class InstituteSettingsScreen extends StatelessWidget {
             onTap: () => Get.toNamed(AppRoutes.instituteChangePassword),
             isLast: true,
           ),
-          // WhatsApp Integration is unfinished (coming-soon placeholder) —
-          // hidden until the feature actually ships.
         ],
       ),
     );
@@ -222,6 +221,7 @@ class InstituteSettingsScreen extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   void _showWhatsAppComingSoonDialog(BuildContext context) {
     Get.dialog(
       Dialog(
@@ -255,16 +255,15 @@ class InstituteSettingsScreen extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   Container(
-                    width: 60,
-                    height: 60,
+                    width: 64,
+                    height: 64,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF25D366),
-                      borderRadius: BorderRadius.circular(
-                        AppSpacing.cardRadius,
-                      ),
+                      color: const Color(0xFF25D366).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                    alignment: Alignment.center,
+                    child: const AppWhatsAppIcon(size: 44),
                   ),
-                  SvgPicture.asset(AppImages.icWhatsapp, width: 48, height: 48),
                 ],
               ),
               AppSpacing.v20,

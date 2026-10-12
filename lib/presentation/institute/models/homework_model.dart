@@ -9,6 +9,7 @@ class HomeworkModel {
   final int submissionsCount;
   final List<HomeworkSubmission> submissions;
   final List<String> resourcePaths;
+  final bool allowLateSubmission;
 
   HomeworkModel({
     required this.id,
@@ -21,10 +22,11 @@ class HomeworkModel {
     this.submissionsCount = 0,
     this.submissions = const [],
     this.resourcePaths = const [],
+    this.allowLateSubmission = false,
   });
 
   String get subject => batchName ?? 'General';
-  bool get isActive => dueDate.isAfter(DateTime.now());
+  bool get isActive => dueDate.isAfter(DateTime.now()) || allowLateSubmission;
   int get submittedCount => submissionsCount;
 
   factory HomeworkModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class HomeworkModel {
                 .map((s) => HomeworkSubmission.fromJson(s))
                 .toList()
           : [],
+      allowLateSubmission: json['allow_late_submission'] == true,
     );
   }
 }
@@ -58,6 +61,8 @@ class HomeworkSubmission {
   String status; // Non-final to allow local updates
   final bool isSubmitted; // Keep for legacy
   final DateTime? submittedAt; // Keep for legacy
+  final String? attachmentUrl;
+  final String? note;
 
   HomeworkSubmission({
     required this.id,
@@ -69,6 +74,8 @@ class HomeworkSubmission {
     required this.status,
     this.isSubmitted = false,
     this.submittedAt,
+    this.attachmentUrl,
+    this.note,
   });
 
   bool get isLate => status.toLowerCase() == 'late';
@@ -83,6 +90,22 @@ class HomeworkSubmission {
             json['enrollment_id'])
         ?.toString();
 
+    final rawAttachment = json['attachment_url'] ?? json['attachment'];
+    String? attachmentUrl;
+    if (rawAttachment != null && rawAttachment.toString().trim().isNotEmpty) {
+      final str = rawAttachment.toString().trim();
+      attachmentUrl = str.startsWith('http')
+          ? str
+          : 'https://tuoora.com/storage/${str.replaceFirst(RegExp(r'^/+'), '')}';
+    }
+
+    final noteStr = json['note']?.toString().trim();
+
+    final isDone = statusStr.toLowerCase() == 'submitted' ||
+        statusStr.toLowerCase() == 'reviewed' ||
+        statusStr.toLowerCase() == 'late' ||
+        (attachmentUrl != null && attachmentUrl.isNotEmpty);
+
     return HomeworkSubmission(
       id: json['id'].toString(),
       studentId: json['student_id'],
@@ -91,10 +114,14 @@ class HomeworkSubmission {
       profileImageUrl: student['profile_image_url'],
       score: (json['score'] ?? 0).toDouble(),
       status: statusStr,
-      isSubmitted: statusStr.toLowerCase() == 'submitted',
-      submittedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
-          : null,
+      isSubmitted: isDone,
+      attachmentUrl: attachmentUrl,
+      note: (noteStr != null && noteStr.isNotEmpty) ? noteStr : null,
+      submittedAt: json['submitted_at'] != null
+          ? DateTime.tryParse(json['submitted_at'].toString())
+          : (json['updated_at'] != null
+              ? DateTime.tryParse(json['updated_at'].toString())
+              : null),
     );
   }
 }

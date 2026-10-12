@@ -26,23 +26,29 @@ class InstituteStudentController extends GetxController {
   final triedToSave = false.obs;
   final currentStudent = Rxn<Student>();
   final isSendingFeeReminder = false.obs;
+  final isUpdatingAccess = false.obs;
 
   final nameController = TextEditingController();
   final parentNameController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   final dobController = TextEditingController();
   final addressController = TextEditingController();
-  final standardController = TextEditingController();
+  final schoolNameController = TextEditingController();
+  final optionalPhoneControllers = <TextEditingController>[].obs;
+  final optionalPhoneErrors = <RxnString>[].obs;
 
   final nameError = RxnString();
   final parentNameError = RxnString();
   final phoneError = RxnString();
   final emailError = RxnString();
+  final passwordError = RxnString();
+  final isPasswordVisible = false.obs;
   final dobError = RxnString();
-  final standardError = RxnString();
 
   final editingStudentId = Rxn<dynamic>();
+  final selectedProfileBatchId = Rxn<dynamic>();
   final selectedBatchId = RxnString();
   final availableBatches = <BatchModel>[].obs;
 
@@ -53,9 +59,9 @@ class InstituteStudentController extends GetxController {
     parentNameController.addListener(validateForm);
     phoneController.addListener(validateForm);
     emailController.addListener(validateForm);
+    passwordController.addListener(validateForm);
     dobController.addListener(validateForm);
     addressController.addListener(validateForm);
-    standardController.addListener(validateForm);
     handleArguments();
     fetchAvailableBatches();
   }
@@ -111,18 +117,26 @@ class InstituteStudentController extends GetxController {
     parentNameController.clear();
     phoneController.clear();
     emailController.clear();
+    passwordController.clear();
+    passwordError.value = null;
+    isPasswordVisible.value = false;
     dobController.clear();
     addressController.clear();
-    standardController.clear();
+    schoolNameController.clear();
+    for (var c in optionalPhoneControllers) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => c.dispose());
+    }
+    optionalPhoneControllers.clear();
+    optionalPhoneErrors.clear();
     selectedImagePath.value = null;
     selectedBatchId.value = null;
+    selectedProfileBatchId.value = null;
 
     nameError.value = null;
     parentNameError.value = null;
     phoneError.value = null;
     emailError.value = null;
     dobError.value = null;
-    standardError.value = null;
     triedToSave.value = false;
 
     validateForm();
@@ -134,9 +148,13 @@ class InstituteStudentController extends GetxController {
     parentNameController.dispose();
     phoneController.dispose();
     emailController.dispose();
+    passwordController.dispose();
     dobController.dispose();
     addressController.dispose();
-    standardController.dispose();
+    schoolNameController.dispose();
+    for (var c in optionalPhoneControllers) {
+      c.dispose();
+    }
     super.onClose();
   }
 
@@ -147,23 +165,43 @@ class InstituteStudentController extends GetxController {
       'Guardian Name',
     );
     final pErr = ValidationUtils.validatePhone(phoneController.text);
-    final eErr = ValidationUtils.validateEmail(emailController.text);
+    final eErr = ValidationUtils.validateOptionalEmail(emailController.text);
+    final pwdErr = ValidationUtils.validateOptionalPassword(passwordController.text);
     final dErr = ValidationUtils.validateRequired(
       dobController.text,
       'Date of Birth',
     );
-    final sErr = ValidationUtils.validateRequired(
-      standardController.text,
-      'Grade/Standard',
-    );
+
+    // Validate optional phone numbers
+    bool areOptionalPhonesValid = true;
+    for (int i = 0; i < optionalPhoneControllers.length; i++) {
+      final text = optionalPhoneControllers[i].text.trim();
+      if (text.isNotEmpty) {
+        final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
+        if (digits.length != 10) {
+          areOptionalPhonesValid = false;
+          if (triedToSave.value && i < optionalPhoneErrors.length) {
+            optionalPhoneErrors[i].value = 'Enter valid 10-digit mobile number';
+          }
+        } else {
+          if (triedToSave.value && i < optionalPhoneErrors.length) {
+            optionalPhoneErrors[i].value = null;
+          }
+        }
+      } else {
+        if (triedToSave.value && i < optionalPhoneErrors.length) {
+          optionalPhoneErrors[i].value = null;
+        }
+      }
+    }
 
     if (triedToSave.value) {
       nameError.value = nErr;
       parentNameError.value = pnErr;
       phoneError.value = pErr;
       emailError.value = eErr;
+      passwordError.value = pwdErr;
       dobError.value = dErr;
-      standardError.value = sErr;
     }
 
     isFormValid.value =
@@ -171,14 +209,19 @@ class InstituteStudentController extends GetxController {
         pnErr == null &&
         pErr == null &&
         eErr == null &&
+        pwdErr == null &&
         dErr == null &&
-        sErr == null;
+        areOptionalPhonesValid;
   }
 
-  Future<void> fetchStudentDetails(dynamic id) async {
+  Future<void> fetchStudentDetails(dynamic id, {dynamic batchId}) async {
     try {
       isLoading.value = true;
-      final student = await _studentRepository.getStudentById(id);
+      final effectiveBatchId = batchId ?? selectedProfileBatchId.value;
+      final student = await _studentRepository.getStudentById(
+        id,
+        batchId: effectiveBatchId,
+      );
       currentStudent.value = student;
       preFillData(student);
     } catch (e) {
@@ -188,16 +231,61 @@ class InstituteStudentController extends GetxController {
     }
   }
 
+  Future<void> switchProfileBatch(dynamic batchId) async {
+    final student = currentStudent.value;
+    if (student == null) return;
+    selectedProfileBatchId.value = batchId;
+    await fetchStudentDetails(student.id, batchId: batchId);
+  }
+
   void preFillData(Student student) {
     editingStudentId.value = student.id;
     nameController.text = student.name;
     emailController.text = student.email;
+    passwordController.clear();
+    passwordError.value = null;
+    isPasswordVisible.value = false;
     dobController.text = student.dob;
     parentNameController.text = student.guardianName ?? '';
     phoneController.text = student.phone;
-    standardController.text = student.standard;
+    schoolNameController.text = student.schoolName ?? '';
+    for (var c in optionalPhoneControllers) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => c.dispose());
+    }
+    optionalPhoneControllers.clear();
+    optionalPhoneErrors.clear();
+    for (var p in student.optionalPhones) {
+      addOptionalPhone(p);
+    }
 
     validateForm();
+  }
+
+  void togglePasswordVisibility() {
+    isPasswordVisible.value = !isPasswordVisible.value;
+  }
+
+  void addOptionalPhone([String val = '']) {
+    if (optionalPhoneControllers.length < 3) {
+      final ctrl = TextEditingController(text: val);
+      ctrl.addListener(validateForm);
+      optionalPhoneControllers.add(ctrl);
+      optionalPhoneErrors.add(RxnString());
+      validateForm();
+    }
+  }
+
+  void removeOptionalPhone(int index) {
+    if (index >= 0 && index < optionalPhoneControllers.length) {
+      final ctrl = optionalPhoneControllers.removeAt(index);
+      if (index < optionalPhoneErrors.length) {
+        optionalPhoneErrors.removeAt(index);
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ctrl.dispose();
+      });
+      validateForm();
+    }
   }
 
   void setGrade(String grade) {
@@ -317,13 +405,23 @@ class InstituteStudentController extends GetxController {
     try {
       isLoading.value = true;
 
+      final cleanedOptionalPhones = optionalPhoneControllers
+          .map((c) => c.text.replaceAll(RegExp(r'[^0-9]'), ''))
+          .where((p) => p.length == 10)
+          .toList();
+
       final studentData = {
-        'name': nameController.text,
-        'email': emailController.text,
-        'phone': phoneController.text,
+        'name': nameController.text.trim(),
+        if (emailController.text.trim().isNotEmpty)
+          'email': emailController.text.trim(),
+        if (passwordController.text.isNotEmpty)
+          'password': passwordController.text,
+        'phone': phoneController.text.trim(),
+        if (schoolNameController.text.trim().isNotEmpty)
+          'school_name': schoolNameController.text.trim(),
+        'optional_phones': cleanedOptionalPhones,
         'guardian_name': parentNameController.text,
         'dob': dobController.text,
-        'standard': standardController.text,
         if (selectedBatchId.value != null) 'batch_id': selectedBatchId.value,
         if (selectedImagePath.value != null)
           'profile_image_url': selectedImagePath.value,
@@ -382,13 +480,58 @@ class InstituteStudentController extends GetxController {
     if (errors.containsKey('email')) {
       emailError.value = (errors['email'] as List).first.toString();
     }
+    if (errors.containsKey('password')) {
+      passwordError.value = (errors['password'] as List).first.toString();
+    }
     if (errors.containsKey('dob')) {
       dobError.value = (errors['dob'] as List).first.toString();
     }
-    if (errors.containsKey('standard')) {
-      standardError.value = (errors['standard'] as List).first.toString();
+    if (errors.containsKey('optional_phones')) {
+      final err = errors['optional_phones'];
+      final msg = err is List ? err.first.toString() : err.toString();
+      if (optionalPhoneErrors.isNotEmpty) {
+        optionalPhoneErrors.first.value = msg;
+      }
+    }
+    for (int i = 0; i < optionalPhoneControllers.length; i++) {
+      if (errors.containsKey('optional_phones.$i')) {
+        final err = errors['optional_phones.$i'];
+        final msg = err is List ? err.first.toString() : err.toString();
+        if (i < optionalPhoneErrors.length) {
+          optionalPhoneErrors[i].value = msg;
+        }
+      }
     }
     isFormValid.value = false;
+  }
+
+  final isPayingInstallment = false.obs;
+
+  Future<bool> payInstallment(
+    int installmentId, {
+    required double amount,
+    String paymentMethod = 'Cash',
+  }) async {
+    try {
+      isPayingInstallment.value = true;
+      await _studentRepository.payInstallment(
+        installmentId,
+        amount: amount,
+        paymentMethod: paymentMethod,
+      );
+      AppSnackBar.success('Milestone payment recorded successfully');
+
+      final student = currentStudent.value;
+      if (student != null) {
+        await fetchStudentDetails(student.id, batchId: selectedProfileBatchId.value);
+      }
+      return true;
+    } catch (e) {
+      AppSnackBar.error('Payment failed: $e');
+      return false;
+    } finally {
+      isPayingInstallment.value = false;
+    }
   }
 
   Future<void> sendFeeReminder() async {
@@ -405,6 +548,48 @@ class InstituteStudentController extends GetxController {
       AppSnackBar.error('Failed to send fee reminder: $e');
     } finally {
       isSendingFeeReminder.value = false;
+    }
+  }
+
+  Future<void> toggleBlockLogin() async {
+    final student = currentStudent.value;
+    if (student == null) return;
+    final block = !student.isLoginBlocked;
+    try {
+      isUpdatingAccess.value = true;
+      final blocked = await _studentRepository.toggleBlock(student.id, block);
+      currentStudent.value = student.copyWith(isLoginBlocked: blocked);
+      AppSnackBar.success(
+        blocked
+            ? '${student.name} can no longer log in to the app'
+            : '${student.name} can log in again',
+      );
+    } catch (e) {
+      AppSnackBar.error('Failed to update login access: $e');
+    } finally {
+      isUpdatingAccess.value = false;
+    }
+  }
+
+  Future<void> toggleFeeReminderMute(bool muted) async {
+    final student = currentStudent.value;
+    if (student == null) return;
+    try {
+      isUpdatingAccess.value = true;
+      final result = await _studentRepository.toggleFeeReminderMute(
+        student.id,
+        muted,
+      );
+      currentStudent.value = student.copyWith(doNotSendFeeReminders: result);
+      AppSnackBar.success(
+        result
+            ? 'Bulk fee reminders muted for ${student.name}'
+            : 'Bulk fee reminders enabled for ${student.name}',
+      );
+    } catch (e) {
+      AppSnackBar.error('Failed to update fee reminder setting: $e');
+    } finally {
+      isUpdatingAccess.value = false;
     }
   }
 

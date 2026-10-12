@@ -2,6 +2,7 @@ import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/config/app_routes.dart';
@@ -23,10 +24,13 @@ class StudentInstituteScreen extends GetView<StudentInstituteController> {
       body: SafeArea(
         child: Column(
           children: [
-            const StudentAppBar(title: AppStrings.studentReceiptInstitute, showDefaultActions: false),
+            const StudentAppBar(
+              title: AppStrings.studentReceiptInstitute,
+              showDefaultActions: false,
+            ),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const CommonLoading(color: AppColors.primaryBrand);
                 }
 
@@ -41,7 +45,7 @@ class StudentInstituteScreen extends GetView<StudentInstituteController> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: controller.fetchInstitute,
+                  onRefresh: () => PullRefresh.run(controller.fetchInstitute),
                   color: AppColors.primaryBrand,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),

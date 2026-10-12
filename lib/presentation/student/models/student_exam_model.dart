@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:tuoora/presentation/institute/models/exam_model.dart' show ExamType;
 
 class StudentExamListItem {
@@ -9,6 +10,7 @@ class StudentExamListItem {
   final double totalMarks;
   final double passingMarks;
   final String status; // scheduled, completed, cancelled
+  final DateTime? examDate;
   final double? marksObtained;
   final bool isAbsent;
   final bool? isPass;
@@ -25,6 +27,7 @@ class StudentExamListItem {
     required this.totalMarks,
     required this.passingMarks,
     required this.status,
+    this.examDate,
     this.marksObtained,
     this.isAbsent = false,
     this.isPass,
@@ -34,8 +37,16 @@ class StudentExamListItem {
   });
 
   String get examTypeLabel => ExamType.labelFor(examType);
-  bool get isScheduled => status == 'scheduled';
-  bool get isCompleted => status == 'completed';
+
+  bool get _datePassed {
+    if (examDate == null) return false;
+    final today = DateTime.now();
+    return examDate!.isBefore(DateTime(today.year, today.month, today.day));
+  }
+
+  bool get isScheduled => status == 'scheduled' && !_datePassed;
+  bool get isCompleted =>
+      status == 'completed' || (status == 'scheduled' && _datePassed);
   bool get hasResult => marksObtained != null || isAbsent;
 
   factory StudentExamListItem.fromJson(Map<String, dynamic> json) {
@@ -48,6 +59,9 @@ class StudentExamListItem {
       totalMarks: (json['total_marks'] ?? 0).toDouble(),
       passingMarks: (json['passing_marks'] ?? 0).toDouble(),
       status: json['status'] ?? 'scheduled',
+      examDate: json['exam_date'] != null
+          ? DateTime.tryParse(json['exam_date'].toString())
+          : null,
       marksObtained: json['marks_obtained'] != null
           ? (json['marks_obtained']).toDouble()
           : null,
@@ -99,6 +113,7 @@ class StudentExamResult {
   final double? percentage;
   final String? grade;
   final String? remarks;
+  final int? rank;
 
   StudentExamResult({
     this.marksObtained,
@@ -107,6 +122,7 @@ class StudentExamResult {
     this.percentage,
     this.grade,
     this.remarks,
+    this.rank,
   });
 
   bool get hasResult => marksObtained != null || isAbsent;
@@ -123,6 +139,7 @@ class StudentExamResult {
           : null,
       grade: json['grade'],
       remarks: json['remarks'],
+      rank: json['rank'] != null ? (json['rank'] as num).toInt() : null,
     );
   }
 }
@@ -158,6 +175,10 @@ class StudentExamDetail {
   final double totalMarks;
   final double passingMarks;
   final String status;
+  final DateTime? examDate;
+  final String? description;
+  final String? startTime;
+  final String? endTime;
   final StudentExamResult result;
   final StudentExamClassStats classStats;
 
@@ -170,12 +191,41 @@ class StudentExamDetail {
     required this.totalMarks,
     required this.passingMarks,
     required this.status,
+    this.examDate,
+    this.description,
+    this.startTime,
+    this.endTime,
     required this.result,
     required this.classStats,
   });
 
   String get examTypeLabel => ExamType.labelFor(examType);
-  bool get isCompleted => status == 'completed';
+
+  bool get _datePassed {
+    if (examDate == null) return false;
+    final today = DateTime.now();
+    return examDate!.isBefore(DateTime(today.year, today.month, today.day));
+  }
+
+  bool get isCompleted =>
+      status == 'completed' || (status == 'scheduled' && _datePassed);
+
+  /// "10:00 AM – 12:00 PM", or null when either side of the range is
+  /// missing or not in the expected "HH:mm:ss" backend format.
+  String? get timeRangeLabel {
+    final start = startTime;
+    final end = endTime;
+    if (start == null || start.isEmpty || end == null || end.isEmpty) {
+      return null;
+    }
+    try {
+      final fmtIn = DateFormat('HH:mm:ss');
+      final fmtOut = DateFormat('h:mm a');
+      return '${fmtOut.format(fmtIn.parse(start))} – ${fmtOut.format(fmtIn.parse(end))}';
+    } catch (_) {
+      return null;
+    }
+  }
 
   factory StudentExamDetail.fromJson(Map<String, dynamic> json) {
     final exam = json['exam'] as Map<String, dynamic>;
@@ -189,6 +239,12 @@ class StudentExamDetail {
       passingMarks:
           double.tryParse(exam['passing_marks']?.toString() ?? '') ?? 0,
       status: exam['status'] ?? 'scheduled',
+      examDate: exam['exam_date'] != null
+          ? DateTime.tryParse(exam['exam_date'].toString())
+          : null,
+      description: exam['description'],
+      startTime: exam['start_time']?.toString(),
+      endTime: exam['end_time']?.toString(),
       result: StudentExamResult.fromJson(
         Map<String, dynamic>.from(json['student_result'] ?? {}),
       ),

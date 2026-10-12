@@ -1,6 +1,7 @@
 import 'dart:io' show File, Platform;
 
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -50,7 +51,7 @@ class WhiteLabelScreen extends GetView<WhiteLabelController> {
             const InstituteAppBar(title: 'White Label', isRoot: false),
             Expanded(
               child: Obx(() {
-                if (controller.isLoading.value) {
+                if (controller.isLoading.value && !PullRefresh.active.value) {
                   return const CommonLoading();
                 }
 
@@ -68,7 +69,7 @@ class WhiteLabelScreen extends GetView<WhiteLabelController> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: controller.fetchStatus,
+                  onRefresh: () => PullRefresh.run(controller.fetchStatus),
                   color: AppColors.primaryBrand,
                   child: SingleChildScrollView(
                     padding: AppSpacing.all16,

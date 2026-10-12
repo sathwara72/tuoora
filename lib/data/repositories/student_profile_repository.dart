@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:tuoora/core/api/api_client.dart';
+import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/data/models/student_profile_model.dart';
 import 'package:tuoora/data/repositories_impl/student_profile_repository_impl.dart';
@@ -55,6 +56,11 @@ class StudentProfileRepository implements StudentProfileRepositoryImpl {
     );
 
     if (response.status.hasError) {
+      if (response.statusCode == 422 && response.body?['errors'] != null) {
+        throw ValidationException(
+          Map<String, dynamic>.from(response.body['errors']),
+        );
+      }
       throw Exception(
         response.body?['message']?.toString() ??
             'Failed to upload avatar: ${response.statusText}',

@@ -105,10 +105,12 @@ class _SplashScreenState extends State<SplashScreen>
     final w = size.width;
     final h = size.height;
     final padTop = MediaQuery.paddingOf(context).top;
+    // Elements are designed for a ~390pt wide phone; grow them on wider ones.
+    final k = (w / 390).clamp(1.0, 1.3);
 
     // ---- logo group -------------------------------------------------------
-    const logoHeight = 64.0;
-    const groupHeight = logoHeight + 8 + 14;
+    final logoHeight = 64.0 * k;
+    final groupHeight = logoHeight + 8 + 14 * k;
     final startTop = h * 0.5 - groupHeight / 2;
     final endTop = padTop + h * 0.085;
     final move = _t(0.5, 1.2, Curves.easeInOutCubic);
@@ -141,13 +143,13 @@ class _SplashScreenState extends State<SplashScreen>
       children: [
         // Soft glow behind the logo.
         Positioned(
-          left: cx - 150,
-          top: logoTop + logoHeight / 2 - 90,
+          left: cx - 150 * k,
+          top: logoTop + logoHeight / 2 - 90 * k,
           child: Opacity(
             opacity: (glow * 0.55).clamp(0.0, 1.0),
             child: Container(
-              width: 300,
-              height: 180,
+              width: 300 * k,
+              height: 180 * k,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
@@ -173,12 +175,12 @@ class _SplashScreenState extends State<SplashScreen>
               scale: logoScale,
               child: Column(
                 children: [
-                  const AppLogo(height: logoHeight),
+                  AppLogo(height: logoHeight),
                   const SizedBox(height: 8),
                   Text(
                     AppStrings.smartInstituteErp,
                     style: AppTextStyles.outfit(
-                      fontSize: 10,
+                      fontSize: 10 * k,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF64748B),
                       letterSpacing: 4,
@@ -203,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen>
                 AppStrings.splashTagline,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.outfit(
-                  fontSize: 16,
+                  fontSize: 16 * k,
                   fontWeight: FontWeight.w600,
                   color: SplashColors.ink,
                   height: 1.4,
@@ -219,7 +221,7 @@ class _SplashScreenState extends State<SplashScreen>
           top: cy - StackedBooks.height / 2 + 6,
           child: RepaintBoundary(
             child: Transform.scale(
-              scale: 1.12,
+              scale: 1.12 * k,
               child: StackedBooks(bookProgress: books, capProgress: cap),
             ),
           ),
@@ -232,7 +234,7 @@ class _SplashScreenState extends State<SplashScreen>
 
         // Orbiting feature icons.
         for (var i = 0; i < _icons.length; i++)
-          _orbitIcon(i, cx, cy, rx, ry, drift),
+          _orbitIcon(i, cx, cy, rx, ry, drift, k),
 
         // Progress line.
         Positioned(
@@ -272,12 +274,13 @@ class _SplashScreenState extends State<SplashScreen>
     double rx,
     double ry,
     double drift,
+    double k,
   ) {
     final (icon, color, deg) = _icons[i];
     final appear = _t(0.5 + i * 0.1, 1.0 + i * 0.1, _softSpring);
     final fade = _t(0.5 + i * 0.1, 0.85 + i * 0.1, Curves.easeOut);
     final angle = deg * math.pi / 180 + drift;
-    const size = 52.0;
+    final size = 52.0 * k;
     final x = cx + rx * math.cos(angle) - size / 2;
     final y = cy + ry * math.sin(angle) - size / 2 + (1 - appear) * 18;
     return Positioned(

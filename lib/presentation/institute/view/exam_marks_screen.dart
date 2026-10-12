@@ -113,7 +113,7 @@ class ExamMarksScreen extends StatelessWidget {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemCount: rows.length,
-                                separatorBuilder: (_, __) =>
+                                separatorBuilder: (_, _) =>
                                     const SizedBox(height: 12),
                                 itemBuilder: (context, index) {
                                   final row = rows[index];
@@ -151,7 +151,7 @@ class ExamMarksScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
@@ -413,7 +413,7 @@ class ExamMarksScreen extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
         border: Border.all(
           color: isAbsent
               ? const Color(0xFFFED7AA)

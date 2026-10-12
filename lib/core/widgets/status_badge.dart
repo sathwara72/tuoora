@@ -25,6 +25,8 @@ class StatusBadge extends StatelessWidget {
     const dangerTokens = {
       'PENDING',
       'CLOSED',
+      'CANCELLED',
+      'CANCELED',
       'OVERDUE',
       'DUE',
       'INACTIVE',

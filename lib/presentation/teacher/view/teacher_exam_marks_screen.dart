@@ -5,6 +5,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
+import 'package:tuoora/core/widgets/app_search_field.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_exam_marks_controller.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_exam_model.dart';
@@ -22,6 +23,7 @@ class TeacherExamMarksScreen extends GetView<TeacherExamMarksController> {
           children: [
             TeacherAppBar(title: 'Marks · ${controller.exam.title}'),
             _buildExamInfoCard(),
+            _buildToolbar(),
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
@@ -38,14 +40,26 @@ class TeacherExamMarksScreen extends GetView<TeacherExamMarksController> {
                     ),
                   );
                 }
+                final list = controller.filteredRows;
+                if (list.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No matching students found.',
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  );
+                }
                 return ListView.separated(
                   padding: AppSpacing.x16.add(
                     const EdgeInsets.only(top: AppSpacing.s8, bottom: AppSpacing.s16),
                   ),
-                  itemCount: controller.rows.length,
+                  itemCount: list.length,
                   separatorBuilder: (_, _) => AppSpacing.v12,
                   itemBuilder: (context, index) => _MarkRow(
-                    row: controller.rows[index],
+                    row: list[index],
                     controller: controller,
                   ),
                 );
@@ -129,18 +143,65 @@ class TeacherExamMarksScreen extends GetView<TeacherExamMarksController> {
             const Divider(height: 1, color: AppColors.borderGrey),
             AppSpacing.v8,
             Obx(
-              () => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+              () => Wrap(
+                alignment: WrapAlignment.spaceAround,
+                spacing: 12,
+                runSpacing: 6,
                 children: [
                   _statItem('Total', '${controller.totalStudents}', AppColors.textSecondary),
-                  _statItem('Present', '${controller.presentCount}', AppColors.primaryBrand),
-                  _statItem('Absent', '${controller.absentCount}', AppColors.bohoRed),
-                  _statItem('Entered', '${controller.enteredCount}', Colors.amber.shade800),
+                  _statItem('Present', '${controller.presentCount}', AppColors.textPrimary),
+                  _statItem('Absent', '${controller.absentCount}', Colors.amber.shade800),
+                  _statItem('Passed', '${controller.passedCount}', AppColors.successGreen),
+                  _statItem('Pass Rate', '${controller.passRate}%', const Color(0xFF4F46E5)),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildToolbar() {
+    return Padding(
+      padding: AppSpacing.x16.add(const EdgeInsets.only(bottom: AppSpacing.s8)),
+      child: Column(
+        children: [
+          AppSearchField(
+            hintText: 'Search student by name or ID...',
+            onChanged: (v) => controller.searchQuery.value = v,
+          ),
+          AppSpacing.v8,
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: controller.fillPassingMarks,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.successGreen,
+                    side: BorderSide(color: AppColors.successGreen.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    'Fill Passing Marks (${controller.exam.passingMarks.toInt()})',
+                    style: AppTextStyles.outfit(fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              AppSpacing.h8,
+              OutlinedButton(
+                onPressed: controller.clearAll,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.errorRed,
+                  side: BorderSide(color: AppColors.errorRed.withValues(alpha: 0.4)),
+                ),
+                child: Text(
+                  'Clear All',
+                  style: AppTextStyles.outfit(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -248,6 +309,8 @@ class _MarkRow extends StatelessWidget {
                   ],
                 ),
               ),
+              _ResultBadge(row: row, exam: controller.exam),
+              AppSpacing.h8,
               // Absent Switch Toggle
               InkWell(
                 onTap: () => controller.toggleAbsent(row),
@@ -328,7 +391,7 @@ class _MarkRow extends StatelessWidget {
                 SizedBox(
                   width: 100,
                   child: TextFormField(
-                    key: ValueKey('marks-${row.studentId}-${row.isAbsent}'),
+                    key: ValueKey('marks-${row.studentId}-${row.isAbsent}-${controller.resetTick.value}'),
                     initialValue: row.marksObtained != null
                         ? (row.marksObtained == row.marksObtained!.roundToDouble()
                             ? row.marksObtained!.toInt().toString()
@@ -371,6 +434,7 @@ class _MarkRow extends StatelessWidget {
               // Remarks field (ALWAYS visible and editable, for both present and absent students)
               Expanded(
                 child: TextFormField(
+                  key: ValueKey('remarks-${row.studentId}-${controller.resetTick.value}'),
                   initialValue: row.remarks ?? '',
                   style: AppTextStyles.outfit(
                     fontSize: 13,
@@ -406,6 +470,45 @@ class _MarkRow extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ResultBadge extends StatelessWidget {
+  final TeacherExamMarkRow row;
+  final TeacherExam exam;
+
+  const _ResultBadge({required this.row, required this.exam});
+
+  @override
+  Widget build(BuildContext context) {
+    final marks = row.marksObtained;
+    final String label;
+    final Color color;
+    if (row.isAbsent) {
+      return const SizedBox.shrink();
+    } else if (marks == null) {
+      label = 'Pending';
+      color = AppColors.textTertiary;
+    } else if (marks > exam.totalMarks) {
+      label = 'Max ${exam.totalMarks.toInt()}';
+      color = AppColors.errorRed;
+    } else {
+      final pct = exam.totalMarks == 0 ? 0 : (marks * 100 / exam.totalMarks).round();
+      final passed = marks >= exam.passingMarks;
+      label = '${passed ? 'Pass' : 'Fail'} ($pct%)';
+      color = passed ? AppColors.successGreen : AppColors.errorRed;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.outfit(fontSize: 10, fontWeight: FontWeight.w700, color: color),
       ),
     );
   }

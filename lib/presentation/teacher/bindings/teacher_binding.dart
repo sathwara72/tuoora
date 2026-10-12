@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 
 import 'package:tuoora/core/api/api_client.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
+import 'package:tuoora/data/repositories_impl/auth_repository_impl.dart';
 import 'package:tuoora/data/repositories/teacher_attendance_repository.dart';
 import 'package:tuoora/data/repositories/teacher_batch_repository.dart';
 import 'package:tuoora/data/repositories/teacher_profile_repository.dart';
@@ -23,7 +24,6 @@ import 'package:tuoora/data/repositories_impl/teacher_timetable_repository_impl.
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_exam_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_homework_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_add_timetable_slot_controller.dart';
-import 'package:tuoora/presentation/teacher/controllers/teacher_assign_students_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_details_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_resources_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_students_controller.dart';
@@ -37,6 +37,7 @@ import 'package:tuoora/presentation/teacher/controllers/teacher_fees_controller.
 import 'package:tuoora/presentation/teacher/controllers/teacher_homework_grading_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_mark_attendance_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_profile_controller.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_dashboard_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_salary_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_timetable_controller.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_self_attendance_controller.dart';
@@ -45,7 +46,13 @@ class TeacherBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<ApiClient>(() => ApiClient());
-    Get.lazyPut(() => AuthRepository(Get.find<ApiClient>()), fenix: true);
+    if (!Get.isRegistered<AuthRepository>()) {
+      final authRepo = AuthRepository(Get.find<ApiClient>());
+      Get.put<AuthRepositoryImpl>(authRepo, permanent: true);
+      Get.put<AuthRepository>(authRepo, permanent: true);
+    } else if (!Get.isRegistered<AuthRepositoryImpl>()) {
+      Get.put<AuthRepositoryImpl>(Get.find<AuthRepository>(), permanent: true);
+    }
     Get.lazyPut<TeacherBatchRepositoryImpl>(
       () => TeacherBatchRepository(Get.find<ApiClient>()),
       fenix: true,
@@ -91,9 +98,6 @@ class TeacherBinding extends Bindings {
     );
     Get.lazyPut(
       () => TeacherBatchStudentsController(Get.find<TeacherBatchRepositoryImpl>()),
-    );
-    Get.lazyPut(
-      () => TeacherAssignStudentsController(Get.find<TeacherBatchRepositoryImpl>()),
     );
     Get.lazyPut(
       () => TeacherBatchResourcesController(
@@ -158,6 +162,9 @@ class TeacherBinding extends Bindings {
     );
     Get.lazyPut(
       () => TeacherSalaryController(Get.find<TeacherSalaryRepositoryImpl>()),
+    );
+    Get.lazyPut(
+      () => TeacherDashboardController(Get.find<TeacherTimetableRepositoryImpl>()),
     );
   }
 }

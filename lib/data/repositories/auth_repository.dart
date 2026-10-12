@@ -77,11 +77,43 @@ class AuthRepository implements AuthRepositoryImpl {
       throw Exception(response.body?['message'] ?? 'Login failed');
     }
 
-    final data = response.body['data'];
-    final token =
-        data['token']?.toString() ?? data['access_token']?.toString() ?? '';
-    final accessToken = data['access_token']?.toString() ?? token;
-    final refreshToken = data['refresh_token']?.toString() ?? '';
+    final body = response.body;
+    Map<String, dynamic> data = {};
+    if (body is Map) {
+      if (body['data'] is Map) {
+        data = Map<String, dynamic>.from(body['data']);
+        if (data['user'] is Map) {
+          final userMap = Map<String, dynamic>.from(data['user']);
+          userMap.addAll(data);
+          data = userMap;
+        }
+      } else {
+        data = Map<String, dynamic>.from(body);
+      }
+    }
+
+    String? findVal(String key) {
+      if (data[key] != null && data[key].toString().isNotEmpty) {
+        return data[key].toString();
+      }
+      if (body is Map && body[key] != null && body[key].toString().isNotEmpty) {
+        return body[key].toString();
+      }
+      if (data['tokens'] is Map && data['tokens'][key] != null) {
+        return data['tokens'][key].toString();
+      }
+      if (body is Map &&
+          body['tokens'] is Map &&
+          body['tokens'][key] != null) {
+        return body['tokens'][key].toString();
+      }
+      return null;
+    }
+
+    final token = findVal('token') ?? findVal('access_token') ?? '';
+    final accessToken = findVal('access_token') ?? token;
+    final refreshToken = findVal('refresh_token') ?? '';
+
     return User.fromJson(
       data,
       token,
@@ -95,21 +127,51 @@ class AuthRepository implements AuthRepositoryImpl {
   Future<({String accessToken, String refreshToken})?> refreshAccessToken(
     String refreshToken,
   ) async {
-    try {
-      final response = await _apiClient.post(ApiConstants.authRefresh, {
-        'refresh_token': refreshToken,
-      });
-      if (response.status.hasError) return null;
-      final data = response.body?['data'];
-      if (data is! Map) return null;
-      final newAccess =
-          data['access_token']?.toString() ?? data['token']?.toString();
-      final newRefresh = data['refresh_token']?.toString();
-      if (newAccess == null || newAccess.isEmpty) return null;
-      return (accessToken: newAccess, refreshToken: newRefresh ?? refreshToken);
-    } catch (_) {
+    final response = await _apiClient.post(ApiConstants.authRefresh, {
+      'refresh_token': refreshToken,
+    });
+    if (response.status.hasError) {
+      final code = response.statusCode;
+      // No answer or a server error: not a verdict on the token, so throw
+      // and let the caller keep the session. 4xx means the token is rejected.
+      if (code == null || code >= 500) {
+        throw Exception('Token refresh unavailable ($code)');
+      }
       return null;
     }
+
+    final body = response.body;
+    Map<String, dynamic> data = {};
+    if (body is Map) {
+      if (body['data'] is Map) {
+        data = Map<String, dynamic>.from(body['data']);
+      } else {
+        data = Map<String, dynamic>.from(body);
+      }
+    }
+
+    String? findVal(String key) {
+      if (data[key] != null && data[key].toString().isNotEmpty) {
+        return data[key].toString();
+      }
+      if (body is Map && body[key] != null && body[key].toString().isNotEmpty) {
+        return body[key].toString();
+      }
+      if (data['tokens'] is Map && data['tokens'][key] != null) {
+        return data['tokens'][key].toString();
+      }
+      if (body is Map &&
+          body['tokens'] is Map &&
+          body['tokens'][key] != null) {
+        return body['tokens'][key].toString();
+      }
+      return null;
+    }
+
+    final newAccess = findVal('access_token') ?? findVal('token');
+    final newRefresh = findVal('refresh_token') ?? refreshToken;
+    if (newAccess == null || newAccess.isEmpty) return null;
+    return (accessToken: newAccess, refreshToken: newRefresh);
   }
 
   @override
