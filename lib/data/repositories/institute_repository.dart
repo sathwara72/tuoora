@@ -399,6 +399,75 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<WhatsAppOverviewData> getWhatsAppOverview() async {
+    final response = await _apiClient.get(ApiConstants.instituteWhatsAppOverview);
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to fetch WhatsApp overview');
+    }
+    return WhatsAppOverviewData.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<List<WhatsAppPackItem>> getWhatsAppPacks() async {
+    final response = await _apiClient.get(ApiConstants.instituteWhatsAppPacks);
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to fetch WhatsApp packs');
+    }
+    final List<dynamic> list = response.body['data'] ?? [];
+    return list.map((e) => WhatsAppPackItem.fromJson(e)).toList();
+  }
+
+  @override
+  Future<Map<String, dynamic>> createWhatsAppPackOrder(int packId) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteWhatsAppCreateOrder,
+      {'pack_id': packId},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to create WhatsApp pack order');
+    }
+    return Map<String, dynamic>.from(response.body);
+  }
+
+  @override
+  Future<Map<String, dynamic>> verifyWhatsAppPackPayment({
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteWhatsAppVerifyPayment,
+      {
+        'razorpay_order_id': razorpayOrderId,
+        'razorpay_payment_id': razorpayPaymentId,
+        'razorpay_signature': razorpaySignature,
+      },
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to verify WhatsApp pack payment');
+    }
+    return Map<String, dynamic>.from(response.body);
+  }
+
+  @override
+  Future<Map<String, dynamic>> sendWhatsAppTestMessage({
+    required String phone,
+    String? message,
+  }) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteWhatsAppTest,
+      {
+        'test_phone': phone,
+        'test_message': message ?? '',
+      },
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to send WhatsApp test message');
+    }
+    return Map<String, dynamic>.from(response.body);
+  }
+
+  @override
   Future<void> changePassword(Map<String, dynamic> data) async {
     final response = await _apiClient.post(
       ApiConstants.instituteChangePassword,

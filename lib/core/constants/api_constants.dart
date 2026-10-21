@@ -74,6 +74,20 @@ class ApiConstants {
       '/institute/profile/change-password';
   static const String instituteWhatsAppSettings =
       '/institute/whatsapp-settings';
+  static const String instituteWhatsAppOverview =
+      '/institute/whatsapp/overview';
+  static const String instituteWhatsAppPacks =
+      '/institute/whatsapp/packs';
+  static const String instituteWhatsAppCreateOrder =
+      '/institute/whatsapp/packs/create-order';
+  static const String instituteWhatsAppVerifyPayment =
+      '/institute/whatsapp/packs/verify-payment';
+  static const String instituteWhatsAppLogs =
+      '/institute/whatsapp/logs';
+  static const String instituteWhatsAppLedger =
+      '/institute/whatsapp/ledger';
+  static const String instituteWhatsAppTest =
+      '/institute/whatsapp/test';
   static const String instituteFees = '/institute/fees';
   static String institutePayInstallment(int installmentId) =>
       '/institute/fees/installments/$installmentId/pay';
