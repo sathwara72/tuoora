@@ -77,6 +77,18 @@ abstract class InstituteRepositoryImpl {
   Future<WhatsAppSettings?> getWhatsAppSettings();
   Future<WhatsAppSettings> saveWhatsAppSettings(Map<String, dynamic> data);
   Future<WhatsAppSettings> updateWhatsAppSettings(Map<String, dynamic> data);
+  Future<WhatsAppOverviewData> getWhatsAppOverview();
+  Future<List<WhatsAppPackItem>> getWhatsAppPacks();
+  Future<Map<String, dynamic>> createWhatsAppPackOrder(int packId);
+  Future<Map<String, dynamic>> verifyWhatsAppPackPayment({
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  });
+  Future<Map<String, dynamic>> sendWhatsAppTestMessage({
+    required String phone,
+    String? message,
+  });
 
   // Password Management
   Future<void> changePassword(Map<String, dynamic> data);

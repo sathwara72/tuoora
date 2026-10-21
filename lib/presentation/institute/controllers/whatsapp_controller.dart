@@ -1,42 +1,96 @@
-import 'package:tuoora/core/widgets/app_snack_bar.dart';
-import 'package:tuoora/core/constants/app_strings.dart';
-import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
-import 'package:tuoora/data/models/whatsapp_settings_model.dart';
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:tuoora/core/constants/app_strings.dart';
+import 'package:tuoora/core/constants/url_constants.dart';
+import 'package:tuoora/core/services/branding_service.dart';
+import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'package:tuoora/data/models/whatsapp_settings_model.dart';
+import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 
 class WhatsAppController extends GetxController {
   final InstituteRepositoryImpl _repository = Get.find<InstituteRepositoryImpl>();
 
+  Razorpay? _razorpay;
+  String? _activeOrderId;
+  WhatsAppPackItem? _activePack;
+  bool _disposed = false;
+
+  // Controllers
   final accessTokenController = TextEditingController();
   final phoneNumberController = TextEditingController();
   final phoneNumberIdController = TextEditingController();
   final businessAccountIdController = TextEditingController();
 
+  final testPhoneController = TextEditingController();
+  final testMessageController = TextEditingController();
+
+  // Observable State
+  final isLoading = false.obs;
+  final isPurchasing = false.obs;
+  final purchasingPackId = RxnInt();
+  final isSendingTest = false.obs;
+  final showDedicatedConfig = false.obs;
+
+  final overviewData = Rxn<WhatsAppOverviewData>();
+  final currentSettings = Rxn<WhatsAppSettings>();
+
+  final walletBalance = 0.obs;
+  final formattedBalance = '0'.obs;
+  final isLowBalance = false.obs;
+  final activeMode = 'tuoora_gateway'.obs;
+  final isWhiteLabel = false.obs;
+  final hasDedicatedWhatsApp = false.obs;
+  final isActiveMeta = true.obs;
+
+  final packs = <WhatsAppPackItem>[].obs;
+  final recentLogs = <WhatsAppLogItem>[].obs;
+
+  // Feature alert toggles
   final feesReminders = true.obs;
   final attendanceAlerts = true.obs;
   final homeworkUpdates = false.obs;
   final holidayNotices = false.obs;
 
-  final isLoading = false.obs;
-  final currentSettings = Rxn<WhatsAppSettings>();
-
   @override
   void onInit() {
     super.onInit();
-    fetchSettings();
+    _initRazorpay();
+    fetchOverview();
   }
 
-  Future<void> fetchSettings() async {
+  void _initRazorpay() {
+    if (Platform.isAndroid || Platform.isIOS) {
+      _razorpay = Razorpay();
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+      _razorpay!.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+      _razorpay!.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    }
+  }
+
+  Future<void> fetchOverview() async {
     try {
       isLoading.value = true;
-      final settings = await _repository.getWhatsAppSettings();
-      if (settings != null) {
-        currentSettings.value = settings;
-        _preFillControllers(settings);
+      final data = await _repository.getWhatsAppOverview();
+      overviewData.value = data;
+
+      walletBalance.value = data.wallet.balance;
+      formattedBalance.value = data.wallet.formattedBalance;
+      isLowBalance.value = data.wallet.isLow;
+      activeMode.value = data.mode;
+      isWhiteLabel.value = data.isWhiteLabel;
+      hasDedicatedWhatsApp.value = data.hasDedicatedWhatsApp;
+
+      packs.assignAll(data.packs);
+      recentLogs.assignAll(data.recentLogs);
+
+      if (data.settings != null) {
+        currentSettings.value = data.settings;
+        _preFillControllers(data.settings!);
       }
     } catch (e) {
-      debugPrint('Error fetching WhatsApp settings: $e');
+      debugPrint('Error fetching WhatsApp overview: $e');
     } finally {
       isLoading.value = false;
     }
@@ -47,6 +101,103 @@ class WhatsAppController extends GetxController {
     phoneNumberController.text = settings.phoneNumber;
     phoneNumberIdController.text = settings.phoneNumberId;
     businessAccountIdController.text = settings.businessAccountId;
+    isActiveMeta.value = settings.isActive;
+  }
+
+  Future<void> startPurchase(WhatsAppPackItem pack) async {
+    if (_disposed || purchasingPackId.value != null) return;
+    if (_razorpay == null && (Platform.isAndroid || Platform.isIOS)) {
+      _initRazorpay();
+    }
+
+    purchasingPackId.value = pack.id;
+    _activePack = pack;
+
+    try {
+      final order = await _repository.createWhatsAppPackOrder(pack.id);
+      _activeOrderId = order['order_id']?.toString();
+
+      final options = {
+        'key': UrlConstants.razorpayKeyId,
+        'amount': order['amount'],
+        'currency': order['currency'] ?? 'INR',
+        'order_id': order['order_id'],
+        'name': Get.isRegistered<BrandingService>() ? Get.find<BrandingService>().appName : 'Tuoora',
+        'description': pack.name,
+        'theme': {'color': '#FF6600'},
+        'prefill': {
+          'name': null,
+          'contact': null,
+        },
+      };
+
+      _razorpay?.open(options);
+    } catch (e) {
+      purchasingPackId.value = null;
+      _activePack = null;
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      AppSnackBar.error(msg.isNotEmpty ? msg : 'Unable to initiate pack purchase');
+    }
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    final pack = _activePack;
+    if (pack == null) return;
+
+    try {
+      isLoading.value = true;
+      final result = await _repository.verifyWhatsAppPackPayment(
+        razorpayOrderId: response.orderId ?? _activeOrderId ?? '',
+        razorpayPaymentId: response.paymentId ?? '',
+        razorpaySignature: response.signature ?? '',
+      );
+
+      await fetchOverview();
+      AppSnackBar.success(result['message']?.toString() ?? 'WhatsApp pack purchased successfully!');
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      AppSnackBar.error(msg.isNotEmpty ? msg : 'Payment verification failed');
+    } finally {
+      purchasingPackId.value = null;
+      _activePack = null;
+      isLoading.value = false;
+    }
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    purchasingPackId.value = null;
+    _activePack = null;
+    AppSnackBar.error(response.message ?? 'Payment was cancelled or failed');
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    AppSnackBar.warning('External wallet selected: ${response.walletName}');
+  }
+
+  Future<void> sendTestMessage() async {
+    final phone = testPhoneController.text.trim();
+    if (phone.isEmpty || phone.length < 10) {
+      AppSnackBar.warning('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
+    try {
+      isSendingTest.value = true;
+      final res = await _repository.sendWhatsAppTestMessage(
+        phone: phone,
+        message: testMessageController.text.trim(),
+      );
+
+      AppSnackBar.success(res['message']?.toString() ?? 'Test WhatsApp message sent successfully!');
+      testPhoneController.clear();
+      testMessageController.clear();
+      await fetchOverview();
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      AppSnackBar.error(msg.isNotEmpty ? msg : 'Failed to send test message');
+    } finally {
+      isSendingTest.value = false;
+    }
   }
 
   Future<void> saveSettings() async {
@@ -72,6 +223,7 @@ class WhatsAppController extends GetxController {
         'access_token': token,
         'phone_number_id': phoneId,
         'business_account_id': accountId,
+        'is_active': isActiveMeta.value ? 1 : 0,
       };
 
       WhatsAppSettings savedSettings;
@@ -82,8 +234,7 @@ class WhatsAppController extends GetxController {
       }
       
       currentSettings.value = savedSettings;
-
-      Get.back();
+      await fetchOverview();
       AppSnackBar.success(AppStrings.settingsSaved);
     } catch (e) {
       AppSnackBar.error(AppStrings.failedToSaveSettings);
@@ -94,11 +245,14 @@ class WhatsAppController extends GetxController {
 
   @override
   void onClose() {
+    _disposed = true;
+    _razorpay?.clear();
     accessTokenController.dispose();
     phoneNumberController.dispose();
     phoneNumberIdController.dispose();
     businessAccountIdController.dispose();
+    testPhoneController.dispose();
+    testMessageController.dispose();
     super.onClose();
   }
 }
-
