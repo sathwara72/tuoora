@@ -82,7 +82,7 @@ class AddOnsController extends GetxController {
       await _loadPrefillIfNeeded();
 
       final options = {
-        'key': UrlConstants.razorpayKeyId,
+        'key': UrlConstants.razorpayKeyFromOrder(order),
         'amount': order['amount'],
         'currency': order['currency'] ?? 'INR',
         'order_id': order['order_id'],

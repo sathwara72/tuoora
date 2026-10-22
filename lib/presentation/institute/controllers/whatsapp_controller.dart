@@ -118,17 +118,13 @@ class WhatsAppController extends GetxController {
       _activeOrderId = order['order_id']?.toString();
 
       final options = {
-        'key': UrlConstants.razorpayKeyId,
+        'key': UrlConstants.razorpayKeyFromOrder(order),
         'amount': order['amount'],
         'currency': order['currency'] ?? 'INR',
         'order_id': order['order_id'],
         'name': Get.isRegistered<BrandingService>() ? Get.find<BrandingService>().appName : 'Tuoora',
         'description': pack.name,
         'theme': {'color': '#FF6600'},
-        'prefill': {
-          'name': null,
-          'contact': null,
-        },
       };
 
       _razorpay?.open(options);
