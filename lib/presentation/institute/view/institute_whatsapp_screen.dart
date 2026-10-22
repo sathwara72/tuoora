@@ -463,6 +463,13 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
   // 4. Live Test Message Card
   // ---------------------------------------------------------------------------
   Widget _buildSendTestCard() {
+    return Obx(() {
+      if (!controller.isWhiteLabel.value) return const SizedBox.shrink();
+      return _buildSendTestCardContent();
+    });
+  }
+
+  Widget _buildSendTestCardContent() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -739,6 +746,7 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
   // ---------------------------------------------------------------------------
   Widget _buildDedicatedMetaSection() {
     return Obx(() {
+      if (!controller.isWhiteLabel.value) return const SizedBox.shrink();
       final isExpanded = controller.showDedicatedConfig.value;
 
       return Container(

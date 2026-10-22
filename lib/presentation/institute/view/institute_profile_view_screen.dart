@@ -91,6 +91,8 @@ class InstituteProfileViewScreen extends StatelessWidget {
                         _buildNotificationPreferencesNavigationCard(),
                         if (!Platform.isIOS) ...[
                           AppSpacing.v16,
+                          _buildWhatsAppNavigationCard(),
+                          AppSpacing.v16,
                           _buildAddOnsNavigationCard(),
                         ],
                         AppSpacing.v16,
@@ -993,6 +995,62 @@ class InstituteProfileViewScreen extends StatelessWidget {
                     ),
                     Text(
                       'Toggle WhatsApp, Push & Email per campus module',
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWhatsAppNavigationCard() {
+    return _card(
+      child: InkWell(
+        onTap: () => Get.toNamed(AppRoutes.instituteWhatsApp),
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+          child: Row(
+            children: [
+              Container(
+                padding: AppSpacing.all8,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF25D366).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.chat_rounded,
+                  size: 18,
+                  color: Color(0xFF25D366),
+                ),
+              ),
+              AppSpacing.h12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'WhatsApp Management',
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Wallet, credit packs & delivery logs',
                       style: AppTextStyles.outfit(
                         fontSize: 11,
                         color: AppColors.textMuted,
