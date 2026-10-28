@@ -8,6 +8,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_action_icon.dart';
+import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/widgets/app_whatsapp_icon.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_controller.dart';
 import 'package:tuoora/presentation/institute/models/fee_record.dart';
@@ -42,6 +43,14 @@ class FeeReceiptScreen extends GetView<InstituteController> {
                     icon: const AppActionIcon(asset: AppImages.icDownload),
                   );
                 }),
+                IconButton(
+                  tooltip: 'Share Receipt',
+                  onPressed: () => _showShareSheet(r),
+                  icon: const Icon(
+                    Icons.share_rounded,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
                 AppSpacing.h8,
               ],
             ),
@@ -113,86 +122,159 @@ class FeeReceiptScreen extends GetView<InstituteController> {
     );
   }
 
-  /// Send the receipt to the student/parent. Nothing goes out automatically
-  /// when a payment is saved; only these buttons send it.
+  /// Opens the share popup. Nothing goes out automatically when a payment
+  /// is saved; only these options send the receipt.
   Widget _buildShareButtons(FeeRecord r) {
     return Obx(() {
-      final sending = controller.sharingReceiptChannel.value;
-      return Row(
-        children: [
-          Expanded(
-            child: _shareButton(
-              label: 'WhatsApp',
-              icon: const AppWhatsAppIcon(size: 20),
-              color: const Color(0xFF25D366),
-              busy: sending == 'whatsapp',
-              onTap: sending != null
-                  ? null
-                  : () => controller.shareFeeReceipt(r, 'whatsapp'),
-            ),
-          ),
-          AppSpacing.h12,
-          Expanded(
-            child: _shareButton(
-              label: 'Email',
-              icon: const Icon(
-                Icons.email_outlined,
-                size: 20,
-                color: AppColors.primaryBrand,
-              ),
-              color: AppColors.primaryBrand,
-              busy: sending == 'email',
-              onTap: sending != null
-                  ? null
-                  : () => controller.shareFeeReceipt(r, 'email'),
-            ),
-          ),
-        ],
+      final busy = controller.sharingReceiptChannel.value != null;
+      return AppButton(
+        label: busy ? 'Sending…' : 'Share Receipt',
+        icon: Icons.share_rounded,
+        isLoading: busy,
+        onPressed: () => _showShareSheet(r),
       );
     });
   }
 
-  Widget _shareButton({
-    required String label,
-    required Widget icon,
-    required Color color,
-    required bool busy,
-    required VoidCallback? onTap,
-  }) {
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-        child: Container(
-          height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-            border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+  void _showShareSheet(FeeRecord r) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (busy)
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: color),
-                )
-              else
-                icon,
-              AppSpacing.h8,
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderGrey,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              AppSpacing.v16,
               Text(
-                busy ? 'Sending…' : label,
+                'Share Receipt',
                 style: AppTextStyles.outfit(
-                  fontSize: 14,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
+              AppSpacing.v12,
+              _shareOption(
+                icon: const AppWhatsAppIcon(size: 22),
+                color: const Color(0xFF25D366),
+                title: 'WhatsApp',
+                subtitle: r.student?.name != null
+                    ? 'Open a chat with ${r.student!.name} with the receipt details'
+                    : 'Open WhatsApp with the receipt details',
+                onTap: () => controller.openReceiptOnWhatsApp(r),
+              ),
+              _shareOption(
+                icon: const Icon(
+                  Icons.picture_as_pdf_rounded,
+                  size: 22,
+                  color: AppColors.bohoRed,
+                ),
+                color: AppColors.bohoRed,
+                title: 'Share PDF',
+                subtitle: 'Send the receipt PDF on WhatsApp or any app',
+                onTap: () => controller.shareReceiptPdf(r),
+              ),
+              _shareOption(
+                icon: const Icon(
+                  Icons.send_rounded,
+                  size: 22,
+                  color: Color(0xFF128C7E),
+                ),
+                color: const Color(0xFF128C7E),
+                title: 'Send on WhatsApp automatically',
+                subtitle: 'Tuoora sends the approved template with the PDF',
+                onTap: () => controller.shareFeeReceipt(r, 'whatsapp'),
+              ),
+              _shareOption(
+                icon: const Icon(
+                  Icons.email_outlined,
+                  size: 22,
+                  color: AppColors.primaryBrand,
+                ),
+                color: AppColors.primaryBrand,
+                title: 'Email',
+                subtitle: 'Email the receipt to the student / parent',
+                onTap: () => controller.shareFeeReceipt(r, 'email'),
+              ),
             ],
           ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _shareOption({
+    required Widget icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: () {
+        Get.back();
+        onTap();
+      },
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: icon,
+            ),
+            AppSpacing.h12,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.outfit(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textMuted,
+            ),
+          ],
         ),
       ),
     );

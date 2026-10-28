@@ -186,6 +186,8 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
             AppSpacing.v24,
             Row(
               children: [
+                // Fee amounts need "Display Total / Pending Fees".
+                if (_auth.can('fees.totals')) ...[
                 Expanded(
                   child: InstituteMetricCard(
                     label: AppStrings.instTotalCollectionLabel,
@@ -200,6 +202,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                   ),
                 ),
                 AppSpacing.h8,
+                ],
                 Expanded(
                   child: InstituteMetricCard(
                     label: AppStrings.instNavStudents,
@@ -412,8 +415,12 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
   }
 
   Widget _buildBatchReportsSection() {
+    // Report downloads need "View Financial Reports"; the Fee report also
+    // shows collection totals, so it needs "Display Total / Pending Fees".
+    if (!_auth.can('reports.view')) return const SizedBox.shrink();
     final reports = <(String, String, IconData, Color)>[
-      ('Fee', 'Fee Report', Icons.payments_rounded, const Color(0xFF10B981)),
+      if (_auth.can('fees.totals'))
+        ('Fee', 'Fee Report', Icons.payments_rounded, const Color(0xFF10B981)),
       (
         'Attendance',
         'Attendance Report',
@@ -480,6 +487,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
 
   Widget _buildCourseManagementSection() {
     final tiles = <_ManagementTileData>[
+      if (_auth.can('academics.timetable'))
       _ManagementTileData(
         svgAsset: AppImages.icBatchTimetable,
         title: AppStrings.timetable,
@@ -489,6 +497,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
+      if (_auth.canModule('students'))
       _ManagementTileData(
         svgAsset: AppImages.icBatchStudents,
         title: AppStrings.instNavStudents,
@@ -498,6 +507,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
+      if (_auth.canModule('batches'))
       _ManagementTileData(
         icon: Icons.school_rounded,
         title: 'Subjects',
@@ -507,6 +517,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
+      if (_auth.can('academics.exams'))
       _ManagementTileData(
         svgAsset: AppImages.icBatchExam, // Clipboard with checkmark
         title: AppStrings.exams,
@@ -516,6 +527,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
+      if (_auth.can('academics.homework'))
       _ManagementTileData(
         icon: Icons.menu_book_rounded,
         title: AppStrings.homework,
@@ -525,6 +537,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
+      if (_auth.canModule('attendance'))
       _ManagementTileData(
         svgAsset: AppImages.icBatchAttendance,
         title: AppStrings.instAttendanceTitle,
@@ -534,6 +547,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
+      if (_auth.canModule('batches'))
       _ManagementTileData(
         svgAsset: AppImages.icBatchResource,
         title: 'Materials',

@@ -4,6 +4,7 @@ import 'package:tuoora/presentation/institute/models/school_class_model.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 
 class BatchClassesController extends GetxController {
@@ -70,6 +71,9 @@ class BatchClassesController extends GetxController {
   }
 
   Future<void> fetchStaff() async {
+    // The staff list is owner-only on the server; skip it for sub-access
+    // users instead of showing them an error on every open.
+    if (Get.find<AuthService>().isSubAccess) return;
     try {
       isLoadingStaff.value = true;
       final response = await _repository.listStaff();

@@ -1,3 +1,7 @@
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'dart:typed_data';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/data/models/student_model.dart';
@@ -8,6 +12,7 @@ import 'package:tuoora/core/services/download_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/pdf_viewer_popup.dart';
 
 class InstituteController extends GetxController {
@@ -37,6 +42,12 @@ class InstituteController extends GetxController {
   final totalCollected = 0.0.obs;
   final totalPending = 0.0.obs;
   final pendingStudentsCount = 0.obs;
+
+  /// Whether to show the Collected / Pending amounts. Hidden (title only,
+  /// like the web) for sub-access users without `fees.totals`.
+  final serverAllowsFeeTotals = true.obs;
+  bool get canViewFeeTotals =>
+      serverAllowsFeeTotals.value && Get.find<AuthService>().can('fees.totals');
   final pendingStudents = <PendingFeeStudent>[].obs;
   final isLoadingPendingFees = false.obs;
   final selectedFeeTab = 'collected'.obs; // 'collected' or 'pending'
@@ -111,6 +122,7 @@ class InstituteController extends GetxController {
       totalCollected.value = result.totalCollected;
       totalPending.value = result.totalPending;
       pendingStudentsCount.value = result.pendingStudentsCount;
+      serverAllowsFeeTotals.value = result.canViewTotals;
 
       if (result.items.isEmpty || result.items.length < 10) {
         feesHasMore.value = false;
@@ -135,6 +147,7 @@ class InstituteController extends GetxController {
       pendingStudents.assignAll(result.items);
       totalPending.value = result.totalPending;
       pendingStudentsCount.value = result.pendingStudentsCount;
+      serverAllowsFeeTotals.value = result.canViewTotals;
     } catch (e, st) {
       debugPrint('fetchPendingFees failed: $e\n$st');
       AppSnackBar.error('Failed to load pending fees');
@@ -211,6 +224,76 @@ class InstituteController extends GetxController {
       downloadingReceiptIds.remove(feeId);
       downloadingReceiptIds.refresh();
     }
+  }
+
+  /// Shares the receipt PDF through the phone's share sheet (WhatsApp,
+  /// Gmail, ...), so the owner can send it from their own WhatsApp.
+  Future<void> shareReceiptPdf(FeeRecord record) async {
+    if (sharingReceiptChannel.value != null) return;
+    try {
+      sharingReceiptChannel.value = 'pdf';
+      final bytes = await _instituteRepository.downloadFeeReceipt(record.id);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [
+            XFile.fromData(
+              Uint8List.fromList(bytes),
+              name: 'Receipt_${receiptNumber(record)}.pdf',
+              mimeType: 'application/pdf',
+            ),
+          ],
+          text: receiptShareText(record),
+        ),
+      );
+    } catch (_) {
+      AppSnackBar.error('Could not prepare the receipt to share');
+    } finally {
+      sharingReceiptChannel.value = null;
+    }
+  }
+
+  /// Opens a WhatsApp chat with the student (WhatsApp number, else phone)
+  /// with the receipt details typed in. With no number, WhatsApp asks which
+  /// chat to send it to.
+  Future<void> openReceiptOnWhatsApp(FeeRecord record) async {
+    final student = record.student;
+    var digits = (student?.whatsappPhone ?? student?.phone ?? '')
+        .replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length == 10) digits = '91$digits';
+    final text = Uri.encodeComponent(receiptShareText(record));
+    final uri = Uri.parse(
+      digits.isEmpty
+          ? 'https://wa.me/?text=$text'
+          : 'https://wa.me/$digits?text=$text',
+    );
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok) AppSnackBar.warning('WhatsApp is not installed on this device.');
+    } catch (_) {
+      AppSnackBar.warning('WhatsApp is not installed on this device.');
+    }
+  }
+
+  String receiptNumber(FeeRecord r) =>
+      'REC-${r.id.toString().padLeft(4, '0')}';
+
+  String receiptShareText(FeeRecord r) {
+    final money = NumberFormat('#,##,###.##');
+    final paidAt = r.latestPayment?.paidAt ?? r.updatedAt;
+    final method = r.latestPayment?.paymentMethod ?? '';
+    String institute = '';
+    if (Get.isRegistered<AuthService>()) {
+      institute = Get.find<AuthService>().currentUser?.instituteName ?? '';
+    }
+    return [
+      'Fee Receipt ${receiptNumber(r)}',
+      if (r.student != null) 'Student: ${r.student!.name}',
+      'Amount Paid: ₹${money.format(r.paidAmount)}',
+      'Date: ${DateFormat('dd MMM yyyy').format(paidAt.toLocal())}',
+      if (method.isNotEmpty) 'Method: $method',
+      '',
+      'Thank you${institute.isNotEmpty ? ',\n$institute' : '.'}',
+    ].join('\n');
   }
 
   Future<void> fetchStudents({bool reset = false}) async {

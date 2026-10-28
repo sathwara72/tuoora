@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/utils/validation_utils.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
@@ -111,6 +112,10 @@ class TimetableController extends GetxController {
 
   Future<void> fetchStaffForAssignment() async {
     if (staffList.isNotEmpty) return;
+    // The staff list is owner-only on the server; asking for it would show
+    // sub-access users an "only the owner" message on every open. They can
+    // still pick from the teachers assigned to the subject.
+    if (Get.find<AuthService>().isSubAccess) return;
     try {
       isLoadingStaff.value = true;
       final response = await _repository.listStaff();

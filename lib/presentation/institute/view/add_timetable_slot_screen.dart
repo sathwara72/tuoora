@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
@@ -933,6 +934,8 @@ class _AddTimetableSlotScreenState extends State<AddTimetableSlotScreen> {
             hint: Text(
               controller.isLoadingStaff.value
                   ? 'Loading staff…'
+                  : Get.find<AuthService>().isSubAccess
+                  ? 'Staff list is available to the owner only'
                   : 'No faculty assigned (Optional)',
               style: AppTextStyles.outfit(
                 fontSize: 14,

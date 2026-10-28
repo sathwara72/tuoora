@@ -25,11 +25,17 @@ class StudentsRegistryScreen extends StatefulWidget {
 class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
   final controller = Get.find<InstituteController>();
   final _scrollController = ScrollController();
+  Worker? _fillWorker;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    // The grid shows many students per screen, so a page may not fill it;
+    // with nothing to scroll, load the next page straight away.
+    _fillWorker = ever(controller.students, (_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _fillViewport());
+    });
     // Fetch on every screen creation so the user sees fresh data each
     // time the registry is opened (not just the first time).
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -37,8 +43,18 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
     });
   }
 
+  void _fillViewport() {
+    if (!mounted || !_scrollController.hasClients) return;
+    if (_scrollController.position.maxScrollExtent <= 0 &&
+        !controller.isLoadingStudents.value &&
+        !controller.isLoadMore.value) {
+      controller.loadMoreStudents();
+    }
+  }
+
   @override
   void dispose() {
+    _fillWorker?.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -100,37 +116,53 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
                         emptyIcon: isSearching
                             ? Icons.search_off_rounded
                             : Icons.people_outline_rounded,
-                        child: ListView.builder(
+                        // 3-column grid, same card style as Staff.
+                        child: CustomScrollView(
                           controller: _scrollController,
-                          padding: AppSpacing.x16.add(
-                            const EdgeInsets.only(bottom: 96),
-                          ),
                           physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount:
-                              controller.students.length +
-                              (controller.isLoadMore.value ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == controller.students.length) {
-                              return const Center(
+                          slivers: [
+                            SliverPadding(
+                              padding: AppSpacing.x16.add(
+                                const EdgeInsets.only(bottom: 16),
+                              ),
+                              sliver: SliverGrid(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 3,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 0.8,
+                                    ),
+                                delegate: SliverChildBuilderDelegate((
+                                  context,
+                                  index,
+                                ) {
+                                  final student = controller.students[index];
+                                  return _buildStudentCard(
+                                    name: student.name,
+                                    id: student.id,
+                                    imageUrl: student.imageUrl,
+                                  );
+                                }, childCount: controller.students.length),
+                              ),
+                            ),
+                            if (controller.isLoadMore.value)
+                              const SliverToBoxAdapter(
                                 child: Padding(
                                   padding: EdgeInsets.all(8.0),
-                                  child: CommonLoading(
-                                    size: 20,
-                                    strokeWidth: 2,
+                                  child: Center(
+                                    child: CommonLoading(
+                                      size: 20,
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 ),
-                              );
-                            }
-                            final student = controller.students[index];
-                            return Padding(
-                              padding: AppSpacing.bottom16,
-                              child: _buildStudentCard(
-                                name: student.name,
-                                id: student.id,
-                                imageUrl: student.imageUrl,
                               ),
-                            );
-                          },
+                            // Space for the add button.
+                            const SliverToBoxAdapter(
+                              child: SizedBox(height: 96),
+                            ),
+                          ],
                         ),
                       );
                     }),
@@ -183,32 +215,30 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+          border: Border.all(color: AppColors.background),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              offset: const Offset(0, AppSpacing.s4),
-              blurRadius: 16,
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildStudentAvatar(imageUrl, name),
-            AppSpacing.h16,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: AppTextStyles.outfit(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ],
+            AppSpacing.v8,
+            Text(
+              name,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.outfit(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+                height: 1.2,
               ),
             ),
           ],
@@ -222,8 +252,8 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
         imageUrl.startsWith('http') &&
         !imageUrl.contains('ui-avatars.com')) {
       return Container(
-        width: AppSpacing.s64,
-        height: AppSpacing.s64,
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
           color: AppColors.primaryBrandLight,
           shape: BoxShape.circle,
@@ -235,18 +265,22 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
       );
     }
 
-    final names = name.trim().split(' ');
+    final names = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((n) => n.isNotEmpty)
+        .toList();
     String initials = '';
     if (names.isNotEmpty) {
-      initials += names[0][0].toUpperCase();
+      initials += names.first[0].toUpperCase();
       if (names.length > 1) {
-        initials += names[names.length - 1][0].toUpperCase();
+        initials += names.last[0].toUpperCase();
       }
     }
 
     return Container(
-      width: AppSpacing.s64,
-      height: AppSpacing.s64,
+      width: 56,
+      height: 56,
       decoration: const BoxDecoration(
         color: AppColors.primaryBrandLight,
         shape: BoxShape.circle,
@@ -255,7 +289,7 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
         child: Text(
           initials,
           style: AppTextStyles.outfit(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.primaryBrand,
           ),

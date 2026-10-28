@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_images.dart';
@@ -85,7 +86,7 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
           ],
         ),
       ),
-      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS || !_canEdit
           ? null
           : FloatingActionButton(
               onPressed: () => _onAddScheduleTap(),
@@ -96,6 +97,10 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
             ),
     );
   }
+
+  /// Add / edit / delete lectures needs the TimeTable permission (also
+  /// reached from Batch Details, not only the dashboard tile).
+  bool get _canEdit => Get.find<AuthService>().can('academics.timetable');
 
   void _onAddScheduleTap() {
     SubscriptionGuard.runAddAction(() {
@@ -292,10 +297,30 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
         emptyTitle: 'No classes scheduled',
         emptySubtitle: emptySubtitle,
         emptyIcon: Icons.calendar_view_week_rounded,
+        // Two cards per row; both cards in a row share the taller height.
         child: Padding(
           padding: AppSpacing.x16,
           child: Column(
-            children: slots.map((slot) => _buildSlotCard(slot)).toList(),
+            children: [
+              for (var i = 0; i < slots.length; i += 2)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: _buildSlotCard(slots[i])),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: i + 1 < slots.length
+                              ? _buildSlotCard(slots[i + 1])
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       );
@@ -308,10 +333,10 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
         : controller.formatTimeRange(slot.startTime, slot.endTime);
     final dayText = _getDayBadgeText(slot.dayOfWeek);
     final isCancelled = slot.status.toLowerCase() == 'cancelled';
+    final accent = isCancelled ? const Color(0xFFE11D48) : AppColors.primaryBrand;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
@@ -329,101 +354,73 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Day badge (MON, TUE, etc.), Cancelled badge & Action icons (Edit & Delete)
+          // Day badge + edit / delete
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isCancelled ? const Color(0xFFFFE4E6) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      dayText,
-                      style: AppTextStyles.outfit(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isCancelled ? const Color(0xFFBE123C) : const Color(0xFF475569),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isCancelled ? const Color(0xFFFFE4E6) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  dayText,
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: isCancelled ? const Color(0xFFBE123C) : const Color(0xFF475569),
+                    letterSpacing: 0.5,
                   ),
-                  if (isCancelled) ...[
-                    AppSpacing.h8,
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFE4E6),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFFDA4AF)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Color(0xFFF43F5E),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'CANCELLED',
-                            style: AppTextStyles.outfit(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFFBE123C),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      controller.startEdit(slot, isLocked: true);
-                      Get.toNamed(
-                        AppRoutes.instituteAddTimetableSlot,
-                        arguments: {
-                          'slot': slot,
-                          'batch': scopedBatch ?? controller.currentBatch.value,
-                        },
-                      );
+              const Spacer(),
+              if (_canEdit) ...[
+              _slotAction(
+                AppImages.icEdit,
+                () {
+                  controller.startEdit(slot, isLocked: true);
+                  Get.toNamed(
+                    AppRoutes.instituteAddTimetableSlot,
+                    arguments: {
+                      'slot': slot,
+                      'batch': scopedBatch ?? controller.currentBatch.value,
                     },
-                    icon: const AppActionIcon(asset: AppImages.icEdit),
-                    constraints: const BoxConstraints(),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.all(4),
-                  ),
-                  AppSpacing.h8,
-                  IconButton(
-                    onPressed: () => controller.deleteSlotWithConfirmation(slot),
-                    icon: const AppActionIcon(asset: AppImages.icDelete),
-                    constraints: const BoxConstraints(),
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.all(4),
-                  ),
-                ],
+                  );
+                },
               ),
+              const SizedBox(width: 4),
+              _slotAction(
+                AppImages.icDelete,
+                () => controller.deleteSlotWithConfirmation(slot),
+              ),
+              ],
             ],
           ),
-          AppSpacing.v8,
+          if (isCancelled) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFE4E6),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFFDA4AF)),
+              ),
+              child: Text(
+                'CANCELLED',
+                style: AppTextStyles.outfit(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFFBE123C),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
 
-          // Row 2: Timing pill
+          // Timing pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: isCancelled ? const Color(0xFFFFF1F2) : const Color(0xFFFFF4EC),
               borderRadius: BorderRadius.circular(20),
@@ -434,30 +431,32 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.access_time_rounded,
-                  size: 13,
-                  color: isCancelled ? const Color(0xFFE11D48) : AppColors.primaryBrand,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  timeDisplay,
-                  style: AppTextStyles.outfit(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: isCancelled ? const Color(0xFFE11D48) : AppColors.primaryBrand,
+                Icon(Icons.access_time_rounded, size: 12, color: accent),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    timeDisplay,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          AppSpacing.v8,
+          const SizedBox(height: 8),
 
-          // Row 3: Subject Name
+          // Subject
           Text(
             slot.subject,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: AppTextStyles.outfit(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w700,
               color: isCancelled ? const Color(0xFF64748B) : const Color(0xFF0F172A),
               decoration: isCancelled ? TextDecoration.lineThrough : null,
@@ -467,15 +466,17 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
           if (scopedBatch == null && slot.batchName != null) ...[
             AppSpacing.v4,
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 slot.batchName!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.outfit(
-                  fontSize: 11,
+                  fontSize: 10,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF64748B),
                 ),
@@ -483,75 +484,56 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
             ),
           ],
 
-          AppSpacing.v8,
-          // Row 4: Divider
+          // Pushes teacher / room to the bottom so cards in a row line up.
+          const Spacer(),
+          const SizedBox(height: 8),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
-          AppSpacing.v8,
-
-          // Row 5: Faculty info
-          Row(
-            children: [
-              const Icon(
-                Icons.person_outline_rounded,
-                size: 16,
-                color: Color(0xFF94A3B8),
-              ),
-              AppSpacing.h8,
-              Expanded(
-                child: Text(
-                  (slot.staffName != null && slot.staffName!.isNotEmpty)
-                      ? slot.staffName!
-                      : 'Teacher Not Assigned',
-                  style: AppTextStyles.outfit(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF334155),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          const SizedBox(height: 8),
+          _slotInfo(
+            Icons.person_outline_rounded,
+            (slot.staffName != null && slot.staffName!.isNotEmpty)
+                ? slot.staffName!
+                : 'Teacher Not Assigned',
           ),
           AppSpacing.v4,
-
-          // Row 6: Room info
-          Row(
-            children: [
-              const Icon(
-                Icons.meeting_room_outlined,
-                size: 16,
-                color: Color(0xFF94A3B8),
-              ),
-              AppSpacing.h8,
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: AppTextStyles.outfit(
-                      fontSize: 13,
-                      color: const Color(0xFF64748B),
-                    ),
-                    children: [
-                      const TextSpan(text: 'Room: '),
-                      TextSpan(
-                        text: (slot.roomNo != null && slot.roomNo!.isNotEmpty)
-                            ? slot.roomNo!
-                            : 'N/A',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          _slotInfo(
+            Icons.meeting_room_outlined,
+            'Room: ${(slot.roomNo != null && slot.roomNo!.isNotEmpty) ? slot.roomNo! : 'N/A'}',
           ),
         ],
       ),
+    );
+  }
+
+  Widget _slotAction(String asset, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: AppActionIcon(asset: asset, size: 18),
+      ),
+    );
+  }
+
+  Widget _slotInfo(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: const Color(0xFF94A3B8)),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.outfit(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF334155),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -148,6 +148,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       ),
                     ],
                   ),
+                  // Amount hidden (title only, like the web) without
+                  // the "Display Total / Pending Fees" permission.
+                  if (controller.canViewFeeTotals) ...[
                   const SizedBox(height: 8),
                   Text(
                     '₹${controller.totalCollected.value.toStringAsFixed(0)}',
@@ -159,6 +162,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       color: isCollectedTab ? AppColors.white : AppColors.textPrimary,
                     ),
                   ),
+                  ],
                 ],
               ),
             ),
@@ -254,6 +258,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       ),
                     ],
                   ),
+                  // Amount hidden (title only, like the web) without
+                  // the "Display Total / Pending Fees" permission.
+                  if (controller.canViewFeeTotals) ...[
                   const SizedBox(height: 8),
                   Text(
                     '₹${controller.totalPending.value.toStringAsFixed(0)}',
@@ -265,6 +272,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                       color: isPendingTab ? AppColors.white : const Color(0xFFB45309),
                     ),
                   ),
+                  ],
                 ],
               ),
             ),

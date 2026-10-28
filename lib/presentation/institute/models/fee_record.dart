@@ -182,6 +182,10 @@ class FeeListResponse {
   final double totalPending;
   final int pendingStudentsCount;
 
+  /// False when the server withholds the institute-wide totals (a sub-access
+  /// user without `fees.totals`); the amounts are then null, not zero.
+  final bool canViewTotals;
+
   FeeListResponse({
     required this.items,
     required this.total,
@@ -192,6 +196,7 @@ class FeeListResponse {
     this.totalCollected = 0.0,
     this.totalPending = 0.0,
     this.pendingStudentsCount = 0,
+    this.canViewTotals = true,
   });
 
   factory FeeListResponse.fromJson(Map<String, dynamic> json) {
@@ -209,6 +214,7 @@ class FeeListResponse {
       totalCollected: FeeRecord.safeDouble(json['total_collected']),
       totalPending: FeeRecord.safeDouble(json['total_pending']),
       pendingStudentsCount: FeeRecord.safeInt(json['pending_students_count']),
+      canViewTotals: json['can_view_totals'] != false,
     );
   }
 }
@@ -308,11 +314,13 @@ class PendingFeesResponse {
   final List<PendingFeeStudent> items;
   final double totalPending;
   final int pendingStudentsCount;
+  final bool canViewTotals;
 
   PendingFeesResponse({
     required this.items,
     required this.totalPending,
     required this.pendingStudentsCount,
+    this.canViewTotals = true,
   });
 
   factory PendingFeesResponse.fromJson(Map<String, dynamic> json) {
@@ -323,6 +331,7 @@ class PendingFeesResponse {
           [],
       totalPending: FeeRecord.safeDouble(json['total_pending']),
       pendingStudentsCount: FeeRecord.safeInt(json['pending_students_count']),
+      canViewTotals: json['can_view_totals'] != false,
     );
   }
 }
