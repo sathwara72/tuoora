@@ -33,7 +33,10 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                     color: AppColors.instBrandOrange,
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -81,7 +84,9 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
       final modeTitle = isDedicated
           ? 'Dedicated School WhatsApp Active'
           : 'Automated WhatsApp Messaging Active';
-      final modeBadge = isDedicated ? 'Direct Meta Billing' : 'Tuoora Official Gateway';
+      final modeBadge = isDedicated
+          ? 'Direct Meta Billing'
+          : 'Tuoora Official Gateway';
       final modeDesc = isDedicated
           ? 'All reminders & receipts are sent from your school\'s registered Meta WhatsApp number.'
           : 'Reminders & receipts are delivered via Tuoora\'s Meta-verified official number using wallet credits.';
@@ -92,7 +97,9 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
           color: isDedicated ? AppColors.violetSoft : AppColors.successBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDedicated ? AppColors.violet.withValues(alpha: 0.2) : AppColors.successGreen.withValues(alpha: 0.25),
+            color: isDedicated
+                ? AppColors.violet.withValues(alpha: 0.2)
+                : AppColors.successGreen.withValues(alpha: 0.25),
           ),
         ),
         child: Row(
@@ -129,9 +136,14 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 2.5,
+                        ),
                         decoration: BoxDecoration(
-                          color: isDedicated ? AppColors.violet.withValues(alpha: 0.15) : AppColors.successGreen.withValues(alpha: 0.15),
+                          color: isDedicated
+                              ? AppColors.violet.withValues(alpha: 0.15)
+                              : AppColors.successGreen.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -139,7 +151,9 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                           style: AppTextStyles.outfit(
                             fontSize: 9,
                             fontWeight: FontWeight.w800,
-                            color: isDedicated ? AppColors.violet : AppColors.greenText,
+                            color: isDedicated
+                                ? AppColors.violet
+                                : AppColors.greenText,
                           ),
                         ),
                       ),
@@ -227,7 +241,10 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                   ],
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(20),
@@ -270,19 +287,29 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
             if (isLow) ...[
               const SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 14),
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.white,
+                      size: 14,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         'Credits are low (<20). Top up now to avoid interrupted reminders.',
-                        style: AppTextStyles.outfit(fontSize: 10, color: Colors.white),
+                        style: AppTextStyles.outfit(
+                          fontSize: 10,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -434,7 +461,10 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                 backgroundColor: AppColors.instBrandOrange,
                 foregroundColor: AppColors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -443,7 +473,10 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                   ? const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : Text(
                       pack.priceFormatted,
@@ -539,16 +572,23 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
               width: double.infinity,
               height: 42,
               child: ElevatedButton.icon(
-                onPressed: controller.isSendingTest.value ? null : () => controller.sendTestMessage(),
+                onPressed: controller.isSendingTest.value
+                    ? null
+                    : () => controller.sendTestMessage(),
                 icon: controller.isSendingTest.value
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.send_rounded, size: 16),
                 label: Text(
-                  controller.isSendingTest.value ? 'Sending...' : 'Send Live Test',
+                  controller.isSendingTest.value
+                      ? 'Sending...'
+                      : 'Send Live Test',
                   style: AppTextStyles.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -590,26 +630,29 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Recent WhatsApp Delivery Logs',
-                      style: AppTextStyles.outfit(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Recent WhatsApp Delivery Logs',
+                        style: AppTextStyles.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Audit trail of outbound WhatsApp messages',
-                      style: AppTextStyles.outfit(
-                        fontSize: 10,
-                        color: AppColors.textSecondary,
+                      Text(
+                        'Audit trail of outbound WhatsApp messages',
+                        style: AppTextStyles.outfit(
+                          fontSize: 10,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '${logs.length} Total',
                   style: AppTextStyles.outfit(
@@ -650,7 +693,9 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                     decoration: BoxDecoration(
                       color: AppColors.surfaceBg,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.fieldBorder.withValues(alpha: 0.6)),
+                      border: Border.all(
+                        color: AppColors.fieldBorder.withValues(alpha: 0.6),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -671,9 +716,14 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSent ? AppColors.successBg : AppColors.errorBg,
+                                color: isSent
+                                    ? AppColors.successBg
+                                    : AppColors.errorBg,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -681,7 +731,9 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                                 style: AppTextStyles.outfit(
                                   fontSize: 8.5,
                                   fontWeight: FontWeight.w900,
-                                  color: isSent ? AppColors.successGreen : AppColors.errorRed,
+                                  color: isSent
+                                      ? AppColors.successGreen
+                                      : AppColors.errorRed,
                                 ),
                               ),
                             ),
@@ -712,15 +764,21 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              log.metaMessageId != null && log.metaMessageId!.isNotEmpty
-                                  ? 'ID: ${log.metaMessageId}'
-                                  : 'No Meta ID',
-                              style: AppTextStyles.outfit(
-                                fontSize: 9,
-                                color: AppColors.textTertiary,
+                            Expanded(
+                              child: Text(
+                                log.metaMessageId != null &&
+                                        log.metaMessageId!.isNotEmpty
+                                    ? 'ID: ${log.metaMessageId}'
+                                    : 'No Meta ID',
+                                style: AppTextStyles.outfit(
+                                  fontSize: 9,
+                                  color: AppColors.textTertiary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            const SizedBox(width: 8),
                             Text(
                               log.sentAt ?? '—',
                               style: AppTextStyles.outfit(
@@ -800,7 +858,9 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                       ),
                     ),
                     Icon(
-                      isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                      isExpanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
                       color: AppColors.textTertiary,
                     ),
                   ],
@@ -858,7 +918,8 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                         ),
                         ToggleSwitch(
                           value: controller.isActiveMeta.value,
-                          onChanged: (val) => controller.isActiveMeta.value = val,
+                          onChanged: (val) =>
+                              controller.isActiveMeta.value = val,
                         ),
                       ],
                     ),
@@ -1029,10 +1090,7 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: AppTextStyles.outfit(
-          fontSize: 13,
-          color: AppColors.textPrimary,
-        ),
+        style: AppTextStyles.outfit(fontSize: 13, color: AppColors.textPrimary),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: AppTextStyles.outfit(
