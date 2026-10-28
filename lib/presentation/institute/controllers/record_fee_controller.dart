@@ -1,6 +1,7 @@
 import 'package:tuoora/core/widgets/app_pickers.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/data/models/student_model.dart';
+import 'package:tuoora/presentation/institute/models/fee_record.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -122,8 +123,32 @@ class RecordFeeController extends GetxController {
     }
   }
 
+  final feeHistory = <FeePayment>[].obs;
+  final isHistoryLoading = false.obs;
+  final historyError = RxnString();
+
+  /// The student has paid at least once, so there is history to show.
+  bool get hasPaidBefore => (selectedStudent.value?.totalPaid ?? 0) > 0;
+
+  Future<void> loadFeeHistory() async {
+    final student = selectedStudent.value;
+    if (student == null) return;
+    try {
+      isHistoryLoading.value = true;
+      historyError.value = null;
+      feeHistory.assignAll(
+        await _instituteRepository.getStudentPayments(student.id),
+      );
+    } catch (e) {
+      historyError.value = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      isHistoryLoading.value = false;
+    }
+  }
+
   void selectStudent(Student student) {
     selectedStudent.value = student;
+    feeHistory.clear();
     isStudentSelected.value = true;
     searchQuery.value = '';
     studentError.value = null;

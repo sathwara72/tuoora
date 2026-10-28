@@ -75,7 +75,8 @@ class ComposeNotificationController extends GetxController {
 
     try {
       isSending.value = true;
-      
+      String successMessage = 'Notification sent successfully';
+
       if (sendPush.value) {
         final apiClient = Get.find<ApiClient>();
         final response = await apiClient.post(
@@ -92,6 +93,24 @@ class ComposeNotificationController extends GetxController {
         if (response.status.hasError) {
           throw Exception(response.body?['message'] ?? 'Failed to send push notification');
         }
+
+        // Staff also get email/WhatsApp copies (when ticked for Internal
+        // Staff Notices), so a send can succeed with no app installs.
+        final body = response.body;
+        final data = body is Map ? body['data'] : null;
+        final reached = data is Map
+            ? int.tryParse(data['staff_email_whatsapp']?.toString() ?? '')
+            : null;
+        final serverMessage = body is Map ? body['message']?.toString() : null;
+        if (serverMessage != null && serverMessage.isNotEmpty) {
+          successMessage = serverMessage;
+        }
+        if (reached != null &&
+            reached > 0 &&
+            !successMessage.toLowerCase().contains('email')) {
+          successMessage +=
+              ' Email/WhatsApp copy sent to $reached staff member(s).';
+        }
       }
 
       if (sendWhatsApp.value) {
@@ -104,10 +123,10 @@ class ComposeNotificationController extends GetxController {
         }
       }
 
-      AppSnackBar.success('Notification sent successfully');
+      AppSnackBar.success(successMessage);
       Get.back(result: true); // Go back and refresh list
     } catch (e) {
-      AppSnackBar.error(e.toString());
+      AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
     } finally {
       isSending.value = false;
     }

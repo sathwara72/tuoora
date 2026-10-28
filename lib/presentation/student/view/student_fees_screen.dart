@@ -170,14 +170,20 @@ class StudentFeesScreen extends GetView<FeesController> {
                           const SizedBox(height: AppSpacing.s12),
                         ],
                         _SummaryCard(summary: controller.summary.value),
-                        const SizedBox(height: AppSpacing.s12),
-                        _PayNowButton(
-                          pendingAmount:
-                              controller.summary.value.pendingInRupees,
-                          onTap: controller.summary.value.pendingInRupees > 0
-                              ? controller.openPayFees
-                              : null,
-                        ),
+                        // pay_url is null when nothing is due: hide Pay Now.
+                        if (!controller.summary.value.hasPayUrlField ||
+                            controller.summary.value.payUrl != null) ...[
+                          const SizedBox(height: AppSpacing.s12),
+                          _PayNowButton(
+                            pendingAmount:
+                                controller.summary.value.pendingInRupees,
+                            onTap:
+                                controller.summary.value.payUrl != null ||
+                                    controller.summary.value.pendingInRupees > 0
+                                ? controller.openPayFees
+                                : null,
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.s24),
                         const StudentSectionHeader(
                           title: AppStrings.studentFeesStatementsTitle,

@@ -4,6 +4,7 @@ import 'package:tuoora/core/constants/api_constants.dart';
 import 'package:tuoora/data/models/student_model.dart';
 import 'package:tuoora/data/repositories_impl/student_repository_impl.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/data/models/subject_performance_model.dart';
 
 class StudentRepository implements StudentRepositoryImpl {
   final ApiClient _apiClient;
@@ -103,6 +104,25 @@ class StudentRepository implements StudentRepositoryImpl {
       throw Exception('Failed to get student: ${response.statusText}');
     }
     return Student.fromJson(response.body['data']);
+  }
+
+  /// Subject-wise exam performance, part of the student detail response.
+  @override
+  Future<SubjectPerformance> getSubjectPerformance(
+    dynamic id, {
+    dynamic batchId,
+  }) async {
+    final response = await _apiClient.get(
+      '${ApiConstants.instituteStudents}/$id',
+      query: batchId != null ? {'batch_id': batchId.toString()} : null,
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to load subject performance');
+    }
+    final data = response.body is Map ? response.body['data'] : null;
+    return SubjectPerformance.fromJson(
+      data is Map ? data['subject_performance'] : null,
+    );
   }
 
   @override

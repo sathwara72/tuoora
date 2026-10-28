@@ -1,5 +1,3 @@
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -12,6 +10,7 @@ import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/widgets/app_whatsapp_icon.dart';
+import 'package:tuoora/core/utils/date_format_utils.dart';
 
 class InstituteSettingsScreen extends StatelessWidget {
   const InstituteSettingsScreen({super.key});
@@ -535,25 +534,8 @@ class InstituteSettingsScreen extends StatelessWidget {
   }
 
   String _formatTimeAgo(String? dateTimeStr) {
-    if (dateTimeStr == null || dateTimeStr.isEmpty) return '1 second ago';
-    try {
-      final dateTime = DateTime.parse(dateTimeStr);
-      final difference = DateTime.now().difference(dateTime);
-      if (difference.inSeconds < 60) {
-        return '1 second ago';
-      } else if (difference.inMinutes < 60) {
-        final m = difference.inMinutes;
-        return '$m ${m == 1 ? 'minute' : 'minutes'} ago';
-      } else if (difference.inHours < 24) {
-        final h = difference.inHours;
-        return '$h ${h == 1 ? 'hour' : 'hours'} ago';
-      } else {
-        final d = difference.inDays;
-        return '$d ${d == 1 ? 'day' : 'days'} ago';
-      }
-    } catch (_) {
-      return 'recently';
-    }
+    final label = DateFormatUtils.relativeTimeFromString(dateTimeStr);
+    return label.isEmpty ? 'recently' : label;
   }
 
   void _confirmLogoutSession(

@@ -39,6 +39,10 @@ class InstituteStudentController extends GetxController {
   final optionalPhoneControllers = <TextEditingController>[].obs;
   final optionalPhoneErrors = <RxnString>[].obs;
 
+  /// Which number gets WhatsApp: -1 = default (parent's number, else main
+  /// phone), 0 = main phone, 1..3 = optional phone at index - 1.
+  final whatsappChoice = (-1).obs;
+
   final nameError = RxnString();
   final parentNameError = RxnString();
   final phoneError = RxnString();
@@ -128,6 +132,7 @@ class InstituteStudentController extends GetxController {
     }
     optionalPhoneControllers.clear();
     optionalPhoneErrors.clear();
+    whatsappChoice.value = -1;
     selectedImagePath.value = null;
     selectedBatchId.value = null;
     selectedProfileBatchId.value = null;
@@ -257,6 +262,7 @@ class InstituteStudentController extends GetxController {
     for (var p in student.optionalPhones) {
       addOptionalPhone(p);
     }
+    whatsappChoice.value = _choiceForNumber(student.whatsappPhone);
 
     validateForm();
   }
@@ -278,6 +284,12 @@ class InstituteStudentController extends GetxController {
   void removeOptionalPhone(int index) {
     if (index >= 0 && index < optionalPhoneControllers.length) {
       final ctrl = optionalPhoneControllers.removeAt(index);
+      final removedChoice = index + 1;
+      if (whatsappChoice.value == removedChoice) {
+        whatsappChoice.value = -1;
+      } else if (whatsappChoice.value > removedChoice) {
+        whatsappChoice.value--;
+      }
       if (index < optionalPhoneErrors.length) {
         optionalPhoneErrors.removeAt(index);
       }
@@ -286,6 +298,36 @@ class InstituteStudentController extends GetxController {
       });
       validateForm();
     }
+  }
+
+  int _choiceForNumber(String? number) {
+    final digits = (number ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return -1;
+    if (_digits(phoneController.text) == digits) return 0;
+    for (var i = 0; i < optionalPhoneControllers.length; i++) {
+      if (_digits(optionalPhoneControllers[i].text) == digits) return i + 1;
+    }
+    return -1;
+  }
+
+  String _digits(String v) => v.replaceAll(RegExp(r'[^0-9]'), '');
+
+  /// Tapping the selected number again goes back to the default.
+  void toggleWhatsappChoice(int choice) {
+    whatsappChoice.value = whatsappChoice.value == choice ? -1 : choice;
+  }
+
+  /// The chosen WhatsApp number, or '' for the default. Sent as
+  /// `whatsapp_phone`; the server stores '' as null (default).
+  String get _selectedWhatsappPhone {
+    final choice = whatsappChoice.value;
+    String number = '';
+    if (choice == 0) {
+      number = _digits(phoneController.text);
+    } else if (choice > 0 && choice <= optionalPhoneControllers.length) {
+      number = _digits(optionalPhoneControllers[choice - 1].text);
+    }
+    return number.length == 10 ? number : '';
   }
 
   void setGrade(String grade) {
@@ -420,6 +462,7 @@ class InstituteStudentController extends GetxController {
         if (schoolNameController.text.trim().isNotEmpty)
           'school_name': schoolNameController.text.trim(),
         'optional_phones': cleanedOptionalPhones,
+        'whatsapp_phone': _selectedWhatsappPhone,
         'guardian_name': parentNameController.text,
         'dob': dobController.text,
         if (selectedBatchId.value != null) 'batch_id': selectedBatchId.value,

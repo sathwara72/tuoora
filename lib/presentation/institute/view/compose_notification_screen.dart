@@ -336,6 +336,22 @@ class ComposeNotificationScreen extends GetView<ComposeNotificationController> {
             ],
           ),
         ),
+        Obx(() {
+          if (controller.selectedTarget.value != 'all_staff') {
+            return const SizedBox.shrink();
+          }
+          return Padding(
+            padding: const EdgeInsets.only(top: 12, left: 4, right: 4),
+            child: Text(
+              'Staff also get email and WhatsApp copies when those are ticked '
+              'for Internal Staff Notices in Notification Preferences.',
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          );
+        }),
       ],
     );
   }

@@ -5,6 +5,7 @@ import 'package:tuoora/core/api/api_client.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/services/download_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'package:tuoora/core/utils/url_launcher_utils.dart';
 import 'package:tuoora/data/repositories/student_fees_repository.dart';
 import 'package:tuoora/data/repositories/student_institute_repository.dart';
 import 'package:tuoora/presentation/student/models/fee_model.dart';
@@ -178,6 +179,11 @@ class FeesController extends GetxController {
   }
 
   void openPayFees() {
+    final url = summary.value.payUrl;
+    if (url != null) {
+      UrlLauncherUtils.openExternal(url);
+      return;
+    }
     Get.toNamed(AppRoutes.studentPayFees);
   }
 

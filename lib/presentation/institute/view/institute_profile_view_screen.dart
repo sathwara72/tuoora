@@ -89,6 +89,8 @@ class InstituteProfileViewScreen extends StatelessWidget {
                         _buildSettingsNavigationCard(),
                         AppSpacing.v16,
                         _buildNotificationPreferencesNavigationCard(),
+                        AppSpacing.v16,
+                        _buildAccessShareNavigationCard(),
                         if (!Platform.isIOS) ...[
                           AppSpacing.v16,
                           _buildWhatsAppNavigationCard(),
@@ -995,6 +997,62 @@ class InstituteProfileViewScreen extends StatelessWidget {
                     ),
                     Text(
                       'Toggle WhatsApp, Push & Email per campus module',
+                      style: AppTextStyles.outfit(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccessShareNavigationCard() {
+    return _card(
+      child: InkWell(
+        onTap: () => Get.toNamed(AppRoutes.instituteSubAccess),
+        borderRadius: BorderRadius.circular(6),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+          child: Row(
+            children: [
+              Container(
+                padding: AppSpacing.all8,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBrand.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.admin_panel_settings_rounded,
+                  size: 18,
+                  color: AppColors.primaryBrand,
+                ),
+              ),
+              AppSpacing.h12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Access Share',
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Team logins & permissions',
                       style: AppTextStyles.outfit(
                         fontSize: 11,
                         color: AppColors.textMuted,

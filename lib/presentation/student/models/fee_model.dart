@@ -84,12 +84,22 @@ class FeeSummary {
   final int billedMonths;
   final String pendingMonthsLabel;
 
+  /// Browser "Pay Now" page (pending amount, UPI button, QR; valid 2 hours).
+  /// Null when nothing is due.
+  final String? payUrl;
+
+  /// Whether the server sent `pay_url` at all; older servers don't, and the
+  /// app then falls back to its in-app pay screen.
+  final bool hasPayUrlField;
+
   const FeeSummary({
     required this.totalInRupees,
     required this.paidInRupees,
     required this.pendingInRupees,
     required this.billedMonths,
     required this.pendingMonthsLabel,
+    this.payUrl,
+    this.hasPayUrlField = false,
   });
 
   double get paidFraction =>
@@ -109,6 +119,10 @@ class FeeSummary {
       pendingInRupees: asInt(json['due_fees']),
       billedMonths: billedMonths,
       pendingMonthsLabel: pendingMonthsLabel,
+      payUrl: (json['pay_url']?.toString().isEmpty ?? true)
+          ? null
+          : json['pay_url'].toString(),
+      hasPayUrlField: json.containsKey('pay_url'),
     );
   }
 }

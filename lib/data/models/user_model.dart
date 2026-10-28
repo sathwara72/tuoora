@@ -27,6 +27,12 @@ class User {
   final String? profileImage;
   final List<TeacherInstituteInfo> institutes;
 
+  /// Signed in as an institute sub-access (Access Share) user rather than
+  /// the owner. Only [permissions] are allowed then.
+  final bool isSubAccess;
+  final String? subAccessName;
+  final List<String> permissions;
+
   bool get isEmailVerified =>
       emailVerifiedAt != null && emailVerifiedAt!.isNotEmpty;
 
@@ -60,6 +66,9 @@ class User {
     this.mustChangePassword = false,
     this.profileImage,
     this.institutes = const [],
+    this.isSubAccess = false,
+    this.subAccessName,
+    this.permissions = const [],
   });
 
   factory User.fromJson(
@@ -104,6 +113,12 @@ class User {
       );
     }
 
+    final subAccess = json['sub_access'] is Map ? json['sub_access'] as Map : null;
+    final isSubAccess = json['is_sub_access'] == true ||
+        json['is_sub_access'] == 1 ||
+        json['is_sub_access'] == '1';
+    final rawPermissions = json['permissions'] ?? subAccess?['permissions'];
+
     return User(
       id: json['id'],
       name: json['name'] ?? json['full_name'] ?? '',
@@ -135,6 +150,13 @@ class User {
           json['avatar_url'] ??
           json['avatar'],
       institutes: parsedInstitutes,
+      isSubAccess: isSubAccess,
+      subAccessName: isSubAccess
+          ? (json['sub_access_name'] ?? subAccess?['name'])?.toString()
+          : null,
+      permissions: isSubAccess && rawPermissions is List
+          ? rawPermissions.map((e) => e.toString()).toList()
+          : const [],
     );
   }
 
@@ -175,6 +197,9 @@ class User {
       'must_change_password': mustChangePassword,
       'profile_url': profileImage,
       'institutes': institutes.map((e) => e.toJson()).toList(),
+      'is_sub_access': isSubAccess,
+      'sub_access_name': subAccessName,
+      'permissions': permissions,
     };
   }
 
@@ -215,6 +240,9 @@ class User {
       mustChangePassword: mustChangePassword ?? this.mustChangePassword,
       profileImage: profileImage ?? this.profileImage,
       institutes: institutes ?? this.institutes,
+      isSubAccess: isSubAccess,
+      subAccessName: subAccessName,
+      permissions: permissions,
     );
   }
 }

@@ -19,6 +19,26 @@ class AuthService extends GetxService {
 
   Subscription? get subscription => _subscription.value;
 
+  /// Signed in as a sub-access (Access Share) user, not the owner.
+  bool get isSubAccess => _currentUser.value?.isSubAccess ?? false;
+
+  /// Whether the signed-in user may use [permission] (e.g. `fees.edit`).
+  /// Owners can do everything; `*` grants everything to a sub-access user.
+  bool can(String permission) {
+    final user = _currentUser.value;
+    if (user == null || !user.isSubAccess) return true;
+    return user.permissions.contains('*') ||
+        user.permissions.contains(permission);
+  }
+
+  /// Any permission in a module, e.g. `canModule('fees')` for `fees.*`.
+  bool canModule(String module) {
+    final user = _currentUser.value;
+    if (user == null || !user.isSubAccess) return true;
+    return user.permissions.contains('*') ||
+        user.permissions.any((p) => p.startsWith('$module.'));
+  }
+
   Future<AuthService> init() async {
     await GetStorage.init();
     _loadSession();

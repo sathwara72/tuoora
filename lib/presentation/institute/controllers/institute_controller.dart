@@ -49,6 +49,30 @@ class InstituteController extends GetxController {
   final downloadingReceiptIds = <int>{}.obs;
   bool isDownloadingReceipt(int id) => downloadingReceiptIds.contains(id);
 
+  /// `whatsapp` / `email` while that receipt share is being sent.
+  final sharingReceiptChannel = RxnString();
+
+  /// Sends the receipt to the student/parent on [channel] (`whatsapp` or
+  /// `email`). Nothing is sent automatically on payment; only this does.
+  Future<void> shareFeeReceipt(FeeRecord record, String channel) async {
+    if (sharingReceiptChannel.value != null) return;
+    // Prefer the payment id: the server matches payment ids first, so a fee
+    // id could hit an unrelated payment with the same number.
+    final id = record.latestPayment?.id ?? record.id;
+    try {
+      sharingReceiptChannel.value = channel;
+      final message = await _instituteRepository.shareReceipt(
+        id,
+        channel: channel,
+      );
+      AppSnackBar.success(message);
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      sharingReceiptChannel.value = null;
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();

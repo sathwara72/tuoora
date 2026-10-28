@@ -37,6 +37,8 @@ class ApiConstants {
   static String studentHomeworkAttachmentDownload(int id) =>
       '/student/homeworks/$id/attachment/download';
   static const String studentExams = '/student/exams';
+  static const String studentSubjectPerformance =
+      '/student/exams/subject-performance';
   static String studentExamDetail(int id) => '/student/exams/$id';
   static const String studentTimetable = '/student/timetable';
   static const String studentBirthdays = '/student/birthdays';
@@ -132,6 +134,28 @@ class ApiConstants {
   static const String razorpayVerifyPayment =
       '/institute/subscription/verify-payment';
 
+  // Access Share (sub-access users)
+  static const String instituteSubAccess = '/institute/sub-access';
+  static const String instituteSubAccessPermissions =
+      '/institute/sub-access/permissions';
+  static String instituteSubAccessDetail(int id) => '/institute/sub-access/$id';
+  static String instituteSubAccessToggleStatus(int id) =>
+      '/institute/sub-access/$id/toggle-status';
+  static String instituteSubAccessForceLogout(int id) =>
+      '/institute/sub-access/$id/force-logout';
+  static String instituteSubAccessResetPassword(int id) =>
+      '/institute/sub-access/$id/reset-password';
+
+  // Student fees: per-batch fee edits, payment history, receipt sharing
+  static String instituteApplyBatchFee(int batchId) =>
+      '/institute/batches/$batchId/apply-batch-fee';
+  static String instituteBatchStudentFee(int batchId, int studentId) =>
+      '/institute/batches/$batchId/students/$studentId/fee';
+  static String instituteStudentPayments(int studentId) =>
+      '/institute/payments/$studentId';
+  static String instituteShareReceipt(int id) =>
+      '/institute/fees/receipts/$id/share';
+
   static String removeStudentFromBatch(int batchId) =>
       '/institute/batches/$batchId/remove-student';
 
@@ -203,6 +227,11 @@ class ApiConstants {
   static String teacherTimetableDetail(int id) => '/teacher/timetable/$id';
   static const String teacherFees = '/teacher/fees';
   static const String teacherSalaries = '/teacher/salaries';
+  static const String teacherNotifications = '/teacher/notifications';
+  static String teacherNotificationRead(int id) =>
+      '/teacher/notifications/$id/read';
+  static const String teacherNotificationsMarkAllRead =
+      '/teacher/notifications/mark-all-read';
   static String teacherSalaryDownload(int id) =>
       '/teacher/salaries/$id/download';
   static const String teacherResources = '/teacher/resources';

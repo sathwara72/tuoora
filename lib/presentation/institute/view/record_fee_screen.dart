@@ -6,6 +6,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/institute/controllers/record_fee_controller.dart';
+import 'package:tuoora/presentation/institute/models/fee_record.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/app_search_field.dart';
@@ -190,7 +191,183 @@ class RecordFeeScreen extends GetView<RecordFeeController> {
             (controller.selectedStudent.value!.totalDue).toDouble(),
           ),
         ],
+        if (controller.isStudentSelected.value &&
+            controller.hasPaidBefore) ...[
+          AppSpacing.v8,
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _openFeeHistory,
+              icon: const Icon(
+                Icons.history_rounded,
+                size: 18,
+                color: AppColors.primaryBrand,
+              ),
+              label: Text(
+                'View Fees History',
+                style: AppTextStyles.outfit(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryBrand,
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  void _openFeeHistory() {
+    controller.loadFeeHistory();
+    Get.bottomSheet(
+      Container(
+        constraints: BoxConstraints(maxHeight: Get.height * 0.75),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderGrey,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            AppSpacing.v16,
+            Text(
+              'Fees History',
+              style: AppTextStyles.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Text(
+              controller.selectedStudent.value?.name ?? '',
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            AppSpacing.v12,
+            Flexible(
+              child: Obx(() {
+                if (controller.isHistoryLoading.value) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: CommonLoading(),
+                  );
+                }
+                if (controller.historyError.value != null) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Text(
+                      controller.historyError.value!,
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  );
+                }
+                final items = controller.feeHistory;
+                if (items.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
+                    child: Text(
+                      'No payments yet',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.outfit(
+                        fontSize: 13,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  separatorBuilder: (_, _) => Divider(
+                    height: 1,
+                    color: AppColors.borderGrey.withValues(alpha: 0.6),
+                  ),
+                  itemBuilder: (_, i) => _buildHistoryRow(items[i]),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _buildHistoryRow(FeePayment p) {
+    final date = p.paidAt ?? p.createdAt;
+    final method = p.paymentMethod.isEmpty ? AppStrings.instPaymentCash : p.paymentMethod;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: AppSpacing.all8,
+            decoration: BoxDecoration(
+              color: AppColors.successBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              method.toLowerCase() == 'cash'
+                  ? Icons.wallet
+                  : Icons.account_balance,
+              size: 18,
+              color: AppColors.greenText,
+            ),
+          ),
+          AppSpacing.h12,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  date != null
+                      ? DateFormat('dd MMM yyyy').format(date.toLocal())
+                      : '—',
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  method,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '₹${NumberFormat('#,##,###.##').format(p.amount)}',
+            style: AppTextStyles.outfit(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: AppColors.greenText,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -1679,6 +1679,73 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<BatchFeeApplyResult> applyBatchFeeToAll(int batchId) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteApplyBatchFee(batchId),
+      {},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to apply batch fee');
+    }
+    final body = response.body is Map
+        ? (response.body as Map).cast<String, dynamic>()
+        : <String, dynamic>{};
+    return BatchFeeApplyResult.fromJson(body);
+  }
+
+  @override
+  Future<String> updateStudentBatchFee({
+    required int batchId,
+    required int studentId,
+    required double fee,
+  }) async {
+    final response = await _apiClient.put(
+      ApiConstants.instituteBatchStudentFee(batchId, studentId),
+      {'fee': fee},
+    );
+    if (response.status.hasError) {
+      // 422 here carries a plain message (e.g. fee below the amount already
+      // paid), not field errors, so surface the message directly.
+      final body = response.body;
+      throw Exception(
+        (body is Map ? body['message'] : null) ?? 'Failed to update fee',
+      );
+    }
+    return response.body?['message']?.toString() ?? 'Fee updated';
+  }
+
+  @override
+  Future<List<FeePayment>> getStudentPayments(int studentId) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteStudentPayments(studentId),
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to load fee history');
+    }
+    final data = response.body is Map ? response.body['data'] : null;
+    if (data is! List) return <FeePayment>[];
+    return data
+        .whereType<Map>()
+        .map((e) => FeePayment.fromJson(e.cast<String, dynamic>()))
+        .toList();
+  }
+
+  @override
+  Future<String> shareReceipt(int id, {required String channel}) async {
+    final response = await _apiClient.post(
+      ApiConstants.instituteShareReceipt(id),
+      {'channel': channel},
+    );
+    if (response.status.hasError) {
+      final body = response.body;
+      throw Exception(
+        (body is Map ? body['message'] : null) ?? 'Failed to send receipt',
+      );
+    }
+    return response.body?['message']?.toString() ?? 'Receipt sent';
+  }
+
+  @override
   Future<void> deleteDeviceSession(int sessionId) async {
     final response = await _apiClient.delete(
       ApiConstants.instituteDeleteDeviceSession(sessionId),

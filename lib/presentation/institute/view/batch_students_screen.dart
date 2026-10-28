@@ -15,7 +15,10 @@ import 'package:tuoora/core/widgets/app_search_field.dart';
 import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/widgets/app_action_icon.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:tuoora/core/widgets/input_styles.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 
 class BatchStudentsScreen extends StatelessWidget {
   const BatchStudentsScreen({super.key});
@@ -55,7 +58,8 @@ class BatchStudentsScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: SubscriptionGuard.hideAddOnIOS
+      bottomNavigationBar: SubscriptionGuard.hideAddOnIOS ||
+              !Get.find<AuthService>().can('batches.edit')
           ? null
           : InstituteBottomButton(
               label: AppStrings.assignStudent,
@@ -296,10 +300,13 @@ class BatchStudentsScreen extends StatelessWidget {
                             color: AppColors.textMuted,
                           ),
                         ),
+                        AppSpacing.v4,
+                        _buildFeeRow(controller, bs),
                       ],
                     ),
                   ),
                 ),
+                if (Get.find<AuthService>().can('batches.edit'))
                 IconButton(
                   onPressed: () =>
                       _showRemoveConfirmation(context, controller, bs),
@@ -315,6 +322,106 @@ class BatchStudentsScreen extends StatelessWidget {
       );
     });
   }
+
+  Widget _buildFeeRow(BatchDetailsController controller, BatchStudent bs) {
+    final fee = controller.feeFor(bs.student);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Total Fee: ',
+          style: AppTextStyles.outfit(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        Text(
+          '₹${_formatAmount(fee)}',
+          style: AppTextStyles.outfit(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        // Owners always have fees.edit.
+        if (Get.find<AuthService>().can('fees.edit')) ...[
+        AppSpacing.h4,
+        InkWell(
+          onTap: () => _showEditFeeDialog(controller, bs, fee),
+          borderRadius: BorderRadius.circular(6),
+          child: const Padding(
+            padding: EdgeInsets.all(4),
+            child: Icon(
+              Icons.edit_rounded,
+              size: 16,
+              color: AppColors.primaryBrand,
+            ),
+          ),
+        ),
+        ],
+      ],
+    );
+  }
+
+  void _showEditFeeDialog(
+    BatchDetailsController controller,
+    BatchStudent bs,
+    double currentFee,
+  ) {
+    final feeCtrl = TextEditingController(text: _formatAmount(currentFee));
+    final error = RxnString();
+    final saving = false.obs;
+
+    CommonDialog.show(
+      title: 'Edit Fee',
+      description: 'Set the total fee for ${bs.student.name} in this batch.',
+      icon: Icons.currency_rupee_rounded,
+      iconColor: AppColors.primaryBrand,
+      iconBgColor: AppColors.primaryBrandLight,
+      confirmText: 'Save',
+      confirmButtonColor: AppColors.primaryBrand,
+      isLoading: saving,
+      body: Obx(
+        () => TextField(
+          controller: feeCtrl,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d{0,6}(\.\d{0,2})?')),
+          ],
+          style: InputStyles.textStyle(),
+          decoration: InputStyles.filled(
+            hintText: 'Total fee',
+            errorText: error.value,
+            prefixIcon: const Icon(
+              Icons.currency_rupee_rounded,
+              size: 18,
+              color: AppColors.fieldLabel,
+            ),
+          ),
+        ),
+      ),
+      onConfirm: () async {
+        final fee = double.tryParse(feeCtrl.text.trim());
+        if (fee == null || fee < 0) {
+          error.value = 'Enter a valid fee';
+          return;
+        }
+        error.value = null;
+        saving.value = true;
+        final err = await controller.updateStudentFee(bs.student, fee);
+        saving.value = false;
+        if (err == null) {
+          Get.back();
+        } else {
+          error.value = err;
+        }
+      },
+    );
+  }
+
+  String _formatAmount(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
   void _showRemoveConfirmation(
     BuildContext context,

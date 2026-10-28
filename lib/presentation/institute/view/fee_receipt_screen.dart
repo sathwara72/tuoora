@@ -8,6 +8,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_action_icon.dart';
+import 'package:tuoora/core/widgets/app_whatsapp_icon.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_controller.dart';
 import 'package:tuoora/presentation/institute/models/fee_record.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
@@ -47,7 +48,14 @@ class FeeReceiptScreen extends GetView<InstituteController> {
             Expanded(
               child: SingleChildScrollView(
                 padding: AppSpacing.all16,
-                child: _buildReceiptCard(r, isPaid, dateFmt, timeFmt),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildReceiptCard(r, isPaid, dateFmt, timeFmt),
+                    AppSpacing.v16,
+                    _buildShareButtons(r),
+                  ],
+                ),
               ),
             ),
           ],
@@ -101,6 +109,91 @@ class FeeReceiptScreen extends GetView<InstituteController> {
           _divider(),
           Padding(padding: AppSpacing.all16, child: _buildTotalRow(r)),
         ],
+      ),
+    );
+  }
+
+  /// Send the receipt to the student/parent. Nothing goes out automatically
+  /// when a payment is saved; only these buttons send it.
+  Widget _buildShareButtons(FeeRecord r) {
+    return Obx(() {
+      final sending = controller.sharingReceiptChannel.value;
+      return Row(
+        children: [
+          Expanded(
+            child: _shareButton(
+              label: 'WhatsApp',
+              icon: const AppWhatsAppIcon(size: 20),
+              color: const Color(0xFF25D366),
+              busy: sending == 'whatsapp',
+              onTap: sending != null
+                  ? null
+                  : () => controller.shareFeeReceipt(r, 'whatsapp'),
+            ),
+          ),
+          AppSpacing.h12,
+          Expanded(
+            child: _shareButton(
+              label: 'Email',
+              icon: const Icon(
+                Icons.email_outlined,
+                size: 20,
+                color: AppColors.primaryBrand,
+              ),
+              color: AppColors.primaryBrand,
+              busy: sending == 'email',
+              onTap: sending != null
+                  ? null
+                  : () => controller.shareFeeReceipt(r, 'email'),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _shareButton({
+    required String label,
+    required Widget icon,
+    required Color color,
+    required bool busy,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        child: Container(
+          height: 48,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+            border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (busy)
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: color),
+                )
+              else
+                icon,
+              AppSpacing.h8,
+              Text(
+                busy ? 'Sending…' : label,
+                style: AppTextStyles.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

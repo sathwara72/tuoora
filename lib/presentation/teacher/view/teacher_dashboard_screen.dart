@@ -8,6 +8,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_dashboard_controller.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_notifications_controller.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_timetable_model.dart';
 import 'package:tuoora/presentation/teacher/widgets/teacher_institute_switcher_sheet.dart';
 
@@ -328,6 +329,7 @@ class TeacherDashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              _buildNotificationBell(),
             ],
           ),
           const SizedBox(height: 14),
@@ -427,6 +429,68 @@ class TeacherDashboardScreen extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationBell() {
+    final hasController = Get.isRegistered<TeacherNotificationsController>();
+    return GestureDetector(
+      onTap: () async {
+        await Get.toNamed(AppRoutes.teacherNotifications);
+        if (Get.isRegistered<TeacherNotificationsController>()) {
+          Get.find<TeacherNotificationsController>().fetch();
+        }
+      },
+      child: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: AppColors.white.withValues(alpha: 0.18),
+          shape: BoxShape.circle,
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(
+              Icons.notifications_none_rounded,
+              color: AppColors.white,
+              size: 24,
+            ),
+            if (hasController)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: Obx(() {
+                  final count =
+                      Get.find<TeacherNotificationsController>().unreadCount.value;
+                  if (count == 0) return const SizedBox.shrink();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.bohoRed,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.white, width: 1.2),
+                    ),
+                    child: Text(
+                      count > 99 ? '99+' : '$count',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.outfit(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.white,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import 'package:tuoora/core/enums/app_enums.dart';
+import 'package:tuoora/core/utils/date_format_utils.dart';
 
 class Chat {
   final String id;
@@ -96,21 +97,9 @@ class Chat {
     };
   }
 
-  /// Human-friendly relative time used in the chat list (matches WhatsApp
-  /// style): same-day → `10:30 AM`, yesterday → `Yesterday`, within the past
-  /// week → weekday name, older → `12 May`.
-  static String _formatRelative(DateTime? dt) {
-    if (dt == null) return '';
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final day = DateTime(dt.year, dt.month, dt.day);
-    final diffDays = today.difference(day).inDays;
-
-    if (diffDays == 0) return DateFormat('h:mm a').format(dt);
-    if (diffDays == 1) return 'Yesterday';
-    if (diffDays < 7) return DateFormat('EEEE').format(dt);
-    return DateFormat('d MMM').format(dt);
-  }
+  /// Relative time used in the chat list (shared app-wide rule).
+  static String _formatRelative(DateTime? dt) =>
+      DateFormatUtils.relativeTime(dt);
 }
 
 class Message {

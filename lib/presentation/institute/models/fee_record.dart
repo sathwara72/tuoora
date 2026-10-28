@@ -326,3 +326,55 @@ class PendingFeesResponse {
     );
   }
 }
+
+/// Result of "Apply to All" on a batch: how many students got the batch fee
+/// and who was skipped because they already paid more than it.
+class BatchFeeApplyResult {
+  final String message;
+  final double batchFee;
+  final int updatedCount;
+  final List<BatchFeeSkippedStudent> skipped;
+
+  const BatchFeeApplyResult({
+    required this.message,
+    required this.batchFee,
+    required this.updatedCount,
+    required this.skipped,
+  });
+
+  factory BatchFeeApplyResult.fromJson(Map<String, dynamic> json) {
+    final data = json['data'] is Map
+        ? (json['data'] as Map).cast<String, dynamic>()
+        : const <String, dynamic>{};
+    final skipped = data['skipped'] is List
+        ? (data['skipped'] as List)
+              .whereType<Map>()
+              .map(
+                (e) => BatchFeeSkippedStudent(
+                  id: FeeRecord.safeInt(e['id']),
+                  name: FeeRecord.safeString(e['name']),
+                  paid: FeeRecord.safeDouble(e['paid']),
+                ),
+              )
+              .toList()
+        : const <BatchFeeSkippedStudent>[];
+    return BatchFeeApplyResult(
+      message: json['message']?.toString() ?? '',
+      batchFee: FeeRecord.safeDouble(data['batch_fee']),
+      updatedCount: FeeRecord.safeInt(data['updated_count']),
+      skipped: skipped,
+    );
+  }
+}
+
+class BatchFeeSkippedStudent {
+  final int id;
+  final String name;
+  final double paid;
+
+  const BatchFeeSkippedStudent({
+    required this.id,
+    required this.name,
+    required this.paid,
+  });
+}

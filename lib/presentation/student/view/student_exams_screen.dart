@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -46,6 +47,8 @@ class StudentExamsScreen extends GetView<StudentExamsController> {
                           _buildStatsCard(controller.overallStats.value!),
                           AppSpacing.v24,
                         ],
+                        _buildSubjectPerformanceEntry(),
+                        AppSpacing.v20,
                         _buildTabPills(),
                         AppSpacing.v20,
                         if (controller.activeItems.isEmpty)
@@ -69,6 +72,63 @@ class StudentExamsScreen extends GetView<StudentExamsController> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubjectPerformanceEntry() {
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      child: InkWell(
+        onTap: () => Get.toNamed(AppRoutes.studentSubjectPerformance),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        child: Padding(
+          padding: AppSpacing.cardPadding,
+          child: Row(
+            children: [
+              Container(
+                padding: AppSpacing.all8,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBrandLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.insights_rounded,
+                  size: 20,
+                  color: AppColors.primaryBrand,
+                ),
+              ),
+              AppSpacing.h12,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Subject Performance',
+                      style: AppTextStyles.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Weak, average and strong subjects',
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ),
         ),
       ),
     );

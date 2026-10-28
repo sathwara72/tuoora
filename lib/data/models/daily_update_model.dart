@@ -1,5 +1,6 @@
 import 'package:tuoora/core/enums/app_enums.dart';
 import 'package:tuoora/data/models/student_model.dart';
+import 'package:tuoora/core/utils/date_format_utils.dart';
 
 class DailyUpdate {
   final int? id;
@@ -100,11 +101,7 @@ class DailyUpdate {
   // UI Helpers
   String get timeAgo {
     if (createdAt == null) return 'Recently';
-    final diff = DateTime.now().difference(createdAt!);
-    if (diff.inDays > 0) return '${diff.inDays}d ago';
-    if (diff.inHours > 0) return '${diff.inHours}h ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
-    return 'Just now';
+    return DateFormatUtils.relativeTime(createdAt);
   }
 
   String get audience {

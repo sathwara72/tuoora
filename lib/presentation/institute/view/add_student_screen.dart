@@ -8,6 +8,7 @@ import 'package:tuoora/presentation/institute/controllers/student_controller.dar
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/widgets/app_input_field.dart';
+import 'package:tuoora/core/widgets/app_whatsapp_icon.dart';
 import 'package:tuoora/core/widgets/input_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
@@ -228,6 +229,8 @@ class AddEditStudentScreen extends GetView<InstituteStudentController> {
               errorText: controller.phoneError.value,
             ),
           ),
+          AppSpacing.v8,
+          Obx(() => _buildWhatsappChoiceRow()),
           AppSpacing.v12,
           Obx(() {
             return Column(
@@ -282,7 +285,12 @@ class AddEditStudentScreen extends GetView<InstituteStudentController> {
                               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6.0),
+                            child: _buildWhatsappToggle(index + 1),
+                          ),
+                          const SizedBox(width: 4),
                           Padding(
                             padding: const EdgeInsets.only(top: 14.0),
                             child: IconButton(
@@ -466,5 +474,82 @@ class AddEditStudentScreen extends GetView<InstituteStudentController> {
       }
     }
     return initials.isEmpty ? 'SP' : initials;
+  }
+
+  /// WhatsApp toggle for the main phone, plus where messages go right now.
+  Widget _buildWhatsappChoiceRow() {
+    final choice = controller.whatsappChoice.value;
+    final String target;
+    if (choice == 0) {
+      target = 'this main number';
+    } else if (choice > 0) {
+      target = 'optional number $choice';
+    } else {
+      target = "the parent's number (else the main number)";
+    }
+    return Row(
+      children: [
+        _buildWhatsappToggle(0, showLabel: true),
+        AppSpacing.h8,
+        Expanded(
+          child: Text(
+            'WhatsApp goes to $target',
+            style: AppTextStyles.outfit(
+              fontSize: 11,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Marks the number at [choice] as the WhatsApp number (0 = main phone,
+  /// 1..3 = optional phones). Only one can be selected.
+  Widget _buildWhatsappToggle(int choice, {bool showLabel = false}) {
+    return Obx(() {
+      final selected = controller.whatsappChoice.value == choice;
+      return InkWell(
+        onTap: () => controller.toggleWhatsappChoice(choice),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: showLabel ? 10 : 8,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? const Color(0xFF25D366).withValues(alpha: 0.12)
+                : AppColors.fieldBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selected ? const Color(0xFF25D366) : AppColors.fieldBorder,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Opacity(
+                opacity: selected ? 1 : 0.45,
+                child: const AppWhatsAppIcon(size: 18),
+              ),
+              if (showLabel) ...[
+                const SizedBox(width: 6),
+                Text(
+                  selected ? 'WhatsApp' : 'Use for WhatsApp',
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: selected
+                        ? const Color(0xFF128C7E)
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    });
   }
 }

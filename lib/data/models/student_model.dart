@@ -34,6 +34,10 @@ class Student {
   final String? pincode;
   final List<String> optionalPhones;
 
+  /// Number WhatsApp messages go to; null means the default (the parent's
+  /// number, else [phone]).
+  final String? whatsappPhone;
+
   const Student({
     required this.id,
     required this.name,
@@ -69,6 +73,7 @@ class Student {
     this.country,
     this.pincode,
     this.optionalPhones = const [],
+    this.whatsappPhone,
   });
 
   static bool _asBool(dynamic v) => v == true || v == 1 || v == '1';
@@ -104,6 +109,9 @@ class Student {
               .map((e) => e.toString())
               .toList()
           : const [],
+      whatsappPhone: (json['whatsapp_phone']?.toString().trim().isEmpty ?? true)
+          ? null
+          : json['whatsapp_phone'].toString().trim(),
       status: json['status']?.toString() ?? '1',
       idHash:
           json['id_hash']?.toString() ??
@@ -172,6 +180,7 @@ class Student {
       'country': country,
       'pincode': pincode,
       'optional_phones': optionalPhones,
+      'whatsapp_phone': whatsappPhone,
     };
   }
 
@@ -210,6 +219,7 @@ class Student {
     String? country,
     String? pincode,
     List<String>? optionalPhones,
+    String? whatsappPhone,
     // copyWith cannot set a field back to null, so removing a student from a
     // batch has to clear the batch explicitly.
     bool clearBatch = false,
@@ -250,6 +260,7 @@ class Student {
       country: country ?? this.country,
       pincode: pincode ?? this.pincode,
       optionalPhones: optionalPhones ?? this.optionalPhones,
+      whatsappPhone: whatsappPhone ?? this.whatsappPhone,
     );
   }
 

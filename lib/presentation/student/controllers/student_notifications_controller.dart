@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/presentation/student/widgets/birthday_wish_dialog.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/api/api_client.dart';
@@ -12,6 +14,7 @@ import 'package:tuoora/data/repositories/student_notifications_repository.dart';
 import 'package:tuoora/presentation/student/controllers/assignments_controller.dart';
 import 'package:tuoora/presentation/student/controllers/student_controller.dart';
 import 'package:tuoora/core/services/push_notification_service.dart';
+import 'package:tuoora/core/utils/date_format_utils.dart';
 
 /// View-model for a single notification row. Encapsulates the icon /
 /// colour / time-ago decisions so the screen widget stays declarative.
@@ -112,6 +115,15 @@ class StudentNotificationsController extends GetxController {
           Get.offAllNamed(AppRoutes.studentDashboard);
         }
         break;
+      case NotificationKind.birthday:
+        final fullName = Get.isRegistered<AuthService>()
+            ? Get.find<AuthService>().currentUser?.name ?? ''
+            : '';
+        BirthdayWishDialog.show(
+          name: fullName.trim().split(' ').first,
+          message: n.message,
+        );
+        break;
       default:
         break;
     }
@@ -143,6 +155,7 @@ class StudentNotificationsController extends GetxController {
       case NotificationKind.feeReminders:
       case NotificationKind.homeworkReminder:
       case NotificationKind.homework:
+      case NotificationKind.birthday:
         return true;
       default:
         return false;
@@ -151,6 +164,12 @@ class StudentNotificationsController extends GetxController {
 
   _NotificationVisuals _visualsFor(NotificationKind k) {
     switch (k) {
+      case NotificationKind.birthday:
+        return const _NotificationVisuals(
+          icon: Icons.cake_outlined,
+          bg: AppColors.warningBg,
+          fg: AppColors.warningAmber,
+        );
       case NotificationKind.homework:
       case NotificationKind.homeworkReminder:
         return const _NotificationVisuals(
@@ -210,31 +229,7 @@ class StudentNotificationsController extends GetxController {
     }
   }
 
-  String _formatTimeAgo(DateTime? dt) {
-    if (dt == null) return '';
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${dt.day} ${months[dt.month - 1]}';
-  }
+  String _formatTimeAgo(DateTime? dt) => DateFormatUtils.relativeTime(dt);
 }
 
 class _NotificationVisuals {

@@ -7,6 +7,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/widgets/app_snack_bar.dart';
 
 class AccountStatus {
   AccountStatus._();
@@ -45,7 +46,29 @@ class InstituteAccountStatusHandler extends GetxService {
 
     if (isBlocked) {
       _showBlockedDialog(message, role: role);
+    } else if (normalizedMessage.contains('permission') ||
+        normalizedMessage.contains('access denied')) {
+      _showNoPermission(message);
     }
+  }
+
+  DateTime? _lastNoPermissionAt;
+
+  /// A sub-access user tried something they aren't allowed to do. Shows the
+  /// server's message; throttled so a screen firing several calls shows it once.
+  void _showNoPermission(String message) {
+    final now = DateTime.now();
+    if (_lastNoPermissionAt != null &&
+        now.difference(_lastNoPermissionAt!) < const Duration(seconds: 3)) {
+      return;
+    }
+    _lastNoPermissionAt = now;
+    AppSnackBar.warning(
+      message.trim().isEmpty
+          ? 'Ask the institute owner to give you access.'
+          : message.trim(),
+      title: "You don't have permission",
+    );
   }
 
   void _showBlockedDialog(String message, {String role = 'STUDENT'}) {

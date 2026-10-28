@@ -240,6 +240,16 @@ abstract class InstituteRepositoryImpl {
   Future<void> logSalary(Map<String, dynamic> data);
   Future<void> deleteResource(int id);
   Future<void> deleteDeviceSession(int sessionId);
+
+  // Student fees: batch fee edits, payment history, receipt sharing
+  Future<BatchFeeApplyResult> applyBatchFeeToAll(int batchId);
+  Future<String> updateStudentBatchFee({
+    required int batchId,
+    required int studentId,
+    required double fee,
+  });
+  Future<List<FeePayment>> getStudentPayments(int studentId);
+  Future<String> shareReceipt(int id, {required String channel});
   Future<List<NotificationPreferenceModule>> getNotificationPreferences();
   Future<List<NotificationPreferenceModule>> updateNotificationPreferences(
     List<Map<String, dynamic>> modules,

@@ -11,6 +11,8 @@ import 'package:tuoora/core/services/notifications/handlers/fee_reminder_notific
 import 'package:tuoora/core/services/notifications/handlers/homework_notification_handler.dart';
 import 'package:tuoora/core/services/notifications/handlers/resource_notification_handler.dart';
 import 'package:tuoora/core/services/notifications/handlers/subscription_notification_handler.dart';
+import 'package:tuoora/core/services/notifications/handlers/teacher_notification_handler.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/services/notifications/notification_handler.dart';
 import 'package:tuoora/core/services/notifications/notification_payload.dart';
 
@@ -28,6 +30,11 @@ class NotificationRouter extends GetxService {
   static NotificationRouter get to => Get.find<NotificationRouter>();
 
   late final Map<String, NotificationHandler> _handlers;
+
+  /// Every teacher push goes here, whatever its type: salary slips and the
+  /// daily schedule have their own screens, staff notices (any other type)
+  /// open Notifications.
+  final NotificationHandler _teacherHandler = TeacherNotificationHandler();
 
   Future<NotificationRouter> init() async {
     // Single homework handler shared by all three homework-related types —
@@ -70,6 +77,9 @@ class NotificationRouter extends GetxService {
       'subscription_alert': SubscriptionNotificationHandler(),
       // Student: birthday celebration.
       'birthday_celebration': BirthdayNotificationHandler(),
+      // Teacher: salary slip + daily schedule.
+      'salary_slip': _teacherHandler,
+      'teacher_timetable': _teacherHandler,
     };
     return this;
   }
@@ -94,7 +104,12 @@ class NotificationRouter extends GetxService {
       return;
     }
 
-    final handler = _handlers[key];
+    // Cold-start taps can arrive before the user is restored, so fall back
+    // to the role saved at login.
+    final auth = Get.isRegistered<AuthService>() ? Get.find<AuthService>() : null;
+    final role = (auth?.currentUser?.role ?? auth?.userRoleFromStorage ?? '')
+        .toUpperCase();
+    final handler = role == 'TEACHER' ? _teacherHandler : _handlers[key];
     if (handler == null) {
       if (kDebugMode) {
         debugPrint(

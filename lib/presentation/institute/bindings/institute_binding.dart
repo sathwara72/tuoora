@@ -36,6 +36,8 @@ import 'package:tuoora/presentation/institute/controllers/add_ons_controller.dar
 import 'package:tuoora/core/api/api_client.dart';
 import 'package:tuoora/core/services/download_service.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/data/repositories/sub_access_repository.dart';
+import 'package:tuoora/presentation/institute/controllers/sub_access_controller.dart';
 
 class InstituteBinding extends Bindings {
   @override
@@ -150,6 +152,10 @@ class InstituteBinding extends Bindings {
     );
     Get.lazyPut<StaffController>(
       () => StaffController(Get.find<InstituteRepositoryImpl>()),
+      fenix: true,
+    );
+    Get.lazyPut<SubAccessController>(
+      () => SubAccessController(SubAccessRepository(Get.find<ApiClient>())),
       fenix: true,
     );
     Get.lazyPut<ExpenseController>(

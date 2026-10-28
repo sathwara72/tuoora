@@ -5,6 +5,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/data/models/student_model.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_controller.dart';
 import 'package:tuoora/presentation/institute/models/batch_model.dart';
+import 'package:tuoora/presentation/institute/models/fee_record.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:tuoora/presentation/institute/controllers/batch_controller.dart';
 import 'package:flutter/material.dart';
@@ -235,6 +236,74 @@ class BatchDetailsController extends GetxController {
         return _repository.exportPerformanceReport(batchId: batchId);
       },
     );
+  }
+
+  /// The student's own fee in this batch; falls back to the batch fee when
+  /// none has been set yet.
+  double feeFor(Student student) {
+    final own = double.tryParse(student.monthlyFee ?? '') ?? 0;
+    return own > 0 ? own : batch.baseFee;
+  }
+
+  final isApplyingBatchFee = false.obs;
+
+  /// "Apply to All": sets every student's fee to the batch fee. Students who
+  /// already paid more than the batch fee are skipped by the server; the
+  /// result is returned so the screen can list them.
+  Future<BatchFeeApplyResult?> applyBatchFeeToAll() async {
+    final batchId = int.tryParse(batch.id);
+    if (batchId == null || isApplyingBatchFee.value) return null;
+    try {
+      isApplyingBatchFee.value = true;
+      final result = await _repository.applyBatchFeeToAll(batchId);
+      final skippedIds = result.skipped.map((s) => s.id).toSet();
+      for (final bs in assignedStudents.toList()) {
+        if (!skippedIds.contains(bs.student.id)) {
+          _setLocalFee(bs.student, result.batchFee);
+        }
+      }
+      refreshStudents();
+      return result;
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
+      return null;
+    } finally {
+      isApplyingBatchFee.value = false;
+    }
+  }
+
+  /// Changes one student's fee. Returns an error message to show under the
+  /// field (e.g. the new fee is below what was already paid), or null.
+  Future<String?> updateStudentFee(Student student, double fee) async {
+    final batchId = int.tryParse(batch.id);
+    if (batchId == null) return 'Batch not found';
+    try {
+      final message = await _repository.updateStudentBatchFee(
+        batchId: batchId,
+        studentId: student.id,
+        fee: fee,
+      );
+      _setLocalFee(student, fee);
+      AppSnackBar.success(message);
+      refreshStudents();
+      return null;
+    } catch (e) {
+      return e.toString().replaceAll('Exception: ', '');
+    }
+  }
+
+  void _setLocalFee(Student student, double fee) {
+    final updated = student.copyWith(monthlyFee: fee.toString());
+    instituteController.updateStudent(updated);
+    final i = assignedStudents.indexWhere((bs) => bs.student.id == student.id);
+    if (i != -1) {
+      final bs = assignedStudents[i];
+      assignedStudents[i] = BatchStudent(
+        student: updated,
+        assignedFee: fee,
+        milestones: bs.milestones,
+      );
+    }
   }
 
   Future<void> refreshStudents() async {

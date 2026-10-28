@@ -53,35 +53,51 @@ class NotificationPreferencesController extends GetxController {
     try {
       isLoading.value = true;
       final result = await _repository.getNotificationPreferences();
-      if (result.isNotEmpty) {
-        // Merge with full default rules to ensure all 20 rules and their rich metadata exist
-        final merged = <NotificationPreferenceModule>[];
-        for (final def in NotificationPreferenceModule.defaultRules) {
-          final foundIndex = result.indexWhere((r) => r.module == def.module);
-          if (foundIndex != -1) {
-            final serverRule = result[foundIndex];
-            merged.add(def.copyWith(
-              isEnabled: serverRule.isEnabled,
-              whatsappEnabled: serverRule.whatsappEnabled,
-              pushEnabled: serverRule.pushEnabled,
-              emailEnabled: serverRule.emailEnabled,
-            ));
-          } else {
-            merged.add(def);
-          }
-        }
-        modules.assignAll(merged);
-      } else {
-        modules.assignAll(NotificationPreferenceModule.defaultRules);
-      }
+      // The server returns only the messages that are actually built (and
+      // is the only place automatic messages are configured), so show
+      // exactly its list. Templates come from the local defaults.
+      modules.assignAll(result.isNotEmpty ? result : _fallbackRules());
     } catch (_) {
-      if (modules.isEmpty) {
-        modules.assignAll(NotificationPreferenceModule.defaultRules);
-      }
+      if (modules.isEmpty) modules.assignAll(_fallbackRules());
     } finally {
       isLoading.value = false;
     }
   }
+
+  /// Messages whose sending isn't built yet; hidden like the server does.
+  static const _notBuilt = {
+    'fee_promise',
+    'attendance_late',
+    'attendance_summary',
+    'attendance_teacher_reminder',
+    'exam_marks_pending',
+    'admin_daily_digest',
+    'admin_lead_alert',
+    'admin_subscription',
+  };
+
+  /// Messages whose WhatsApp starts OFF until the owner ticks it.
+  static const _whatsappOptIn = {
+    'payment_receipt',
+    'homework_new',
+    'exam_schedule',
+    'class_schedule_change',
+    'birthday_wishes',
+    'salary_slip',
+    'teacher_timetable',
+    'staff_announcements',
+  };
+
+  /// Used only when the server can't be reached.
+  List<NotificationPreferenceModule> _fallbackRules() => NotificationPreferenceModule
+      .defaultRules
+      .where((r) => !_notBuilt.contains(r.module))
+      .map(
+        (r) => _whatsappOptIn.contains(r.module)
+            ? r.copyWith(whatsappEnabled: false)
+            : r,
+      )
+      .toList();
 
   void setFilter(String filter) {
     selectedAudienceFilter.value = filter;

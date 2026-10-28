@@ -13,6 +13,7 @@ import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/app_search_field.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 
 class StudentsRegistryScreen extends StatefulWidget {
   const StudentsRegistryScreen({super.key});
@@ -140,7 +141,8 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
           ),
         ],
       ),
-      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS ||
+              !Get.find<AuthService>().can('students.create')
           ? null
           : FloatingActionButton(
               onPressed: () => SubscriptionGuard.runAddAction(

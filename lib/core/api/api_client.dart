@@ -257,12 +257,14 @@ class ApiClient extends GetConnect {
     if (_loggingOut) return;
     _loggingOut = true;
     String role = 'STUDENT';
+    var wasSubAccess = false;
     try {
       final auth = Get.find<AuthService>();
       role = _detectRole(auth);
+      wasSubAccess = auth.currentUser?.isSubAccess == true;
       await auth.clearSession();
     } catch (_) {}
-    _goToLogin(role);
+    _goToLogin(role, wasSubAccess: wasSubAccess);
     Future<void>.delayed(const Duration(seconds: 3), () {
       _loggingOut = false;
     });
@@ -271,13 +273,16 @@ class ApiClient extends GetConnect {
   /// Navigates straight to login. A post-frame callback alone is not enough:
   /// it only fires when a frame is scheduled, which an idle dashboard never
   /// does, so the user would stay on the page.
-  void _goToLogin(String role) {
+  void _goToLogin(String role, {bool wasSubAccess = false}) {
     void go() {
       try {
         if (Get.currentRoute != AppRoutes.login) {
           Get.offAllNamed(AppRoutes.login, arguments: role);
           AppSnackBar.warning(
-            AppStrings.errSessionExpired,
+            // The owner can end a sub-access user's sessions at any time.
+            wasSubAccess
+                ? 'You have been signed out. The institute owner may have logged you out. Please sign in again.'
+                : AppStrings.errSessionExpired,
             title: AppStrings.sessionExpiredTitle,
           );
         }

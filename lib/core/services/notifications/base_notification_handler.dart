@@ -72,7 +72,9 @@ abstract class BaseNotificationHandler implements NotificationHandler {
           Get.find<AuthService>().isAuthenticated;
       final route = Get.currentRoute;
       final navigable =
-          route.startsWith('/student') || route.startsWith('/institute');
+          route.startsWith('/student') ||
+          route.startsWith('/institute') ||
+          route.startsWith('/teacher');
       if (authed && navigable) return true;
       await Future.delayed(_pollInterval);
     }

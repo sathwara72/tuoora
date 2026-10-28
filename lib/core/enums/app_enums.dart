@@ -9,6 +9,7 @@ enum NotificationKind {
   batchRemoval('batch_removal'),
   eventsHolidays('events_holidays'),
   feeReminders('fee_reminder'),
+  birthday('birthday_celebration'),
   unknown('');
 
   final String value;
@@ -30,6 +31,9 @@ enum NotificationKind {
         normalized == 'fees_reminder' ||
         normalized == 'fee_payment_reminder') {
       return NotificationKind.feeReminders;
+    }
+    if (normalized.startsWith('birthday')) {
+      return NotificationKind.birthday;
     }
     if (normalized.startsWith('exam')) {
       return NotificationKind.eventsHolidays;

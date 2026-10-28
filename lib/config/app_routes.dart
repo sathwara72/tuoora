@@ -32,6 +32,8 @@ class AppRoutes {
   static const String studentStudyMaterialDetail =
       '/student/study-material/detail';
   static const String studentFeedback = '/student/feedback';
+  static const String studentSubjectPerformance =
+      '/student/subject-performance';
 
   static const String teacherDashboard = '/teacher/dashboard';
   static const String teacherForgotPassword = '/teacher/forgot-password';
@@ -57,6 +59,7 @@ class AppRoutes {
   static const String teacherFees = '/teacher/batches/fees';
   static const String teacherBatchResources = '/teacher/batches/resources';
   static const String teacherSalaries = '/teacher/salaries';
+  static const String teacherNotifications = '/teacher/notifications';
 
   static const String instituteDashboard = '/institute/dashboard';
   static const String instituteStudents = '/institute/students';
@@ -80,6 +83,9 @@ class AppRoutes {
   static const String instituteWhatsApp = '/institute/profile/whatsapp';
   static const String instituteNotificationPreferences =
       '/institute/profile/notification-preferences';
+  static const String instituteSubAccess = '/institute/profile/sub-access';
+  static const String instituteAddEditSubAccess =
+      '/institute/profile/sub-access/add-edit';
   static const String instituteUpiPaymentSettings =
       '/institute/profile/upi-payment';
   static const String instituteFeeReport = '/institute/reports/fee-main';

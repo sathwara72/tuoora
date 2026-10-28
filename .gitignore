@@ -35,3 +35,6 @@ ios/Flutter/Flutter.podspec
 
 # Environment secrets
 .env
+test/
+tool/
+tools/

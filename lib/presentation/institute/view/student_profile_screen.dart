@@ -11,14 +11,20 @@ import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/student_id_card_dialog.dart';
 import 'package:tuoora/presentation/institute/view/student_report_content.dart';
+import 'package:tuoora/core/widgets/subject_performance_view.dart';
+import 'package:tuoora/data/models/subject_performance_model.dart';
+import 'package:tuoora/data/repositories_impl/student_repository_impl.dart';
 
 class StudentProfileScreen extends GetView<InstituteStudentController> {
   final bool showBottomNav;
   const StudentProfileScreen({super.key, this.showBottomNav = true});
+
+  AuthService get _auth => Get.find<AuthService>();
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +49,9 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                             color: Colors.black,
                           ),
                         ),
-                      if (student != null)
+                      if (student != null &&
+                          (_auth.can('students.edit') ||
+                              _auth.can('students.delete')))
                         PopupMenuButton<String>(
                           icon: const Icon(
                             Icons.more_vert_rounded,
@@ -55,17 +63,21 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                           onSelected: (value) =>
                               _onMenuSelected(context, value, student),
                           itemBuilder: (_) => [
+                            if (_auth.can('students.edit'))
                             _menuItem('edit', Icons.edit_outlined, 'Edit'),
+                            if (_auth.can('students.edit'))
                             _menuItem(
                               'forgot',
                               Icons.email_outlined,
                               'Forgot Password',
                             ),
+                            if (_auth.can('students.edit'))
                             _menuItem(
                               'reset',
                               Icons.lock_outline_rounded,
                               'Reset Password',
                             ),
+                            if (_auth.can('students.edit'))
                             _menuItem(
                               'block',
                               student.isLoginBlocked
@@ -75,6 +87,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                                   ? 'Unblock Login'
                                   : 'Block Login',
                             ),
+                            if (_auth.can('students.delete'))
                             _menuItem(
                               'delete',
                               Icons.delete_outline_rounded,
@@ -100,6 +113,10 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                                   ? _buildFeeExtras(context, student)
                                   : null,
                             ),
+                          if (student != null) ...[
+                            const SizedBox(height: AppSpacing.s16),
+                            _SubjectPerformanceSection(student: student),
+                          ],
                           const SizedBox(height: AppSpacing.s24),
                         ],
                       ),
@@ -1418,6 +1435,84 @@ class _InlineAcademicReportState extends State<_InlineAcademicReport> {
             fallbackStudent: widget.student,
           );
         }),
+      ],
+    );
+  }
+}
+
+/// Subject-wise performance: weak-subject alert and one card per subject.
+class _SubjectPerformanceSection extends StatefulWidget {
+  final Student student;
+  const _SubjectPerformanceSection({required this.student});
+
+  @override
+  State<_SubjectPerformanceSection> createState() =>
+      _SubjectPerformanceSectionState();
+}
+
+class _SubjectPerformanceSectionState
+    extends State<_SubjectPerformanceSection> {
+  SubjectPerformance? _data;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _SubjectPerformanceSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.student.id != widget.student.id ||
+        oldWidget.student.batchId != widget.student.batchId) {
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    SubjectPerformance? data;
+    try {
+      data = await Get.find<StudentRepositoryImpl>().getSubjectPerformance(
+        widget.student.id,
+        batchId: widget.student.batchId,
+      );
+    } catch (_) {
+      data = null;
+    }
+    if (!mounted) return;
+    setState(() {
+      _data = data;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = _data;
+    if (!_loading && (data == null || data.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Subject Performance',
+          style: AppTextStyles.outfit(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else
+          SubjectPerformanceView(performance: data!),
       ],
     );
   }

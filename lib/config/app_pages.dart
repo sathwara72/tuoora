@@ -135,6 +135,12 @@ import 'package:tuoora/presentation/institute/view/add_salary_screen.dart';
 import 'package:tuoora/presentation/institute/view/expenses_screen.dart';
 import 'package:tuoora/presentation/institute/view/add_expense_screen.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/presentation/institute/view/sub_access_screen.dart';
+import 'package:tuoora/presentation/institute/view/add_edit_sub_access_screen.dart';
+import 'package:tuoora/presentation/student/view/student_subject_performance_screen.dart';
+import 'package:tuoora/presentation/student/controllers/student_subject_performance_controller.dart';
+import 'package:tuoora/presentation/teacher/view/teacher_notifications_screen.dart';
+import 'package:tuoora/config/owner_only_middleware.dart';
 
 class AppPages {
   static final pages = [
@@ -189,6 +195,15 @@ class AppPages {
       name: AppRoutes.studentAssignmentDetail,
       page: () => const StudentAssignmentDetailScreen(),
       binding: StudentBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.studentSubjectPerformance,
+      page: () => const StudentSubjectPerformanceScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<StudentSubjectPerformanceController>(
+          () => StudentSubjectPerformanceController(),
+        );
+      }),
     ),
     GetPage(
       name: AppRoutes.studentExams,
@@ -410,6 +425,11 @@ class AppPages {
       page: () => const TeacherSalaryScreen(),
       binding: TeacherBinding(),
     ),
+    GetPage(
+      name: AppRoutes.teacherNotifications,
+      page: () => const TeacherNotificationsScreen(),
+      binding: TeacherBinding(),
+    ),
     // Institute routes
     GetPage(
       name: AppRoutes.instituteDashboard,
@@ -475,51 +495,73 @@ class AppPages {
       name: AppRoutes.instituteEditProfile,
       page: () => const InstituteEditProfileScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteProfile,
       page: () => const InstituteProfileViewScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteSettings,
       page: () => const InstituteSettingsScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteChangePassword,
       page: () => const InstituteChangePasswordScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteSubscription,
       page: () => const InstituteSubscriptionScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteWhiteLabel,
       page: () => const WhiteLabelScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteAddOns,
       page: () => const AddOnsScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteWhatsApp,
       page: () => const InstituteWhatsAppScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteNotificationPreferences,
       page: () => const NotificationPreferencesScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.instituteSubAccess,
+      page: () => const SubAccessScreen(),
+      binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
+    ),
+    GetPage(
+      name: AppRoutes.instituteAddEditSubAccess,
+      page: () => const AddEditSubAccessScreen(),
+      binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteUpiPaymentSettings,
       page: () => const InstituteUpiPaymentSettingsScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteReports,
@@ -550,11 +592,13 @@ class AppPages {
       name: AppRoutes.instituteUpdates,
       page: () => const InstituteUpdatesScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteCreateUpdate,
       page: () => const CreateUpdateScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteNotifications,
@@ -670,26 +714,31 @@ class AppPages {
       name: AppRoutes.instituteLeads,
       page: () => const LeadsManagementScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteAddEditLead,
       page: () => const AddEditLeadScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteLeadDetails,
       page: () => const LeadDetailsScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteNotes,
       page: () => const NotesListScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteAddEditNote,
       page: () => const AddEditNoteScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteChats,
@@ -710,36 +759,43 @@ class AppPages {
       name: AppRoutes.instituteStaffs,
       page: () => const StaffMainScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteStaffDetails,
       page: () => const StaffProfileScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteAddEditStaff,
       page: () => const AddEditStaffScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteSalaryHistory,
       page: () => const SalaryHistoryScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteStaffAttendance,
       page: () => const StaffAttendanceScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteLogStaffAttendance,
       page: () => const LogAttendanceScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteAddSalary,
       page: () => const AddSalaryScreen(),
       binding: InstituteBinding(),
+      middlewares: [OwnerOnlyMiddleware()],
     ),
     GetPage(
       name: AppRoutes.instituteExpenses,

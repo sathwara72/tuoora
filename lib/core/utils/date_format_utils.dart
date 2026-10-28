@@ -39,6 +39,41 @@ class DateFormatUtils {
     return DateFormat('dd MMM yyyy').format(date);
   }
 
+  /// App-wide "time ago" label used on every list timestamp:
+  /// - under 1 minute → "Just now"
+  /// - under 1 hour → "25 min ago"
+  /// - earlier today → "3 hours ago"
+  /// - yesterday → "Yesterday"
+  /// - 2–6 days → "2 days ago"
+  /// - 7 days or more → "20 Oct 2026, 3:45 PM"
+  static String relativeTime(DateTime? dateTime) {
+    if (dateTime == null) return '';
+    final dt = dateTime.toLocal();
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+
+    final today = DateTime(now.year, now.month, now.day);
+    final that = DateTime(dt.year, dt.month, dt.day);
+    final days = today.difference(that).inDays;
+
+    if (days <= 0) {
+      final h = diff.inHours;
+      return '$h ${h == 1 ? 'hour' : 'hours'} ago';
+    }
+    if (days == 1) return 'Yesterday';
+    if (days < 7) return '$days days ago';
+    return DateFormat('d MMM yyyy, h:mm a').format(dt);
+  }
+
+  /// [relativeTime] for a raw server timestamp string; empty when unparsable.
+  static String relativeTimeFromString(String? value) {
+    if (value == null || value.isEmpty) return '';
+    return relativeTime(DateTime.tryParse(value));
+  }
+
   /// Whether two timestamps fall on different calendar days (used to decide
   /// when to insert a day separator between consecutive chat messages).
   static bool isDifferentDay(DateTime? a, DateTime? b) {

@@ -12,6 +12,7 @@ import 'package:tuoora/core/widgets/app_search_field.dart';
 import 'package:tuoora/core/widgets/status_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/config/app_routes.dart';
 
 class BatchesScreen extends StatefulWidget {
@@ -128,7 +129,8 @@ class _BatchesScreenState extends State<BatchesScreen> {
           ),
         ],
       ),
-      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS ||
+              !Get.find<AuthService>().can('batches.create')
           ? null
           : FloatingActionButton(
               onPressed: () => SubscriptionGuard.runAddAction(() {

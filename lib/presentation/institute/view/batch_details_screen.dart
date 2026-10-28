@@ -4,6 +4,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/presentation/institute/controllers/batch_details_controller.dart';
 import 'package:tuoora/presentation/institute/models/batch_model.dart';
+import 'package:tuoora/presentation/institute/models/fee_record.dart';
 import 'package:tuoora/presentation/institute/controllers/batch_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_info_row.dart';
@@ -17,6 +18,7 @@ import 'package:tuoora/core/utils/date_format_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 
 class BatchDetailsScreen extends StatefulWidget {
   const BatchDetailsScreen({super.key});
@@ -28,6 +30,7 @@ class BatchDetailsScreen extends StatefulWidget {
 class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
   late BatchDetailsController controller;
   final BatchController batchController = Get.find<BatchController>();
+  final AuthService _auth = Get.find<AuthService>();
 
   @override
   void initState() {
@@ -46,6 +49,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
             InstituteAppBar(
               title: AppStrings.instBatchDetailsTitle,
               actions: [
+                if (_auth.can('batches.edit'))
                 IconButton(
                   onPressed: () {
                     batchController.initEditMode(controller.batch);
@@ -53,6 +57,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                   },
                   icon: const AppActionIcon(asset: AppImages.icEdit),
                 ),
+                if (_auth.can('batches.delete'))
                 IconButton(
                   onPressed: () => batchController.deleteBatchWithConfirmation(
                     controller.batch.id,
@@ -118,7 +123,8 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                       : batch.statusLabel,
                 ),
                 const Spacer(),
-                if (!controller.isStatusClosed.value)
+                if (!controller.isStatusClosed.value &&
+                    _auth.can('batches.edit'))
                   GestureDetector(
                     onTap: () {
                       CommonDialog.show(
@@ -230,11 +236,172 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
               text: batch.staffName!,
             ),
           ],
+          // Owners always have fees.edit.
+          if (_auth.can('fees.edit')) ...[
+            AppSpacing.v16,
+            _buildBatchFeeRow(batch),
+          ],
         ],
       ),
     );
   });
 }
+
+  /// Batch fee with "Apply to All", which sets every student's fee to it.
+  Widget _buildBatchFeeRow(BatchModel batch) {
+    final busy = controller.isApplyingBatchFee.value;
+    return Container(
+      padding: AppSpacing.all12,
+      decoration: BoxDecoration(
+        color: AppColors.primaryBrandLight.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.currency_rupee_rounded,
+            size: 18,
+            color: AppColors.primaryBrand,
+          ),
+          AppSpacing.h8,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Batch Fee',
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  '₹${_formatAmount(batch.baseFee)}',
+                  style: AppTextStyles.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: busy ? null : () => _confirmApplyBatchFee(batch),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primaryBrand,
+                borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+              ),
+              child: busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.white,
+                      ),
+                    )
+                  : Text(
+                      'Apply to All',
+                      style: AppTextStyles.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.white,
+                      ),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmApplyBatchFee(BatchModel batch) {
+    CommonDialog.show(
+      title: 'Apply Batch Fee to All?',
+      description:
+          "Every student's fee in this batch will be set to ₹${_formatAmount(batch.baseFee)}. Students who already paid more than this are skipped.",
+      icon: Icons.currency_rupee_rounded,
+      iconColor: AppColors.primaryBrand,
+      iconBgColor: AppColors.primaryBrandLight,
+      confirmText: 'Apply',
+      confirmButtonColor: AppColors.primaryBrand,
+      onConfirm: () async {
+        final result = await controller.applyBatchFeeToAll();
+        if (result != null) _showApplyResult(result);
+      },
+    );
+  }
+
+  void _showApplyResult(BatchFeeApplyResult result) {
+    CommonDialog.show(
+      title: result.skipped.isEmpty ? 'Batch Fee Applied' : 'Applied with Skips',
+      description: result.message,
+      icon: result.skipped.isEmpty
+          ? Icons.check_circle_outline_rounded
+          : Icons.info_outline_rounded,
+      iconColor: result.skipped.isEmpty
+          ? AppColors.greenText
+          : AppColors.warningAmber,
+      iconBgColor: result.skipped.isEmpty
+          ? AppColors.successBg
+          : AppColors.warningBg,
+      confirmText: 'OK',
+      confirmButtonColor: AppColors.primaryBrand,
+      showButtons: true,
+      body: result.skipped.isEmpty
+          ? null
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Skipped (already paid more than the batch fee):',
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                AppSpacing.v8,
+                ...result.skipped.map(
+                  (s) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            s.name,
+                            style: AppTextStyles.outfit(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'Paid ₹${_formatAmount(s.paid)}',
+                          style: AppTextStyles.outfit(
+                            fontSize: 12,
+                            color: AppColors.warningAmber,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+      onConfirm: () {
+        if (result.skipped.isNotEmpty) Get.back();
+      },
+    );
+  }
+
+  String _formatAmount(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
   // Batches created after the time-slot field was removed have empty
   // start/end times, which [Batch.time] renders as a bare " - ". Hide the

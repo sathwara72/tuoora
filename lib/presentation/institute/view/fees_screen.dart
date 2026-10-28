@@ -8,6 +8,7 @@ import 'package:tuoora/presentation/institute/models/fee_record.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/app_empty_view.dart';
 import 'package:flutter/material.dart';
@@ -58,7 +59,8 @@ class InstituteFeesScreen extends GetView<InstituteController> {
           ],
         ),
       ),
-      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS ||
+              !Get.find<AuthService>().can('fees.collect')
           ? null
           : FloatingActionButton(
               heroTag: 'fees_fab_unique_tag',

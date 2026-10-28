@@ -12,6 +12,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/services/branding_service.dart';
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/services/auth_service.dart';
+import 'package:tuoora/core/constants/app_strings.dart';
+import 'package:tuoora/core/widgets/common_dialog.dart';
 
 class InstituteDashboard extends GetView<InstituteProfileController> {
   const InstituteDashboard({super.key});
@@ -29,7 +32,8 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildTopHeader(),
-              const SubscriptionBanner(),
+              // Subscription is owner-only.
+              if (!_auth.isSubAccess) const SubscriptionBanner(),
               const TodaysBirthdayCard(),
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -77,6 +81,9 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
             ),
           ),
           AppSpacing.h20,
+          if (_auth.isSubAccess)
+            _buildSubAccessBadge()
+          else
           GestureDetector(
             onTap: () => Get.toNamed(AppRoutes.instituteProfile),
             child: Obx(
@@ -95,6 +102,62 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  AuthService get _auth => Get.find<AuthService>();
+
+  /// Shown instead of the profile avatar for sub-access users (Profile is
+  /// owner-only). Tapping it offers Log Out, which lives on Profile otherwise.
+  Widget _buildSubAccessBadge() {
+    final name = _auth.currentUser?.subAccessName ??
+        _auth.currentUser?.name ??
+        '';
+    return GestureDetector(
+      onTap: () => CommonDialog.show(
+        title: AppStrings.logout,
+        description: 'Signed in as sub-access user $name. Log out now?',
+        icon: Icons.logout_rounded,
+        iconColor: AppColors.primaryBrand,
+        iconBgColor: AppColors.primaryBrandLight,
+        confirmText: AppStrings.logout,
+        confirmButtonColor: AppColors.primaryBrand,
+        onConfirm: () => Get.find<InstituteProfileController>().logout(),
+      ),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.primaryBrandLight,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.primaryBrand.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.admin_panel_settings_rounded,
+              size: 14,
+              color: AppColors.primaryBrand,
+            ),
+            AppSpacing.h4,
+            Flexible(
+              child: Text(
+                'Sub-Access: $name',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.outfit(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryBrand,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -127,61 +190,73 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
 
   Widget _buildModulesGrid() {
     final modules = [
+      if (_auth.can('academics.timetable'))
       ModuleItem(
         'Timetable',
         () => Get.toNamed(AppRoutes.instituteTimetable),
         AppImages.icBatchTimetable,
       ),
+      if (_auth.canModule('students'))
       ModuleItem(
         'Students',
         () => Get.toNamed(AppRoutes.instituteStudents),
         AppImages.icModuleStaff,
       ),
+      if (_auth.canModule('batches'))
       ModuleItem(
         'Batches',
         () => Get.toNamed(AppRoutes.instituteBatches),
         AppImages.icModuleBatch,
       ),
+      if (_auth.canModule('fees'))
       ModuleItem(
         'Fees',
         () => Get.toNamed(AppRoutes.instituteFees),
         AppImages.icModuleFees,
       ),
+      if (!_auth.isSubAccess)
       ModuleItem(
         'Staffs',
         () => Get.toNamed(AppRoutes.instituteStaffs),
         AppImages.icModuleStaff,
       ),
+      if (_auth.canModule('communication'))
       ModuleItem(
         'Chats',
         () => Get.toNamed(AppRoutes.instituteChats),
         AppImages.icModuleChat,
       ),
+      if (_auth.can('reports.view'))
       ModuleItem(
         'Reports',
         () => Get.toNamed(AppRoutes.instituteReports),
         AppImages.icModuleReports,
       ),
+      if (!_auth.isSubAccess)
       ModuleItem(
         'Leads',
         () => Get.toNamed(AppRoutes.instituteLeads),
         AppImages.icModuleLead,
       ),
+      if (!_auth.isSubAccess)
       ModuleItem(
         'Notes',
         () => Get.toNamed(AppRoutes.instituteNotes),
         AppImages.icModuleNotes,
       ),
+      if (_auth.can('expenses.manage'))
       ModuleItem(
         'Expenses',
         () => Get.toNamed(AppRoutes.instituteExpenses),
         AppImages.icModuleExpense,
       ),
+      if (!_auth.isSubAccess)
       ModuleItem(
         'Updates',
         () => Get.toNamed(AppRoutes.instituteUpdates),
         AppImages.icModuleUpdates,
       ),
+      if (_auth.canModule('students'))
       ModuleItem(
         'Birthdays',
         () => Get.toNamed(AppRoutes.instituteBirthdays),

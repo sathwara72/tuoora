@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:tuoora/presentation/teacher/controllers/teacher_notifications_controller.dart';
 
 import 'package:tuoora/core/api/api_client.dart';
 import 'package:tuoora/data/repositories/auth_repository.dart';
@@ -53,6 +54,10 @@ class TeacherBinding extends Bindings {
     } else if (!Get.isRegistered<AuthRepositoryImpl>()) {
       Get.put<AuthRepositoryImpl>(Get.find<AuthRepository>(), permanent: true);
     }
+    Get.lazyPut<TeacherNotificationsController>(
+      () => TeacherNotificationsController(Get.find<ApiClient>()),
+      fenix: true,
+    );
     Get.lazyPut<TeacherBatchRepositoryImpl>(
       () => TeacherBatchRepository(Get.find<ApiClient>()),
       fenix: true,
