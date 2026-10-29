@@ -1,3 +1,5 @@
+import 'package:tuoora/core/widgets/common_dialog.dart';
+import 'package:tuoora/presentation/institute/controllers/expense_controller.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/utils/validation_utils.dart';
@@ -264,6 +266,68 @@ class StaffController extends GetxController {
     }
   }
 
+  final deletingSalaryIds = <int>{}.obs;
+  final deletingAttendanceIds = <int>{}.obs;
+
+  void confirmDeleteSalary(StaffSalary salary) {
+    if (deletingSalaryIds.contains(salary.id)) return;
+    CommonDialog.showDeleteConfirmation(
+      title: 'Delete Salary Payment',
+      description: 'Delete the salary payment dated ${salary.paymentDate}? This cannot be undone.',
+      onConfirm: () => deleteSalary(salary),
+    );
+  }
+
+  Future<void> deleteSalary(StaffSalary salary) async {
+    if (!deletingSalaryIds.add(salary.id)) return;
+    try {
+      final message = await _repository.deleteSalary(salary.id);
+      salaryList.removeWhere((record) => record.id == salary.id);
+      globalSalaryList.removeWhere((record) => record.id == salary.id);
+      AppSnackBar.success(message);
+      await Future.wait([
+        fetchGlobalSalaries(page: 1),
+        if (selectedStaff.value != null) fetchSalaryHistory(),
+        if (Get.isRegistered<ExpenseController>())
+          Get.find<ExpenseController>().loadExpenses(),
+      ]);
+    } catch (e) {
+      AppSnackBar.error('Failed to delete salary payment: $e');
+    } finally {
+      deletingSalaryIds.remove(salary.id);
+    }
+  }
+
+  void confirmUnmarkAttendance(StaffAttendance attendance) {
+    if (deletingAttendanceIds.contains(attendance.id)) return;
+    CommonDialog.showDeleteConfirmation(
+      title: 'Unmark Attendance',
+      description: 'Remove the ${attendance.status} mark for ${attendance.date}? The day will become unmarked.',
+      confirmText: 'Unmark',
+      onConfirm: () => unmarkAttendance(attendance),
+    );
+  }
+
+  Future<void> unmarkAttendance(StaffAttendance attendance) async {
+    if (!deletingAttendanceIds.add(attendance.id)) return;
+    try {
+      final message = await _repository.deleteStaffAttendance(attendance.id);
+      attendanceList.removeWhere((record) => record.id == attendance.id);
+      globalAttendanceList.removeWhere((record) => record.id == attendance.id);
+      AppSnackBar.success(message);
+      await Future.wait([
+        fetchGlobalAttendance(page: 1),
+        if (selectedStaff.value != null) fetchAttendanceHistory(),
+        if (selectedAddSalaryStaff.value?.id == attendance.staffId)
+          fetchSalaryPreview(attendance.staffId),
+      ]);
+    } catch (e) {
+      AppSnackBar.error('Failed to unmark attendance: $e');
+    } finally {
+      deletingAttendanceIds.remove(attendance.id);
+    }
+  }
+
   Future<void> fetchSalaryHistory({int page = 1}) async {
     if (selectedStaff.value == null) return;
     try {
@@ -312,6 +376,10 @@ class StaffController extends GetxController {
       totalAbsent.value = response.totalAbsent;
       attendanceCurrentPage.value = response.currentPage;
       attendanceLastPage.value = response.lastPage;
+      // The calendar needs every marked day, including later API pages.
+      if (response.currentPage < response.lastPage) {
+        await fetchAttendanceHistory(page: response.currentPage + 1);
+      }
     } catch (e) {
       AppSnackBar.error('Failed to load attendance history: $e');
     } finally {

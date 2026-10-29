@@ -14,6 +14,7 @@ import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/widgets/app_action_icon.dart';
 import 'package:tuoora/core/widgets/status_badge.dart';
 import 'package:tuoora/core/widgets/common_dialog.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/date_format_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -191,14 +192,14 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                 Expanded(
                   child: InstituteMetricCard(
                     label: AppStrings.instTotalCollectionLabel,
-                    value: '₹${controller.totalExpected.value}',
+                    value: formatRupees(controller.totalExpected.value),
                   ),
                 ),
                 AppSpacing.h8,
                 Expanded(
                   child: InstituteMetricCard(
                     label: AppStrings.instFeesPaidLabel,
-                    value: '₹${controller.totalPaid.value}',
+                    value: formatRupees(controller.totalPaid.value),
                   ),
                 ),
                 AppSpacing.h8,
@@ -279,7 +280,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                   ),
                 ),
                 Text(
-                  '₹${_formatAmount(batch.baseFee)}',
+                  formatRupees(batch.baseFee),
                   style: AppTextStyles.outfit(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -325,7 +326,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
     CommonDialog.show(
       title: 'Apply Batch Fee to All?',
       description:
-          "Every student's fee in this batch will be set to ₹${_formatAmount(batch.baseFee)}. Students who already paid more than this are skipped.",
+          "Every student's fee in this batch will be set to ${formatRupees(batch.baseFee)}. Students who already paid more than this are skipped.",
       icon: Icons.currency_rupee_rounded,
       iconColor: AppColors.primaryBrand,
       iconBgColor: AppColors.primaryBrandLight,
@@ -384,7 +385,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                           ),
                         ),
                         Text(
-                          'Paid ₹${_formatAmount(s.paid)}',
+                          'Paid ${formatRupees(s.paid)}',
                           style: AppTextStyles.outfit(
                             fontSize: 12,
                             color: AppColors.warningAmber,

@@ -5,6 +5,7 @@ import 'package:tuoora/presentation/institute/models/fee_record.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/validation_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:tuoora/data/repositories_impl/student_repository_impl.dart';
@@ -65,7 +66,7 @@ class RecordFeeController extends GetxController {
       final pendingFees = selectedStudent.value!.totalDue;
       if (parsedAmount > pendingFees) {
         amountError.value =
-            'Amount cannot exceed pending fees of ₹$pendingFees';
+            'Amount cannot exceed pending fees of ${formatRupees(pendingFees)}';
         isValid = false;
       }
     }
@@ -202,7 +203,13 @@ class RecordFeeController extends GetxController {
         _handleValidationErrors(e.errors);
         AppSnackBar.error(AppStrings.validationErrorsBelow);
       } else {
-        AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
+        final message = e.toString().replaceAll('Exception: ', '');
+        // Over-payment 422s ("…more than the pending fee…", "…no pending
+        // fees.") belong to the amount field.
+        if (message.toLowerCase().contains('pending fee')) {
+          amountError.value = message;
+        }
+        AppSnackBar.error(message);
       }
     } finally {
       isLoading.value = false;

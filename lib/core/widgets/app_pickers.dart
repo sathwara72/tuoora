@@ -130,6 +130,24 @@ class AppPickers {
     );
   }
 
+  /// Convenience for a brand-themed date range picker.
+  static Future<DateTimeRange?> dateRange(
+    BuildContext context, {
+    DateTimeRange? initialRange,
+    required DateTime firstDate,
+    required DateTime lastDate,
+    String? helpText,
+  }) {
+    return showDateRangePicker(
+      context: context,
+      initialDateRange: initialRange,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: helpText,
+      builder: dateBuilder,
+    );
+  }
+
   /// Convenience for a brand-themed (12-hour) time picker.
   static Future<TimeOfDay?> time(
     BuildContext context, {

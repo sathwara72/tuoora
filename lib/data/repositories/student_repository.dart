@@ -210,6 +210,34 @@ class StudentRepository implements StudentRepositoryImpl {
   }
 
   @override
+  Future<String> deleteFee(int feeId) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteFees}/$feeId',
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to delete fee record');
+    }
+    return response.body?['message']?.toString() ??
+        'Fee record deleted successfully.';
+  }
+
+  @override
+  Future<String> updateInstallments(
+    int feeId,
+    List<Map<String, dynamic>> installments,
+  ) async {
+    final response = await _apiClient.put(
+      ApiConstants.instituteSyncInstallments(feeId),
+      {'installments': installments},
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to update milestones');
+    }
+    return response.body?['message']?.toString() ??
+        'Milestones updated successfully';
+  }
+
+  @override
   Future<void> payInstallment(
     int installmentId, {
     required double amount,

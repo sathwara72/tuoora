@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 
@@ -83,7 +84,7 @@ class TeacherSalaryScreen extends GetView<TeacherSalaryController> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '₹${salary.netSalary ?? '-'}',
+                                      formatRupees(salary.netSalary),
                                       style: AppTextStyles.outfit(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,

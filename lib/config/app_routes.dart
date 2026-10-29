@@ -89,6 +89,7 @@ class AppRoutes {
   static const String instituteUpiPaymentSettings =
       '/institute/profile/upi-payment';
   static const String instituteFeeReport = '/institute/reports/fee-main';
+  static const String instituteProfitLoss = '/institute/reports/profit-loss';
   static const String instituteAttendanceReport =
       '/institute/reports/attendance';
   static const String institutePerformanceReport =

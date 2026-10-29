@@ -97,7 +97,7 @@ class Student {
       email: json['email']?.toString() ?? '',
       phone: json['phone']?.toString() ?? '',
       instituteId: safeInt(json['institute_id']),
-      enrollmentID: json['enrollment_id'],
+      enrollmentID: json['enrollment_id']?.toString(),
       parentId: safeNullableInt(json['parent_id']),
       batchId: safeNullableInt(json['batch_id']),
       dob: json['dob']?.toString() ?? '',

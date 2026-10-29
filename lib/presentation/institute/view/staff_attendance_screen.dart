@@ -244,7 +244,10 @@ class StaffAttendanceScreen extends GetView<StaffController> {
     for (var a in controller.attendanceList) {
       try {
         final day = DateTime.parse(a.date).day;
-        attendanceMap[day] = a.status;
+        final parsed = DateTime.parse(a.date);
+        if (parsed.year == currentMonth.year && parsed.month == currentMonth.month) {
+          attendanceMap[day] = a.status;
+        }
       } catch (_) {}
     }
 
@@ -262,6 +265,8 @@ class StaffAttendanceScreen extends GetView<StaffController> {
         status = 1;
       } else if (statusStr == 'Absent') {
         status = 2;
+      } else if (statusStr != null) {
+        status = 3;
       }
 
       currentStatuses.add(status);
@@ -327,41 +332,52 @@ class StaffAttendanceScreen extends GetView<StaffController> {
   Widget _buildCalendarDay(String date, int status) {
     if (date.isEmpty) return const SizedBox(width: 32);
 
-    return SizedBox(
-      width: 32,
-      child: Column(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(shape: BoxShape.circle),
-            child: Center(
-              child: Text(
-                date,
-                style: AppTextStyles.outfit(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+    final month = controller.selectedAttendanceMonth.value;
+    final record = controller.attendanceList.firstWhereOrNull((entry) {
+      final parsed = DateTime.tryParse(entry.date);
+      return parsed != null && parsed.year == month.year &&
+          parsed.month == month.month && parsed.day == int.parse(date);
+    });
+    final busy = record != null && controller.deletingAttendanceIds.contains(record.id);
+    return GestureDetector(
+      onTap: record == null || busy ? null : () => controller.confirmUnmarkAttendance(record),
+      onLongPress: record == null || busy ? null : () => controller.confirmUnmarkAttendance(record),
+      child: SizedBox(
+        width: 32,
+        child: Column(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: Center(
+                child: Text(
+                  date,
+                  style: AppTextStyles.outfit(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ),
-          ),
-          if (status != -1) ...[
-            AppSpacing.v4,
-            Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                color: status == 1
-                    ? AppColors.successGreen.withValues(alpha: 0.6)
-                    : (status == 2
-                          ? AppColors.errorRed.withValues(alpha: 0.6)
-                          : Colors.transparent),
-                shape: BoxShape.circle,
+            if (status != -1) ...[
+              AppSpacing.v4,
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: status == 1
+                      ? AppColors.successGreen.withValues(alpha: 0.6)
+                      : (status == 2
+                            ? AppColors.errorRed.withValues(alpha: 0.6)
+                            : status == 3 ? AppColors.textMuted : Colors.transparent),
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+      ),
       ),
     );
   }

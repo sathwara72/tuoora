@@ -1,5 +1,6 @@
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -59,7 +60,8 @@ class InstituteFeesScreen extends GetView<InstituteController> {
           ],
         ),
       ),
-      floatingActionButton: SubscriptionGuard.hideAddOnIOS ||
+      floatingActionButton:
+          SubscriptionGuard.hideAddOnIOS ||
               !Get.find<AuthService>().can('fees.collect')
           ? null
           : FloatingActionButton(
@@ -102,7 +104,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                 color: isCollectedTab ? null : AppColors.white,
                 borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                 border: Border.all(
-                  color: isCollectedTab ? Colors.transparent : AppColors.borderGrey,
+                  color: isCollectedTab
+                      ? Colors.transparent
+                      : AppColors.borderGrey,
                   width: 1.5,
                 ),
                 boxShadow: [
@@ -143,7 +147,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                         child: Icon(
                           Icons.check_circle_outline,
                           size: 14,
-                          color: isCollectedTab ? AppColors.white : const Color(0xFF10B981),
+                          color: isCollectedTab
+                              ? AppColors.white
+                              : const Color(0xFF10B981),
                         ),
                       ),
                     ],
@@ -151,17 +157,19 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                   // Amount hidden (title only, like the web) without
                   // the "Display Total / Pending Fees" permission.
                   if (controller.canViewFeeTotals) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    '₹${controller.totalCollected.value.toStringAsFixed(0)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: isCollectedTab ? AppColors.white : AppColors.textPrimary,
+                    const SizedBox(height: 8),
+                    Text(
+                      formatRupees(controller.totalCollected.value),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: isCollectedTab
+                            ? AppColors.white
+                            : AppColors.textPrimary,
+                      ),
                     ),
-                  ),
                   ],
                 ],
               ),
@@ -190,7 +198,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                 color: isPendingTab ? null : AppColors.white,
                 borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                 border: Border.all(
-                  color: isPendingTab ? Colors.transparent : const Color(0xFFFDE68A),
+                  color: isPendingTab
+                      ? Colors.transparent
+                      : const Color(0xFFFDE68A),
                   width: 1.5,
                 ),
                 boxShadow: [
@@ -225,9 +235,14 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                           if (pendingCount > 0) ...[
                             const SizedBox(width: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
                               decoration: BoxDecoration(
-                                color: isPendingTab ? AppColors.white.withValues(alpha: 0.25) : const Color(0xFFFEF3C7),
+                                color: isPendingTab
+                                    ? AppColors.white.withValues(alpha: 0.25)
+                                    : const Color(0xFFFEF3C7),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -235,7 +250,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                                 style: AppTextStyles.outfit(
                                   fontSize: 9,
                                   fontWeight: FontWeight.w800,
-                                  color: isPendingTab ? AppColors.white : const Color(0xFFB45309),
+                                  color: isPendingTab
+                                      ? AppColors.white
+                                      : const Color(0xFFB45309),
                                 ),
                               ),
                             ),
@@ -253,7 +270,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                         child: Icon(
                           Icons.schedule,
                           size: 14,
-                          color: isPendingTab ? AppColors.white : const Color(0xFFD97706),
+                          color: isPendingTab
+                              ? AppColors.white
+                              : const Color(0xFFD97706),
                         ),
                       ),
                     ],
@@ -261,17 +280,19 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                   // Amount hidden (title only, like the web) without
                   // the "Display Total / Pending Fees" permission.
                   if (controller.canViewFeeTotals) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    '₹${controller.totalPending.value.toStringAsFixed(0)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.outfit(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: isPendingTab ? AppColors.white : const Color(0xFFB45309),
+                    const SizedBox(height: 8),
+                    Text(
+                      formatRupees(controller.totalPending.value),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: isPendingTab
+                            ? AppColors.white
+                            : const Color(0xFFB45309),
+                      ),
                     ),
-                  ),
                   ],
                 ],
               ),
@@ -282,7 +303,10 @@ class InstituteFeesScreen extends GetView<InstituteController> {
     );
   }
 
-  Widget _buildRegistryHeader(BuildContext context, InstituteController controller) {
+  Widget _buildRegistryHeader(
+    BuildContext context,
+    InstituteController controller,
+  ) {
     final isPending = controller.selectedFeeTab.value == 'pending';
 
     if (isPending) {
@@ -303,7 +327,10 @@ class InstituteFeesScreen extends GetView<InstituteController> {
               if (count > 0) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF3C7),
                     borderRadius: BorderRadius.circular(12),
@@ -328,18 +355,26 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                 ? const SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   )
                 : const Icon(Icons.send_rounded, size: 14),
             label: Text(
               'Remind All',
-              style: AppTextStyles.outfit(fontSize: 12, fontWeight: FontWeight.w700),
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD97706),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               elevation: 0,
             ),
           ),
@@ -374,31 +409,47 @@ class InstituteFeesScreen extends GetView<InstituteController> {
     );
   }
 
-  void _confirmSendAllReminders(BuildContext context, InstituteController controller) {
+  void _confirmSendAllReminders(
+    BuildContext context,
+    InstituteController controller,
+  ) {
     final count = controller.pendingStudents.length;
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.notifications_active_outlined, color: Color(0xFFD97706), size: 22),
+            const Icon(
+              Icons.notifications_active_outlined,
+              color: Color(0xFFD97706),
+              size: 22,
+            ),
             const SizedBox(width: 8),
             Text(
               'Send Fee Reminders?',
-              style: AppTextStyles.outfit(fontSize: 17, fontWeight: FontWeight.w700),
+              style: AppTextStyles.outfit(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
         content: Text(
           'This will send in-app and push notification reminders to all $count pending student(s) and their parents.',
-          style: AppTextStyles.outfit(fontSize: 13, color: AppColors.textSecondary),
+          style: AppTextStyles.outfit(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
             child: Text(
               'Cancel',
-              style: AppTextStyles.outfit(color: AppColors.textTertiary, fontWeight: FontWeight.w600),
+              style: AppTextStyles.outfit(
+                color: AppColors.textTertiary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           ElevatedButton(
@@ -409,7 +460,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD97706),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: Text(
               'Confirm & Send',
@@ -437,7 +490,6 @@ class InstituteFeesScreen extends GetView<InstituteController> {
 
     return Column(
       children: controller.feeRecords.map((record) {
-        final amount = record.paidAmount > 0 ? record.paidAmount : record.totalAmount;
         final studentName = record.student?.name.trim().isNotEmpty == true
             ? record.student!.name
             : 'Student';
@@ -451,9 +503,9 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                 Get.toNamed(AppRoutes.instituteFeeReceipt, arguments: record),
             child: _buildFeeItem(
               studentName,
-              '₹${amount.toStringAsFixed(0)}',
+              formatRupees(record.transactionAmount),
               'ID: $displayId',
-              record.date,
+              record,
             ),
           ),
         );
@@ -462,7 +514,8 @@ class InstituteFeesScreen extends GetView<InstituteController> {
   }
 
   Widget _buildPendingList(InstituteController controller) {
-    if (controller.isLoadingPendingFees.value && controller.pendingStudents.isEmpty) {
+    if (controller.isLoadingPendingFees.value &&
+        controller.pendingStudents.isEmpty) {
       return const Center(
         child: Padding(padding: EdgeInsets.all(32.0), child: CommonLoading()),
       );
@@ -490,7 +543,13 @@ class InstituteFeesScreen extends GetView<InstituteController> {
     InstituteController controller,
   ) {
     final initials = student.name.isNotEmpty
-        ? student.name.split(' ').where((s) => s.isNotEmpty).map((s) => s[0]).take(2).join('').toUpperCase()
+        ? student.name
+              .split(' ')
+              .where((s) => s.isNotEmpty)
+              .map((s) => s[0])
+              .take(2)
+              .join('')
+              .toUpperCase()
         : '?';
 
     return Container(
@@ -602,7 +661,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '₹${student.monthlyFee.toStringAsFixed(0)} / ₹${student.totalPaid.toStringAsFixed(0)}',
+                    '${formatRupees(student.monthlyFee)} / ${formatRupees(student.totalPaid)}',
                     style: AppTextStyles.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -624,13 +683,16 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                   ),
                   const SizedBox(height: 2),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF2F2),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      '₹${student.pendingAmount.toStringAsFixed(0)}',
+                      formatRupees(student.pendingAmount),
                       style: AppTextStyles.outfit(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -649,27 +711,43 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                 child: SizedBox(
                   height: 36,
                   child: Obx(() {
-                    final isSending = controller.isSendingReminderTo(student.id);
+                    final isSending = controller.isSendingReminderTo(
+                      student.id,
+                    );
                     return OutlinedButton.icon(
                       onPressed: isSending
                           ? null
-                          : () => controller.sendFeeReminderToStudent(student.id, student.name),
+                          : () => controller.sendFeeReminderToStudent(
+                              student.id,
+                              student.name,
+                            ),
                       icon: isSending
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD97706)),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFFD97706),
+                              ),
                             )
-                          : const Icon(Icons.notifications_active_outlined, size: 15),
+                          : const Icon(
+                              Icons.notifications_active_outlined,
+                              size: 15,
+                            ),
                       label: Text(
                         isSending ? 'Sending...' : 'Reminder',
-                        style: AppTextStyles.outfit(fontSize: 11, fontWeight: FontWeight.w700),
+                        style: AppTextStyles.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFB45309),
                         side: const BorderSide(color: Color(0xFFFDE68A)),
                         backgroundColor: const Color(0xFFFFFBEB),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     );
                   }),
@@ -686,7 +764,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
     String name,
     String amount,
     String studentId,
-    DateTime date,
+    FeeRecord record,
   ) {
     return Container(
       padding: AppSpacing.cardPadding,
@@ -724,14 +802,19 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      name,
-                      style: AppTextStyles.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                    Expanded(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.outfit(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
+                    AppSpacing.h8,
                     Text(
                       amount,
                       style: AppTextStyles.outfit(
@@ -746,23 +829,39 @@ class InstituteFeesScreen extends GetView<InstituteController> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      studentId,
-                      style: AppTextStyles.outfit(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textTertiary,
+                    Expanded(
+                      child: Text(
+                        studentId,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.outfit(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textTertiary,
+                        ),
                       ),
                     ),
+                    AppSpacing.h8,
                     Text(
-                      DateFormat('dd MMM, yyyy').format(date),
+                      record.transactionMethod,
                       style: AppTextStyles.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textTertiary,
+                        color: AppColors.primaryBrand,
                       ),
                     ),
                   ],
+                ),
+                AppSpacing.v4,
+                Text(
+                  'Paid: ${DateFormat('dd MMM, yyyy').format(record.transactionPaidAt)}'
+                  '  •  Recorded: ${DateFormat('dd MMM, yyyy h:mm a').format(record.transactionRecordedAt.toLocal())}',
+                  maxLines: 2,
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textTertiary,
+                  ),
                 ),
               ],
             ),
@@ -771,6 +870,4 @@ class InstituteFeesScreen extends GetView<InstituteController> {
       ),
     );
   }
-
-
 }

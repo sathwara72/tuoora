@@ -1,3 +1,5 @@
+import 'package:tuoora/presentation/institute/controllers/profit_loss_controller.dart';
+import 'package:tuoora/presentation/institute/view/profit_loss_screen.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/presentation/institute/bindings/institute_binding.dart';
@@ -582,6 +584,14 @@ class AppPages {
       name: AppRoutes.institutePerformanceReport,
       page: () => const PerformanceReportScreen(),
       binding: InstituteBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteProfitLoss,
+      page: () => const ProfitLossScreen(),
+      bindings: [
+        InstituteBinding(),
+        BindingsBuilder(() => Get.lazyPut(() => ProfitLossController())),
+      ],
     ),
     GetPage(
       name: AppRoutes.instituteAnalytics,

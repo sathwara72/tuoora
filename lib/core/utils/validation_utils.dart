@@ -83,7 +83,7 @@ class ValidationUtils {
     if (value == null || value.isEmpty) {
       return '$fieldName is required';
     }
-    final amount = double.tryParse(value);
+    final amount = double.tryParse(value.replaceAll(',', ''));
     if (amount == null) {
       return 'Enter a valid amount';
     }

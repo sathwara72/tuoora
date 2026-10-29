@@ -1,7 +1,8 @@
-﻿import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/presentation/institute/controllers/staff_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
@@ -142,11 +143,17 @@ class SalaryHistoryScreen extends GetView<StaffController> {
               ],
             ),
           ),
+          Obx(() => IconButton(
+            tooltip: 'Delete salary payment',
+            onPressed: controller.deletingSalaryIds.contains(salary.id)
+                ? null : () => controller.confirmDeleteSalary(salary),
+            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.errorRed),
+          )),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '₹${salary.netSalary}',
+                formatRupees(salary.netSalary),
                 style: AppTextStyles.outfit(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,

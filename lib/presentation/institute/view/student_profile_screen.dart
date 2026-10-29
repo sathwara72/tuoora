@@ -3,8 +3,10 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/data/models/student_model.dart';
 import 'package:tuoora/presentation/institute/controllers/student_controller.dart';
+import 'package:tuoora/presentation/institute/widgets/edit_milestones_sheet.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/common_dialog.dart';
@@ -196,7 +198,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                 Text(
                   sending
                       ? 'Sending Reminder...'
-                      : 'Send Fee Reminder  •  ₹${totalDue.toStringAsFixed(0)}',
+                      : 'Send Fee Reminder  •  ${formatRupees(totalDue)}',
                   style: AppTextStyles.outfit(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -441,6 +443,33 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
               ),
             ],
           ),
+          if (_auth.can('fees.edit') ||
+              (_auth.can('fees.delete') &&
+                  _deletableFees(student).isNotEmpty)) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (_auth.can('fees.delete') &&
+                    _deletableFees(student).isNotEmpty)
+                  _scheduleAction(
+                    label: 'Delete Fee',
+                    icon: Icons.delete_outline_rounded,
+                    color: AppColors.errorRed,
+                    onPressed: () => _deleteFee(student),
+                  ),
+                if (_auth.can('fees.edit'))
+                  _scheduleAction(
+                    label: 'Edit Milestones',
+                    icon: Icons.edit_outlined,
+                    color: AppColors.primaryBrand,
+                    onPressed: () => _editMilestones(student),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 14),
           Column(
             children: [
@@ -451,6 +480,118 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// Opens the milestone editor; with milestones on more than one fee, asks
+  /// which fee first.
+  Widget _scheduleAction({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: color,
+        side: BorderSide(color: color),
+        visualDensity: VisualDensity.compact,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      icon: Icon(icon, size: 16),
+      label: Text(
+        label,
+        style: AppTextStyles.outfit(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  List<StudentFee> _scheduledFees(Student student) =>
+      student.fees.where((f) => f.installments.isNotEmpty).toList();
+
+  /// Fees the server will let us delete: nothing paid against them.
+  List<StudentFee> _deletableFees(Student student) =>
+      _scheduledFees(student).where((f) {
+        final paid = double.tryParse(f.paidAmount) ?? 0;
+        return f.payments.isEmpty &&
+            paid <= 0 &&
+            f.installments.every((i) => i.paidAmount <= 0);
+      }).toList();
+
+  /// Opens the milestone editor; with milestones on more than one fee, asks
+  /// which fee first.
+  void _editMilestones(Student student) {
+    _pickFee(_scheduledFees(student), EditMilestonesSheet.show);
+  }
+
+  void _deleteFee(Student student) {
+    _pickFee(_deletableFees(student), (fee) {
+      CommonDialog.showDeleteConfirmation(
+        title: 'Delete Fee Record',
+        description:
+            'Delete the ${formatRupees(fee.totalAmount)} fee and its '
+            '${fee.installments.length} milestones for ${student.name}? '
+            'This cannot be undone.',
+        onConfirm: () => controller.deleteFee(fee.id),
+      );
+    });
+  }
+
+  /// Runs [onPick] straight away for a single fee, otherwise asks which one.
+  void _pickFee(List<StudentFee> fees, void Function(StudentFee) onPick) {
+    if (fees.isEmpty) return;
+    if (fees.length == 1) {
+      onPick(fees.first);
+      return;
+    }
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Which fee?',
+                style: AppTextStyles.outfit(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              for (final fee in fees)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    'Fee of ${formatRupees(fee.totalAmount)}',
+                    style: AppTextStyles.outfit(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${fee.installments.length} milestones'
+                    '${fee.date.isNotEmpty ? ' • ${_formatInstallmentDate(fee.date)}' : ''}',
+                    style: AppTextStyles.outfit(fontSize: 12),
+                  ),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () {
+                    Get.back();
+                    onPick(fee);
+                  },
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -526,21 +667,23 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
               ),
             ],
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.event_outlined, size: 14, color: AppColors.textTertiary),
-              const SizedBox(width: 5),
-              Text(
-                'Due Date: ${_formatInstallmentDate(inst.dueDate)}',
-                style: AppTextStyles.outfit(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
+          if (inst.dueDate?.isNotEmpty == true) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.event_outlined, size: 14, color: AppColors.textTertiary),
+                const SizedBox(width: 5),
+                Text(
+                  'Due Date: ${_formatInstallmentDate(inst.dueDate)}',
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
           const SizedBox(height: 10),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
           const SizedBox(height: 10),
@@ -552,7 +695,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Total: ₹${inst.amount.toStringAsFixed(0)}',
+                    'Total: ${formatRupees(inst.amount)}',
                     style: AppTextStyles.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -561,7 +704,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                   ),
                   if (inst.isPartial)
                     Text(
-                      'Paid: ₹${inst.paidAmount.toStringAsFixed(0)}',
+                      'Paid: ${formatRupees(inst.paidAmount)}',
                       style: AppTextStyles.outfit(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -599,7 +742,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Due: ₹${inst.dueAmount.toStringAsFixed(0)}',
+                      'Due: ${formatRupees(inst.dueAmount)}',
                       style: AppTextStyles.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -728,7 +871,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                       ),
                     ),
                     Text(
-                      '₹${inst.dueAmount.toStringAsFixed(0)}',
+                      formatRupees(inst.dueAmount),
                       style: AppTextStyles.outfit(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -925,7 +1068,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                                   return;
                                 }
                                 if (enteredAmt > inst.dueAmount) {
-                                  amountError.value = 'Cannot exceed due ₹${inst.dueAmount.toStringAsFixed(0)}';
+                                  amountError.value = 'Cannot exceed due ${formatRupees(inst.dueAmount)}';
                                   return;
                                 }
                                 amountError.value = null;

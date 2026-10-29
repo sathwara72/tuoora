@@ -48,12 +48,16 @@ class AttendanceHistoryScreen extends GetView<StaffController> {
                             controller.globalAttendanceList[index];
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12.0),
-                          child: _buildAttendanceCard(
-                            attendance.staff?.fullName ?? 'Unknown Staff',
-                            attendance.note ?? '',
-                            attendance.status,
-                            attendance.staff?.profileUrl ?? '',
-                            attendance.date,
+                          child: GestureDetector(
+                            onTap: () => controller.confirmUnmarkAttendance(attendance),
+                            onLongPress: () => controller.confirmUnmarkAttendance(attendance),
+                            child: _buildAttendanceCard(
+                              attendance.staff?.fullName ?? 'Unknown Staff',
+                              attendance.note ?? '',
+                              attendance.status,
+                              attendance.staff?.profileUrl ?? '',
+                              attendance.date,
+                            ),
                           ),
                         );
                       },

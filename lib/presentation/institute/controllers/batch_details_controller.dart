@@ -15,7 +15,6 @@ import 'package:get/get.dart';
 class MilestoneDraft {
   String title;
   double amount;
-  DateTime dueDate;
 
   /// Bumped when the amount is changed for the user, so its text field resets.
   int stamp = 0;
@@ -23,14 +22,13 @@ class MilestoneDraft {
   MilestoneDraft({
     required this.title,
     required this.amount,
-    required this.dueDate,
   });
 
   Map<String, dynamic> toJson() => {
     'title': title,
     'amount': amount,
-    'due_date':
-        '${dueDate.year.toString().padLeft(4, '0')}-${dueDate.month.toString().padLeft(2, '0')}-${dueDate.day.toString().padLeft(2, '0')}',
+    // Milestones have no due date (matches web).
+    'due_date': '',
   };
 }
 

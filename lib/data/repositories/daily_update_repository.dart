@@ -36,6 +36,19 @@ class DailyUpdateRepository implements DailyUpdateRepositoryImpl {
   }
 
   @override
+  Future<String> deleteDailyUpdate(int id) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteDailyUpdates}/$id',
+    );
+    final body = response.body;
+    final message = body is Map ? body['message']?.toString() : null;
+    if (response.status.hasError) {
+      throw Exception(message ?? 'Failed to delete update');
+    }
+    return message ?? 'Update deleted successfully.';
+  }
+
+  @override
   Future<List<DailyUpdate>> listDailyUpdates() async {
     final response = await _apiClient.get(ApiConstants.instituteDailyUpdates);
     if (response.status.hasError) {

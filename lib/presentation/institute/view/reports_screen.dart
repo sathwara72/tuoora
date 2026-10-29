@@ -63,6 +63,18 @@ class ReportsScreen extends StatelessWidget {
                   ),
                   AppSpacing.v10,
                   _buildReportCard(
+                    title: 'Profit & Loss',
+                    subtitle:
+                        'Fee income against expenses for a financial year, '
+                        'calendar year or custom dates.',
+                    icon: Icons.account_balance_rounded,
+                    color: AppColors.primaryBrand,
+                    onTap: () {
+                      Get.toNamed(AppRoutes.instituteProfitLoss);
+                    },
+                  ),
+                  AppSpacing.v10,
+                  _buildReportCard(
                     title: AppStrings.labelBusinessAnalytics,
                     subtitle: AppStrings.revenueFeeCollectionAndDropoutTrends,
                     icon: Icons.bar_chart_rounded,

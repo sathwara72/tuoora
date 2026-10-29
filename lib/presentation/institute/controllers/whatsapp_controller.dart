@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:tuoora/core/services/institute_account_status_handler.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/url_constants.dart';
 import 'package:tuoora/core/services/branding_service.dart';
@@ -10,7 +11,8 @@ import 'package:tuoora/data/models/whatsapp_settings_model.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 
 class WhatsAppController extends GetxController {
-  final InstituteRepositoryImpl _repository = Get.find<InstituteRepositoryImpl>();
+  final InstituteRepositoryImpl _repository =
+      Get.find<InstituteRepositoryImpl>();
 
   Razorpay? _razorpay;
   String? _activeOrderId;
@@ -28,6 +30,18 @@ class WhatsAppController extends GetxController {
 
   // Observable State
   final isLoading = false.obs;
+
+  /// No paid plan: WhatsApp setup, tests and credit purchases are blocked.
+  final planRequired = false.obs;
+  final canBuyCredits = true.obs;
+
+  /// White Label institutes set up their own Meta number here, so they get the
+  /// normal screen even without a paid plan.
+  bool get showUpgradePrompt => planRequired.value && !isWhiteLabel.value;
+
+  final planRequiredMessage =
+      'WhatsApp Integration is available on paid plans. Upgrade your plan to use it.'
+          .obs;
   final isPurchasing = false.obs;
   final purchasingPackId = RxnInt();
   final isSendingTest = false.obs;
@@ -69,6 +83,14 @@ class WhatsAppController extends GetxController {
     }
   }
 
+  /// Credits are charged on delivery, so the balance can drop after the
+  /// screen was last shown: reload every time it opens (skipped while the
+  /// first load from [onInit] is still running).
+  void refreshOnOpen() {
+    if (isLoading.value) return;
+    fetchOverview();
+  }
+
   Future<void> fetchOverview() async {
     try {
       isLoading.value = true;
@@ -82,6 +104,11 @@ class WhatsAppController extends GetxController {
       isWhiteLabel.value = data.isWhiteLabel;
       hasDedicatedWhatsApp.value = data.hasDedicatedWhatsApp;
 
+      planRequired.value = data.planRequired;
+      canBuyCredits.value = data.canBuyCredits;
+      if (data.planRequiredMessage.isNotEmpty) {
+        planRequiredMessage.value = data.planRequiredMessage;
+      }
       packs.assignAll(data.packs);
       recentLogs.assignAll(data.recentLogs);
 
@@ -122,7 +149,9 @@ class WhatsAppController extends GetxController {
         'amount': order['amount'],
         'currency': order['currency'] ?? 'INR',
         'order_id': order['order_id'],
-        'name': Get.isRegistered<BrandingService>() ? Get.find<BrandingService>().appName : 'Tuoora',
+        'name': Get.isRegistered<BrandingService>()
+            ? Get.find<BrandingService>().appName
+            : 'Tuoora',
         'description': pack.name,
         'theme': {'color': '#FF6600'},
       };
@@ -132,7 +161,9 @@ class WhatsAppController extends GetxController {
       purchasingPackId.value = null;
       _activePack = null;
       final msg = e.toString().replaceFirst('Exception: ', '');
-      AppSnackBar.error(msg.isNotEmpty ? msg : 'Unable to initiate pack purchase');
+      AppSnackBar.error(
+        msg.isNotEmpty ? msg : 'Unable to initiate pack purchase',
+      );
     }
   }
 
@@ -149,7 +180,10 @@ class WhatsAppController extends GetxController {
       );
 
       await fetchOverview();
-      AppSnackBar.success(result['message']?.toString() ?? 'WhatsApp pack purchased successfully!');
+      AppSnackBar.success(
+        result['message']?.toString() ??
+            'WhatsApp pack purchased successfully!',
+      );
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
       AppSnackBar.error(msg.isNotEmpty ? msg : 'Payment verification failed');
@@ -170,6 +204,14 @@ class WhatsAppController extends GetxController {
     AppSnackBar.warning('External wallet selected: ${response.walletName}');
   }
 
+  void _showTestSkipped(String message) {
+    final noCredits = message.toLowerCase().contains('credit');
+    AppSnackBar.warning(
+      message.isNotEmpty ? message : 'The test message was not sent.',
+      title: noCredits ? 'No credits left' : 'Not sent',
+    );
+  }
+
   Future<void> sendTestMessage() async {
     final phone = testPhoneController.text.trim();
     if (phone.isEmpty || phone.length < 10) {
@@ -184,12 +226,36 @@ class WhatsAppController extends GetxController {
         message: testMessageController.text.trim(),
       );
 
-      AppSnackBar.success(res['message']?.toString() ?? 'Test WhatsApp message sent successfully!');
+      // Not sent (no credits / no paid plan): show why, not "Sent".
+      if (res['status']?.toString() == 'skipped') {
+        _showTestSkipped(res['message']?.toString() ?? '');
+        fetchOverview();
+        return;
+      }
+
+      AppSnackBar.success(
+        res['message']?.toString() ??
+            'Test WhatsApp message sent successfully!',
+      );
       testPhoneController.clear();
       testMessageController.clear();
       await fetchOverview();
     } catch (e) {
+      // A 403 (plan_required, …) already showed its own prompt.
+      if (Get.isRegistered<InstituteAccountStatusHandler>() &&
+          InstituteAccountStatusHandler.to.recentlyDenied) {
+        return;
+      }
       final msg = e.toString().replaceFirst('Exception: ', '');
+      // The server reports a skipped send as "WhatsApp delivery failed: <why>".
+      final reason = msg.replaceFirst('WhatsApp delivery failed: ', '');
+      final lower = reason.toLowerCase();
+      if (lower.contains('no whatsapp credits') ||
+          lower.contains('paid plan')) {
+        _showTestSkipped(reason);
+        fetchOverview();
+        return;
+      }
       AppSnackBar.error(msg.isNotEmpty ? msg : 'Failed to send test message');
     } finally {
       isSendingTest.value = false;
@@ -202,7 +268,10 @@ class WhatsAppController extends GetxController {
     final phoneId = phoneNumberIdController.text.trim();
     final accountId = businessAccountIdController.text.trim();
 
-    if (token.isEmpty || phoneNumber.isEmpty || phoneId.isEmpty || accountId.isEmpty) {
+    if (token.isEmpty ||
+        phoneNumber.isEmpty ||
+        phoneId.isEmpty ||
+        accountId.isEmpty) {
       AppSnackBar.warning(AppStrings.enterAllCredentials);
       return;
     }
@@ -228,7 +297,7 @@ class WhatsAppController extends GetxController {
       } else {
         savedSettings = await _repository.saveWhatsAppSettings(data);
       }
-      
+
       currentSettings.value = savedSettings;
       await fetchOverview();
       AppSnackBar.success(AppStrings.settingsSaved);

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 
 import 'package:tuoora/core/constants/app_colors.dart';
-import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
-import 'package:tuoora/core/widgets/app_action_icon.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
+import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/core/widgets/app_whatsapp_icon.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_controller.dart';
 import 'package:tuoora/presentation/institute/models/fee_record.dart';
@@ -20,7 +21,6 @@ class FeeReceiptScreen extends GetView<InstituteController> {
   @override
   Widget build(BuildContext context) {
     final r = Get.arguments as FeeRecord;
-    final isPaid = r.status.toLowerCase() == 'paid';
     final dateFmt = DateFormat('dd MMM, yyyy');
     final timeFmt = DateFormat('dd MMM, yyyy hh:mm a');
 
@@ -32,27 +32,6 @@ class FeeReceiptScreen extends GetView<InstituteController> {
             InstituteAppBar(
               title: AppStrings.receiptDetailsTitle,
               isRoot: false,
-              actions: [
-                Obx(() {
-                  final busy = controller.isDownloadingReceipt(r.id);
-                  return IconButton(
-                    tooltip: AppStrings.downloadReceiptTooltip,
-                    onPressed: busy
-                        ? null
-                        : () => controller.downloadFeeReceipt(r.id),
-                    icon: const AppActionIcon(asset: AppImages.icDownload),
-                  );
-                }),
-                IconButton(
-                  tooltip: 'Share Receipt',
-                  onPressed: () => _showShareSheet(r),
-                  icon: const Icon(
-                    Icons.share_rounded,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                AppSpacing.h8,
-              ],
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -60,9 +39,16 @@ class FeeReceiptScreen extends GetView<InstituteController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildReceiptCard(r, isPaid, dateFmt, timeFmt),
+                    _buildReceiptCard(r, dateFmt, timeFmt),
                     AppSpacing.v16,
+                    _buildDownloadButton(r),
+                    AppSpacing.v12,
                     _buildShareButtons(r),
+                    if (Get.find<AuthService>().can('fees.delete') &&
+                        r.transactionPaymentId != null) ...[
+                      AppSpacing.v12,
+                      _buildDeleteButton(r),
+                    ],
                   ],
                 ),
               ),
@@ -75,7 +61,6 @@ class FeeReceiptScreen extends GetView<InstituteController> {
 
   Widget _buildReceiptCard(
     FeeRecord r,
-    bool isPaid,
     DateFormat dateFmt,
     DateFormat timeFmt,
   ) {
@@ -104,14 +89,11 @@ class FeeReceiptScreen extends GetView<InstituteController> {
               ),
             ),
           ),
-          Padding(
-            padding: AppSpacing.all16,
-            child: _buildHeader(r, isPaid, dateFmt),
-          ),
+          Padding(padding: AppSpacing.all16, child: _buildHeader(r, dateFmt)),
           _divider(),
           Padding(
             padding: AppSpacing.all16,
-            child: _buildBilledAndPayment(r, timeFmt),
+            child: _buildBilledAndPayment(r, dateFmt, timeFmt),
           ),
           _divider(),
           Padding(padding: AppSpacing.all16, child: _buildLineItems(r)),
@@ -119,6 +101,51 @@ class FeeReceiptScreen extends GetView<InstituteController> {
           Padding(padding: AppSpacing.all16, child: _buildTotalRow(r)),
         ],
       ),
+    );
+  }
+
+  Widget _buildDownloadButton(FeeRecord r) {
+    return Obx(() {
+      final busy = controller.isDownloadingReceipt(r.id);
+      return AppButton(
+        label: busy ? 'Downloading…' : 'Download Receipt',
+        icon: Icons.download_rounded,
+        isLoading: busy,
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.primaryBrand,
+        borderColor: AppColors.primaryBrand,
+        hasShadow: false,
+        onPressed: () => controller.downloadFeeReceipt(r.id),
+      );
+    });
+  }
+
+  Widget _buildDeleteButton(FeeRecord r) {
+    return Obx(() {
+      final busy = controller.isDeletingTransaction.value;
+      return AppButton(
+        label: busy ? 'Deleting…' : 'Delete Transaction',
+        icon: Icons.delete_outline_rounded,
+        isLoading: busy,
+        backgroundColor: AppColors.white,
+        foregroundColor: AppColors.errorRed,
+        borderColor: AppColors.errorRed,
+        hasShadow: false,
+        onPressed: () => _confirmDelete(r),
+      );
+    });
+  }
+
+  void _confirmDelete(FeeRecord r) {
+    CommonDialog.showDeleteConfirmation(
+      title: 'Delete Transaction',
+      description:
+          'Delete the ${_money(r.transactionAmount)} payment from '
+          '${r.student?.name ?? 'this student'}? This cannot be undone.',
+      onConfirm: () async {
+        final deleted = await controller.deleteTransaction(r);
+        if (deleted) Get.back();
+      },
     );
   }
 
@@ -270,10 +297,7 @@ class FeeReceiptScreen extends GetView<InstituteController> {
                 ],
               ),
             ),
-            const Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textMuted,
-            ),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -286,7 +310,7 @@ class FeeReceiptScreen extends GetView<InstituteController> {
     color: AppColors.borderGrey.withValues(alpha: 0.6),
   );
 
-  Widget _buildHeader(FeeRecord r, bool isPaid, DateFormat dateFmt) {
+  Widget _buildHeader(FeeRecord r, DateFormat dateFmt) {
     final name = r.student?.name ?? '—';
     final phone = r.student?.phone ?? '';
     return Row(
@@ -334,23 +358,6 @@ class FeeReceiptScreen extends GetView<InstituteController> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: isPaid ? AppColors.successBg : AppColors.warningBg,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                r.status.toUpperCase(),
-                style: AppTextStyles.outfit(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isPaid ? AppColors.greenText : AppColors.warningAmber,
-                  letterSpacing: 0.6,
-                ),
-              ),
-            ),
-            AppSpacing.v8,
             Text(
               'Receipt No: REC-${_paddedId(r.id)}',
               style: AppTextStyles.outfit(
@@ -361,7 +368,7 @@ class FeeReceiptScreen extends GetView<InstituteController> {
             ),
             AppSpacing.v2,
             Text(
-              'Date: ${dateFmt.format(r.date)}',
+              'Date: ${dateFmt.format(r.transactionPaidAt)}',
               style: AppTextStyles.outfit(
                 fontSize: 11,
                 color: AppColors.textSecondary,
@@ -375,7 +382,11 @@ class FeeReceiptScreen extends GetView<InstituteController> {
 
   String _paddedId(int id) => id.toString().padLeft(4, '0');
 
-  Widget _buildBilledAndPayment(FeeRecord r, DateFormat timeFmt) {
+  Widget _buildBilledAndPayment(
+    FeeRecord r,
+    DateFormat dateFmt,
+    DateFormat timeFmt,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -412,11 +423,16 @@ class FeeReceiptScreen extends GetView<InstituteController> {
               AppSpacing.v8,
               _sectionHeader(AppStrings.receiptPaymentInformation),
               AppSpacing.v8,
-              _kvRow(AppStrings.receiptMethodLabel, _methodOf(r)),
+              _kvRow(AppStrings.receiptMethodLabel, r.transactionMethod),
               AppSpacing.v4,
               _kvRow(
                 AppStrings.receiptPaidDateLabel,
-                timeFmt.format(_paidAtOf(r)),
+                dateFmt.format(r.transactionPaidAt),
+              ),
+              AppSpacing.v4,
+              _kvRow(
+                'Transaction Date:',
+                timeFmt.format(r.transactionRecordedAt.toLocal()),
               ),
             ],
           ),
@@ -425,16 +441,7 @@ class FeeReceiptScreen extends GetView<InstituteController> {
     );
   }
 
-  String _methodOf(FeeRecord r) {
-    final p = r.latestPayment;
-    if (p != null && p.paymentMethod.isNotEmpty) return p.paymentMethod;
-    return AppStrings.instPaymentCash;
-  }
-
-  DateTime _paidAtOf(FeeRecord r) => r.latestPayment?.paidAt ?? r.updatedAt;
-
   Widget _buildLineItems(FeeRecord r) {
-    final periodLabel = DateFormat('MMMM yyyy').format(r.date);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -457,31 +464,18 @@ class FeeReceiptScreen extends GetView<InstituteController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.receiptMonthlyAcademicFees,
-                    style: AppTextStyles.outfit(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  AppSpacing.v2,
-                  Text(
-                    'Billing Period: $periodLabel',
-                    style: AppTextStyles.outfit(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+              child: Text(
+                'Fee Payment',
+                style: AppTextStyles.outfit(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             AppSpacing.h8,
             Text(
-              _money(r.totalAmount),
+              _money(r.transactionAmount),
               style: AppTextStyles.outfit(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -508,7 +502,7 @@ class FeeReceiptScreen extends GetView<InstituteController> {
         ),
         AppSpacing.h16,
         Text(
-          _money(r.paidAmount),
+          _money(r.transactionAmount),
           style: AppTextStyles.outfit(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -553,5 +547,5 @@ class FeeReceiptScreen extends GetView<InstituteController> {
     );
   }
 
-  String _money(double v) => '₹${NumberFormat('#,##,###.##').format(v)}';
+  String _money(double v) => formatRupees(v);
 }

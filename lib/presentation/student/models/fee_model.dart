@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:tuoora/core/enums/app_enums.dart';
 
 class FeeStatement {
@@ -177,6 +178,14 @@ class StudentReceipt {
   String get displayEnrollment =>
       enrollmentId.trim().isNotEmpty ? enrollmentId.trim() : 'N/A';
 
+  /// The day the student paid (`paid_at`), falling back to the server's
+  /// display `date`.
+  static String _paidDate(Map<String, dynamic> json) {
+    final paidAt = DateTime.tryParse(json['paid_at']?.toString() ?? '');
+    if (paidAt != null) return DateFormat('d MMM yyyy').format(paidAt);
+    return json['date']?.toString() ?? '';
+  }
+
   factory StudentReceipt.fromJson(Map<String, dynamic> json) {
     final parsedEnrollment = json['enrollment_id']?.toString() ??
         json['enrollment_no']?.toString() ??
@@ -189,7 +198,7 @@ class StudentReceipt {
       receiptNumber: json['receipt_number']?.toString() ?? '',
       amount: json['amount']?.toString() ?? '0',
       paymentMethod: json['payment_method']?.toString() ?? '',
-      date: json['date']?.toString() ?? '',
+      date: _paidDate(json),
       studentName: json['student_name']?.toString() ?? '',
       rollNo: parsedRollNo,
       enrollmentId: parsedEnrollment,

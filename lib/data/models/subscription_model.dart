@@ -8,7 +8,11 @@ class Subscription {
   final String status;
   final String effectiveStatus;
   final String statusLabel;
+  /// 0 for lifetime plans (the server sends null); check [isLifetime] first.
   final int daysLeft;
+
+  /// Lifetime plans never expire; their end date is a far-future placeholder.
+  final bool isLifetime;
 
   const Subscription({
     required this.id,
@@ -21,6 +25,7 @@ class Subscription {
     this.effectiveStatus = '',
     this.statusLabel = '',
     this.daysLeft = 0,
+    this.isLifetime = false,
   });
 
   bool get isActive => effectiveStatus.toLowerCase() == 'active';
@@ -42,6 +47,7 @@ class Subscription {
       effectiveStatus: effectiveStatus,
       statusLabel: statusLabel,
       daysLeft: daysLeft,
+      isLifetime: isLifetime,
     );
   }
 
@@ -61,7 +67,8 @@ class Subscription {
       status: (json['status'] ?? '').toString(),
       effectiveStatus: (json['effective_status'] ?? json['status'] ?? '').toString(),
       statusLabel: (json['status_label'] ?? '').toString(),
-      daysLeft: json['days_left'] ?? 0,
+      daysLeft: int.tryParse(json['days_left']?.toString() ?? '') ?? 0,
+      isLifetime: json['is_lifetime'] == true || json['is_lifetime'] == 1,
     );
   }
 
@@ -77,6 +84,7 @@ class Subscription {
       'effective_status': effectiveStatus,
       'status_label': statusLabel,
       'days_left': daysLeft,
+      'is_lifetime': isLifetime,
     };
   }
 }

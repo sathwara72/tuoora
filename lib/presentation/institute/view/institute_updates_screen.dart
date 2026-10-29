@@ -4,6 +4,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/enums/app_enums.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/data/models/daily_update_model.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
@@ -312,8 +313,41 @@ class InstituteUpdatesScreen extends StatelessWidget {
               ),
             ),
           ],
+          // Owner only (sub-access users can't open this screen at all).
+          if (update.id != null && !Get.find<AuthService>().isSubAccess) ...[
+            AppSpacing.v16,
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () {
+                  Get.back();
+                  _confirmDelete(update);
+                },
+                style: TextButton.styleFrom(foregroundColor: AppColors.errorRed),
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: Text(
+                  'Delete Update',
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.errorRed,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  void _confirmDelete(DailyUpdate update) {
+    CommonDialog.showDeleteConfirmation(
+      title: 'Delete Update',
+      description:
+          'Delete "${update.topic ?? 'this update'}"? Students and staff will '
+          'no longer see it. This cannot be undone.',
+      onConfirm: () => Get.find<UpdatesController>().deleteUpdate(update),
     );
   }
 

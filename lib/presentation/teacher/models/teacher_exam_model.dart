@@ -225,7 +225,7 @@ class TeacherExamMarkRow {
     return TeacherExamMarkRow(
       studentId: json['student_id'],
       studentName: json['student_name'] ?? '',
-      enrollmentId: json['enrollment_id'],
+      enrollmentId: json['enrollment_id']?.toString(),
       marksObtained: json['marks_obtained'] != null
           ? double.tryParse('${json['marks_obtained']}')
           : null,

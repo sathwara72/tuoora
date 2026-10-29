@@ -138,12 +138,17 @@ class ExpenseListResponse {
   final int lastPage;
   final int perPage;
 
+  /// Sum of every expense in the requested period (all pages); null from
+  /// servers that don't send it yet.
+  final double? totalAmount;
+
   ExpenseListResponse({
     required this.items,
     required this.total,
     required this.currentPage,
     required this.lastPage,
     required this.perPage,
+    this.totalAmount,
   });
 
   factory ExpenseListResponse.fromJson(Map<String, dynamic> json) {
@@ -155,6 +160,9 @@ class ExpenseListResponse {
       currentPage: json['current_page'] ?? 1,
       lastPage: json['last_page'] ?? 1,
       perPage: json['per_page'] ?? 15,
+      totalAmount: json['total_amount'] == null
+          ? null
+          : double.tryParse(json['total_amount'].toString()),
     );
   }
 }

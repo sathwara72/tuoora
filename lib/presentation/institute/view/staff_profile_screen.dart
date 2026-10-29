@@ -113,6 +113,8 @@ class StaffProfileScreen extends GetView<StaffController> {
                     color: AppColors.textPrimary,
                   ),
                 ),
+                AppSpacing.v4,
+                _roleBadge(staff.roleLabel),
                 AppSpacing.v8,
                 _buildContactItem(
                   Icons.email,
@@ -433,4 +435,25 @@ class StaffProfileScreen extends GetView<StaffController> {
       },
     );
   }
+}
+
+Widget _roleBadge(String label, {double fontSize = 10}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: AppColors.primaryBrandLight,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      label.toUpperCase(),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyles.outfit(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w700,
+        color: AppColors.primaryBrand,
+        letterSpacing: 0.6,
+      ),
+    ),
+  );
 }

@@ -15,6 +15,13 @@ class FeeRecord {
   final List<FeePayment> payments;
   final List<FeeInstallment> installments;
 
+  /// Latest payment summary sent with the fees list (`latest_payment_*`).
+  final int? latestPaymentId;
+  final double? latestPaymentAmount;
+  final String? latestPaymentMethod;
+  final DateTime? latestPaymentPaidAt;
+  final DateTime? latestPaymentRecordedAt;
+
   FeeRecord({
     required this.id,
     required this.studentId,
@@ -29,7 +36,32 @@ class FeeRecord {
     this.student,
     this.payments = const <FeePayment>[],
     this.installments = const <FeeInstallment>[],
+    this.latestPaymentId,
+    this.latestPaymentAmount,
+    this.latestPaymentMethod,
+    this.latestPaymentPaidAt,
+    this.latestPaymentRecordedAt,
   });
+
+  /// The payment a receipt / transaction row stands for.
+  int? get transactionPaymentId => latestPayment?.id ?? latestPaymentId;
+
+  /// This payment's amount only (not the fee total or paid-so-far).
+  double get transactionAmount =>
+      latestPayment?.amount ?? latestPaymentAmount ?? paidAmount;
+
+  String get transactionMethod {
+    final m = latestPayment?.paymentMethod ?? latestPaymentMethod ?? '';
+    return m.isNotEmpty ? m : 'Cash';
+  }
+
+  /// When the student paid (the date picked in the form).
+  DateTime get transactionPaidAt =>
+      latestPayment?.paidAt ?? latestPaymentPaidAt ?? date;
+
+  /// When the entry was recorded.
+  DateTime get transactionRecordedAt =>
+      latestPaymentRecordedAt ?? latestPayment?.createdAt ?? createdAt;
 
   FeePayment? get latestPayment {
     if (payments.isEmpty) return null;
@@ -69,6 +101,17 @@ class FeeRecord {
               .map((e) => FeeInstallment.fromJson(e.cast<String, dynamic>()))
               .toList() ??
           const <FeeInstallment>[],
+      latestPaymentId: json['latest_payment_id'] != null
+          ? safeInt(json['latest_payment_id'])
+          : null,
+      latestPaymentAmount: json['latest_payment_amount'] != null
+          ? safeDouble(json['latest_payment_amount'])
+          : null,
+      latestPaymentMethod: json['latest_payment_method']?.toString(),
+      latestPaymentPaidAt: safeNullableDate(json['latest_payment_date']),
+      latestPaymentRecordedAt: safeNullableDate(
+        json['latest_payment_recorded_at'],
+      ),
     );
   }
 
@@ -219,7 +262,6 @@ class FeeListResponse {
   }
 }
 
-
 class FeeInstallment {
   final int id;
   final int feeId;
@@ -297,7 +339,9 @@ class PendingFeeStudent {
       id: FeeRecord.safeInt(json['id']),
       name: FeeRecord.safeString(json['name']),
       enrollmentId: FeeRecord.safeString(json['enrollment_id']),
-      batchId: json['batch_id'] != null ? FeeRecord.safeInt(json['batch_id']) : null,
+      batchId: json['batch_id'] != null
+          ? FeeRecord.safeInt(json['batch_id'])
+          : null,
       batchName: FeeRecord.safeString(json['batch_name']),
       monthlyFee: FeeRecord.safeDouble(json['monthly_fee']),
       totalPaid: FeeRecord.safeDouble(json['total_paid']),
@@ -325,7 +369,8 @@ class PendingFeesResponse {
 
   factory PendingFeesResponse.fromJson(Map<String, dynamic> json) {
     return PendingFeesResponse(
-      items: (json['items'] as List?)
+      items:
+          (json['items'] as List?)
               ?.map((i) => PendingFeeStudent.fromJson(i))
               .toList() ??
           [],

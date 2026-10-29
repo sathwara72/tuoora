@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/institute_account_status_handler.dart';
 import 'package:tuoora/core/api/api_client.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 
@@ -27,6 +28,11 @@ class AppSnackBar {
 
   static void error(String message, {String title = 'Error'}) {
     if (Get.isRegistered<ApiClient>() && Get.find<ApiClient>().isLoggingOut) {
+      return;
+    }
+    // "You don't have permission" was just shown for this failure.
+    if (Get.isRegistered<InstituteAccountStatusHandler>() &&
+        InstituteAccountStatusHandler.to.recentlyDenied) {
       return;
     }
     Get.snackbar(

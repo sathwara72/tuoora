@@ -1,3 +1,5 @@
+import 'package:tuoora/presentation/institute/models/profit_loss_model.dart';
+import 'package:tuoora/data/models/financial_period.dart';
 import 'package:tuoora/data/models/institute_subscription_model.dart';
 import 'dart:io';
 import 'package:tuoora/presentation/institute/models/expense_model.dart';
@@ -641,6 +643,30 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<ProfitLossReport> getProfitLoss(FinancialPeriod period) async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteReportProfitLoss,
+      query: period.toQuery(),
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to load Profit & Loss');
+    }
+    final data = response.body is Map ? response.body['data'] : null;
+    return ProfitLossReport.fromJson(
+      data is Map ? data.cast<String, dynamic>() : const {},
+    );
+  }
+
+  @override
+  Future<List<int>> exportProfitLoss(FinancialPeriod period) async {
+    final query = Uri(queryParameters: period.toQuery()).query;
+    return _downloadFile(
+      '${ApiConstants.instituteReportProfitLossExport}?$query',
+      acceptHeader: 'application/pdf',
+    );
+  }
+
+  @override
   Future<List<int>> exportFeeReport({int? batchId}) async {
     return _downloadFile(
       _withBatch(ApiConstants.instituteReportFeeExport, batchId),
@@ -1268,9 +1294,11 @@ class InstituteRepository implements InstituteRepositoryImpl {
     int? year,
     int? categoryId,
     int? perPage,
+    FinancialPeriod? period,
   }) async {
     final Map<String, String> queryParams = {
       'page': page.toString(),
+      ...?period?.toQuery(),
     };
     if (month != null) queryParams['month'] = month.toString();
     if (year != null) queryParams['year'] = year.toString();
@@ -1321,6 +1349,22 @@ class InstituteRepository implements InstituteRepositoryImpl {
       throw Exception('Failed to update category: ${response.statusText}');
     }
     return ExpenseCategory.fromJson(response.body['data']);
+  }
+
+  @override
+  Future<String> deleteExpense(int expenseId) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteExpenses}/$expenseId',
+    );
+    return _messageOr(response, 'Expense deleted successfully.');
+  }
+
+  @override
+  Future<String> deleteStaffRole(int roleId) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteStaffRoles}/$roleId',
+    );
+    return _messageOr(response, 'Role deleted successfully');
   }
 
   @override
@@ -1383,16 +1427,11 @@ class InstituteRepository implements InstituteRepositoryImpl {
 
   @override
   Future<List<ExpenseModel>> listSalaryExpenses({
-    required int month,
-    required int year,
+    required FinancialPeriod period,
   }) async {
     final response = await _apiClient.get(
       ApiConstants.instituteExpenses,
-      query: {
-        'category_id': 'salary',
-        'month': month.toString(),
-        'year': year.toString(),
-      },
+      query: {'category_id': 'salary', ...period.toQuery()},
     );
     if (response.status.hasError) {
       throw Exception('Failed to fetch salary expenses: ${response.statusText}');
@@ -1505,6 +1544,14 @@ class InstituteRepository implements InstituteRepositoryImpl {
     }
 
     return Staff.fromJson(response.body['data']);
+  }
+
+  /// Server `message` on success; throws with the server message on error.
+  String _messageOr(Response response, String fallback) {
+    final body = response.body;
+    final message = body is Map ? body['message']?.toString() : null;
+    if (response.status.hasError) throw Exception(message ?? fallback);
+    return message ?? fallback;
   }
 
   void _handleError(Response response, String defaultMessage) {
@@ -1651,6 +1698,22 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<String> deleteSalary(int recordId) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteSalaries}/$recordId',
+    );
+    return _messageOr(response, 'Salary payment deleted successfully.');
+  }
+
+  @override
+  Future<String> deleteStaffAttendance(int recordId) async {
+    final response = await _apiClient.delete(
+      '${ApiConstants.instituteAttendance}/$recordId',
+    );
+    return _messageOr(response, 'Attendance unmarked successfully.');
+  }
+
+  @override
   Future<void> logSalary(Map<String, dynamic> data) async {
     final response = await _apiClient.post(
       ApiConstants.instituteSalaries,
@@ -1728,6 +1791,19 @@ class InstituteRepository implements InstituteRepositoryImpl {
         .whereType<Map>()
         .map((e) => FeePayment.fromJson(e.cast<String, dynamic>()))
         .toList();
+  }
+
+  @override
+  Future<String> deletePayment(int paymentId) async {
+    final response = await _apiClient.delete(
+      ApiConstants.institutePaymentDelete(paymentId),
+    );
+    if (response.status.hasError) {
+      _handleError(response, 'Failed to delete transaction');
+    }
+    final body = response.body;
+    return (body is Map ? body['message']?.toString() : null) ??
+        'Transaction deleted.';
   }
 
   @override

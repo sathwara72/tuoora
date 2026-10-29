@@ -121,7 +121,6 @@ class AssignToBatchController extends GetxController {
   }
 
   void addStudentToSelection(Student student) {
-    final today = DateTime.now();
     selectedStudents.add(
       BatchStudent(
         student: student,
@@ -130,7 +129,6 @@ class AssignToBatchController extends GetxController {
           MilestoneDraft(
             title: 'Installment 1',
             amount: batch.baseFee,
-            dueDate: DateTime(today.year, today.month, today.day),
           ),
         ],
       ),
@@ -192,13 +190,6 @@ class AssignToBatchController extends GetxController {
     }
   }
 
-  DateTime _dateForNext(BatchStudent bs) {
-    final last = bs.milestones.isNotEmpty
-        ? bs.milestones.last.dueDate
-        : DateTime.now();
-    return DateTime(last.year, last.month + 1, last.day);
-  }
-
   /// Changing the fee re-splits it evenly across the milestones.
   void updateStudentFee(int studentId, String feeStr) {
     final bs = _find(studentId);
@@ -211,7 +202,6 @@ class AssignToBatchController extends GetxController {
   void splitMilestones(int studentId, int count) {
     final bs = _find(studentId);
     if (bs == null || count < 1) return;
-    final now = DateTime.now();
     bs.milestones
       ..clear()
       ..addAll(
@@ -220,7 +210,6 @@ class AssignToBatchController extends GetxController {
           (i) => MilestoneDraft(
             title: 'Installment ${i + 1}',
             amount: 0,
-            dueDate: DateTime(now.year, now.month + i, now.day),
           ),
         ),
       );
@@ -232,7 +221,7 @@ class AssignToBatchController extends GetxController {
     final bs = _find(studentId);
     if (bs == null) return;
     bs.milestones.add(
-      MilestoneDraft(title: '', amount: 0, dueDate: _dateForNext(bs)),
+      MilestoneDraft(title: '', amount: 0),
     );
     _retitle(bs);
     _redistribute(bs);
@@ -256,13 +245,6 @@ class AssignToBatchController extends GetxController {
     if (bs == null || index >= bs.milestones.length) return;
     bs.milestones[index].amount = double.tryParse(value) ?? 0;
     _redistribute(bs, fixedIndex: index);
-    selectedStudents.refresh();
-  }
-
-  void updateMilestoneDate(int studentId, int index, DateTime date) {
-    final bs = _find(studentId);
-    if (bs == null || index >= bs.milestones.length) return;
-    bs.milestones[index].dueDate = date;
     selectedStudents.refresh();
   }
 
@@ -694,30 +676,6 @@ class AssignToBatchScreen extends StatelessWidget {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                    ),
-                  ),
-                ),
-                AppSpacing.h8,
-                Expanded(
-                  flex: 3,
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final picked = await showDatePicker(
-                        context: Get.context!,
-                        initialDate: bs.milestones[i].dueDate,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime(2100),
-                      );
-                      if (picked != null) {
-                        controller.updateMilestoneDate(id, i, picked);
-                      }
-                    },
-                    icon: const Icon(Icons.event_rounded, size: 16),
-                    label: Text(
-                      '${bs.milestones[i].dueDate.day.toString().padLeft(2, '0')}/'
-                      '${bs.milestones[i].dueDate.month.toString().padLeft(2, '0')}/'
-                      '${bs.milestones[i].dueDate.year}',
-                      style: AppTextStyles.outfit(fontSize: 12),
                     ),
                   ),
                 ),

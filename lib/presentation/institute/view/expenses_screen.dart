@@ -1,3 +1,4 @@
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -8,9 +9,11 @@ import 'package:tuoora/presentation/institute/controllers/expense_controller.dar
 import 'package:tuoora/presentation/institute/models/expense_model.dart';
 import 'package:tuoora/presentation/institute/widgets/expense_widgets.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
-import 'package:tuoora/presentation/institute/widgets/month_selector_widget.dart';
+import 'package:tuoora/core/widgets/period_filter_bar.dart';
 import 'package:tuoora/core/widgets/app_empty_view.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
+import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -25,8 +28,21 @@ class ExpensesScreen extends GetView<ExpenseController> {
       body: SafeArea(
         child: Column(
           children: [
-            const InstituteAppBar(title: AppStrings.expensesOverview),
-            _buildMonthSelector(context),
+            InstituteAppBar(
+              title: AppStrings.expensesOverview,
+              actions: [
+                if (Get.find<AuthService>().can('reports.view'))
+                  IconButton(
+                    tooltip: 'Profit & Loss',
+                    onPressed: () => Get.toNamed(AppRoutes.instituteProfitLoss),
+                    icon: const Icon(
+                      Icons.account_balance_rounded,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+              ],
+            ),
+            _buildPeriodFilter(),
             Expanded(
               child: Obx(() {
                 if (controller.isLoading.value && controller.expenses.isEmpty) {
@@ -44,10 +60,8 @@ class ExpensesScreen extends GetView<ExpenseController> {
                     children: [
                       ExpenseHeroCard(
                         title: 'Total Spend',
-                        total: controller.totalMonthlySpending,
-                        monthLabel: DateFormat('MMMM yyyy').format(
-                          controller.selectedExpensesMonth.value,
-                        ),
+                        total: controller.totalSpending,
+                        monthLabel: controller.period.value.label,
                         stats: [
                           MapEntry('Categories', '${groups.length}'),
                           MapEntry(
@@ -125,25 +139,15 @@ class ExpensesScreen extends GetView<ExpenseController> {
     );
   }
 
-  Widget _buildMonthSelector(BuildContext context) {
+  Widget _buildPeriodFilter() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Obx(() {
-        final selectedDate = controller.selectedExpensesMonth.value;
-        final isPrevEnabled = selectedDate.year > 2020;
-
-        return MonthSelectorWidget(
-          selectedMonth: selectedDate,
-          onMonthChanged: (date) {
-            controller.setExpensesMonth(date);
-          },
-          isNextEnabled: controller.canGoToNextExpensesMonth,
-          isPrevEnabled: isPrevEnabled,
-          minDate: DateTime(2020, 1),
-          maxDate: DateTime.now(),
-          helpText: 'Select Month',
-        );
-      }),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Obx(
+        () => PeriodFilterBar(
+          period: controller.period.value,
+          onChanged: controller.setPeriod,
+        ),
+      ),
     );
   }
 
@@ -183,12 +187,6 @@ class ExpensesScreen extends GetView<ExpenseController> {
   }
 
   void _showTransactionsPopUp(BuildContext context, ExpenseCategoryGroup group) {
-    final currencyFormat = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
-      decimalDigits: 2,
-    );
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -249,14 +247,18 @@ class ExpensesScreen extends GetView<ExpenseController> {
                               color: AppColors.textPrimary,
                             ),
                           ),
-                          Text(
-                            '${group.count} ${group.count == 1 ? 'transaction' : 'transactions'} • Total: ${currencyFormat.format(group.totalAmount)}',
-                            style: AppTextStyles.outfit(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
+                          Obx(() {
+                            final live = _liveGroup(group);
+                            final count = live?.count ?? 0;
+                            return Text(
+                              '$count ${count == 1 ? 'transaction' : 'transactions'} • Total: ${formatRupees(live?.totalAmount ?? 0)}',
+                              style: AppTextStyles.outfit(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.textSecondary,
+                              ),
+                            );
+                          }),
                         ],
                       ),
                     ),
@@ -291,26 +293,48 @@ class ExpensesScreen extends GetView<ExpenseController> {
 
               // Transactions list
               Expanded(
-                child: group.transactions.isEmpty
-                    ? const Center(child: Text('No transactions found'))
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        itemCount: group.transactions.length,
-                        separatorBuilder: (context, index) => const Divider(
-                          height: 10,
-                          thickness: 0.5,
-                          color: AppColors.borderGrey,
-                        ),
-                        itemBuilder: (context, index) {
-                          final transaction = group.transactions[index];
-                          return _buildTransactionItem(transaction, currencyFormat);
-                        },
-                      ),
+                child: Obx(() {
+                  final transactions =
+                      _liveGroup(group)?.transactions ?? const <ExpenseModel>[];
+                  if (transactions.isEmpty) {
+                    return const Center(child: Text('No transactions found'));
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    itemCount: transactions.length,
+                    separatorBuilder: (context, index) => const Divider(
+                      height: 10,
+                      thickness: 0.5,
+                      color: AppColors.borderGrey,
+                    ),
+                    itemBuilder: (context, index) {
+                      return _buildTransactionItem(
+                        transactions[index],
+                      );
+                    },
+                  );
+                }),
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  /// The current version of [group] (it changes when an entry is deleted).
+  ExpenseCategoryGroup? _liveGroup(ExpenseCategoryGroup group) => controller
+      .categoryGroups
+      .firstWhereOrNull((g) => g.categoryId == group.categoryId);
+
+  void _confirmDeleteExpense(ExpenseModel transaction) {
+    CommonDialog.showDeleteConfirmation(
+      title: 'Delete Expense',
+      description:
+          'Delete this ${formatInr(transaction.amount)} expense'
+          '${transaction.description.isNotEmpty ? ' (${transaction.description})' : ''}? '
+          'This cannot be undone.',
+      onConfirm: () => controller.deleteExpense(transaction),
     );
   }
 
@@ -481,7 +505,6 @@ class ExpensesScreen extends GetView<ExpenseController> {
 
   Widget _buildTransactionItem(
     ExpenseModel transaction,
-    NumberFormat currencyFormat,
   ) {
     final dateFormat = DateFormat('MMM dd, yyyy');
     final isOnline = transaction.paymentMethod == 'Online';
@@ -546,13 +569,36 @@ class ExpensesScreen extends GetView<ExpenseController> {
           ),
           AppSpacing.h8,
           Text(
-            currencyFormat.format(transaction.amount),
+            formatRupees(transaction.amount),
             style: AppTextStyles.outfit(
               fontSize: 13,
               fontWeight: FontWeight.w700,
               color: AppColors.primaryBrand,
             ),
           ),
+          // Paid salaries come from the salary module and are read-only here.
+          if (!transaction.isSalary)
+            Obx(() {
+              final busy = controller.deletingExpenseIds.contains(
+                transaction.id,
+              );
+              return IconButton(
+                visualDensity: VisualDensity.compact,
+                tooltip: 'Delete expense',
+                onPressed: busy ? null : () => _confirmDeleteExpense(transaction),
+                icon: busy
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.redAccent,
+                        size: 19,
+                      ),
+              );
+            }),
         ],
       ),
     );

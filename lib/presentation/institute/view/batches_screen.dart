@@ -1,4 +1,5 @@
 import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -238,7 +239,7 @@ class _BatchesScreenState extends State<BatchesScreen> {
                             ),
                             AppSpacing.h16,
                             Text(
-                              '₹${batch.baseFee.toStringAsFixed(0)}',
+                              formatRupees(batch.baseFee),
                               style: AppTextStyles.outfit(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,

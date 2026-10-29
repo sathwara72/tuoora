@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:tuoora/core/services/auth_service.dart';
+import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -16,6 +18,13 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
 
   @override
   Widget build(BuildContext context) {
+    return _RefreshOnOpen(
+      onOpen: controller.refreshOnOpen,
+      child: _buildScaffold(),
+    );
+  }
+
+  Widget _buildScaffold() {
     return Scaffold(
       backgroundColor: AppColors.surfaceBg,
       body: SafeArea(
@@ -37,24 +46,28 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildModeBanner(),
-                          AppSpacing.v16,
-                          _buildWalletCard(),
-                          AppSpacing.v20,
-                          _buildPacksSection(),
-                          AppSpacing.v20,
-                          _buildSendTestCard(),
-                          AppSpacing.v20,
-                          _buildRecentLogsSection(),
-                          AppSpacing.v20,
-                          _buildDedicatedMetaSection(),
-                          AppSpacing.v20,
-                          _buildAutomatedAlertsSection(),
-                          AppSpacing.v32,
-                        ],
+                      child: Obx(
+                        () => controller.showUpgradePrompt
+                            ? _buildPlanRequired()
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildModeBanner(),
+                                  AppSpacing.v16,
+                                  _buildWalletCard(),
+                                  AppSpacing.v20,
+                                  _buildPacksSection(),
+                                  AppSpacing.v20,
+                                  _buildSendTestCard(),
+                                  AppSpacing.v20,
+                                  _buildRecentLogsSection(),
+                                  AppSpacing.v20,
+                                  _buildDedicatedMetaSection(),
+                                  AppSpacing.v20,
+                                  _buildAutomatedAlertsSection(),
+                                  AppSpacing.v32,
+                                ],
+                              ),
                       ),
                     ),
                   ),
@@ -180,15 +193,74 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
   // ---------------------------------------------------------------------------
   // 2. Wallet Balance Card (Gradient Brand Card)
   // ---------------------------------------------------------------------------
+  Widget _buildMetaBillingNote() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.fieldBorder),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.violetSoft,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.receipt_long_rounded,
+              color: AppColors.violet,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Billed by Meta to your WhatsApp Business account',
+                  style: AppTextStyles.outfit(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Messages go out from your own number, so message credits '
+                  'are not needed.',
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildWalletCard() {
     return Obx(() {
       final isDedicated = controller.hasDedicatedWhatsApp.value;
-      if (isDedicated) {
+      // Own Meta number: Meta bills the institute directly, no credits.
+      if (isDedicated) return _buildMetaBillingNote();
+      // Credits only pay for the Tuoora number: none to buy for White Label
+      // without a paid plan.
+      if (!controller.canBuyCredits.value) {
         return const SizedBox.shrink();
       }
 
       final balance = controller.walletBalance.value;
-      final isLow = controller.isLowBalance.value;
+      // At 0 credits the server skips every Tuoora-number message.
+      final isEmpty = balance <= 0;
+      final isLow = controller.isLowBalance.value || isEmpty;
 
       return Container(
         width: double.infinity,
@@ -250,7 +322,7 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    isLow ? 'LOW CREDITS' : 'ACTIVE',
+                    isEmpty ? 'NO CREDITS' : (isLow ? 'LOW CREDITS' : 'ACTIVE'),
                     style: AppTextStyles.outfit(
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
@@ -305,7 +377,9 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Credits are low (<20). Top up now to avoid interrupted reminders.',
+                        isEmpty
+                            ? 'No credits left — WhatsApp messages are paused. Buy a pack below to keep sending.'
+                            : 'Credits are low (<20). Top up now to avoid interrupted reminders.',
                         style: AppTextStyles.outfit(
                           fontSize: 10,
                           color: Colors.white,
@@ -328,6 +402,11 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
   Widget _buildPacksSection() {
     return Obx(() {
       if (controller.hasDedicatedWhatsApp.value) {
+        return const SizedBox.shrink();
+      }
+      // White Label without a paid plan: credits would only pay for the
+      // Tuoora number, which it can't use.
+      if (!controller.canBuyCredits.value) {
         return const SizedBox.shrink();
       }
 
@@ -610,6 +689,75 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
     );
   }
 
+  /// No paid plan: upgrade prompt instead of setup. Plans is owner-only, so
+  /// sub-access users are asked to contact the owner.
+  Widget _buildPlanRequired() {
+    final isOwner = !Get.find<AuthService>().isSubAccess;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.fieldBorder),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: const BoxDecoration(
+              color: AppColors.primaryBrandLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.workspace_premium_rounded,
+              color: AppColors.primaryBrand,
+              size: 32,
+            ),
+          ),
+          AppSpacing.v16,
+          Text(
+            'Upgrade to use WhatsApp',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.outfit(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          AppSpacing.v8,
+          Text(
+            controller.planRequiredMessage.value,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.outfit(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          AppSpacing.v20,
+          if (isOwner)
+            AppButton(
+              label: 'View Plans',
+              icon: Icons.arrow_forward_rounded,
+              onPressed: () => Get.toNamed(AppRoutes.instituteSubscription),
+            )
+          else
+            Text(
+              'Ask the institute owner to upgrade the plan.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.outfit(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textTertiary,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // 5. Recent Delivery Logs (Card view matching web mobile UI)
   // ---------------------------------------------------------------------------
@@ -686,7 +834,9 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final log = logs[index];
-                  final isSent = log.isSent;
+                  final status = log.normalizedStatus;
+                  final isFailed = log.isFailed;
+                  final isRead = status == 'read';
 
                   return Container(
                     padding: const EdgeInsets.all(10),
@@ -721,19 +871,25 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: isSent
-                                    ? AppColors.successBg
-                                    : AppColors.errorBg,
+                                color: isFailed
+                                    ? AppColors.errorBg
+                                    : AppColors.successBg,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                isSent ? 'SENT' : 'FAILED',
+                                isRead
+                                    ? 'READ ✓✓'
+                                    : status == 'delivered'
+                                    ? 'DELIVERED ✓✓'
+                                    : status.toUpperCase(),
                                 style: AppTextStyles.outfit(
                                   fontSize: 8.5,
                                   fontWeight: FontWeight.w900,
-                                  color: isSent
-                                      ? AppColors.successGreen
-                                      : AppColors.errorRed,
+                                  color: isFailed
+                                      ? AppColors.errorRed
+                                      : isRead
+                                      ? AppColors.primaryBrand
+                                      : AppColors.successGreen,
                                 ),
                               ),
                             ),
@@ -760,6 +916,31 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (isFailed &&
+                            (log.errorMessage?.trim().isNotEmpty ?? false)) ...[
+                          const SizedBox(height: 5),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorBg,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Reason: ${log.errorMessage!.trim()}',
+                              style: AppTextStyles.outfit(
+                                fontSize: 10,
+                                color: AppColors.errorRed,
+                                height: 1.3,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 6),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1103,4 +1284,26 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
       ),
     );
   }
+}
+
+/// Runs [onOpen] once each time the screen is pushed.
+class _RefreshOnOpen extends StatefulWidget {
+  final VoidCallback onOpen;
+  final Widget child;
+
+  const _RefreshOnOpen({required this.onOpen, required this.child});
+
+  @override
+  State<_RefreshOnOpen> createState() => _RefreshOnOpenState();
+}
+
+class _RefreshOnOpenState extends State<_RefreshOnOpen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => widget.onOpen());
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

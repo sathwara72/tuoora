@@ -1,4 +1,5 @@
 import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -124,7 +125,7 @@ class SalaryManagementScreen extends GetView<StaffController> {
                 ),
                 AppSpacing.v8,
                 Text(
-                  '₹${controller.totalGlobalSalaryAmount.value}',
+                  formatRupees(controller.totalGlobalSalaryAmount.value),
                   style: AppTextStyles.outfit(
                     fontSize: 36,
                     fontWeight: FontWeight.w800,
@@ -182,11 +183,27 @@ class SalaryManagementScreen extends GetView<StaffController> {
                   borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
                   border: Border.all(color: AppColors.background),
                 ),
-                child: _buildPayoutItem(
-                  staffName,
-                  '$date \u2022 $method',
-                  '₹$amount',
-                  salary.staff?.profileUrl ?? '',
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildPayoutItem(
+                        staffName,
+                        '$date \u2022 $method',
+                        formatRupees(amount),
+                        salary.staff?.profileUrl ?? '',
+                      ),
+                    ),
+                    Obx(() => IconButton(
+                      tooltip: 'Delete salary payment',
+                      onPressed: controller.deletingSalaryIds.contains(salary.id)
+                          ? null
+                          : () => controller.confirmDeleteSalary(salary),
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: AppColors.errorRed,
+                      ),
+                    )),
+                  ],
                 ),
               );
             } catch (e, stack) {

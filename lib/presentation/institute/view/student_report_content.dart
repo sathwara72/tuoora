@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/widgets/app_empty_view.dart';
 import 'package:tuoora/data/models/student_model.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
@@ -256,7 +257,7 @@ class StudentReportContent extends StatelessWidget {
         ? 'Fully Paid'
         : (paid > 0 ? 'Partially Paid' : 'Unpaid');
 
-    String rupees(num v) => '₹${v.toStringAsFixed(0)}';
+    String rupees(num v) => formatRupees(v);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1134,9 +1135,9 @@ class StudentReportContent extends StatelessWidget {
     return Column(
       children: [
         _buildStatsBar([
-          _StatBarItem('Monthly Fee', '₹${report.financial.monthlyFee.toStringAsFixed(0)}'),
-          _StatBarItem('Paid', '₹${report.financial.totalPaid.toStringAsFixed(0)}', color: AppColors.successGreen),
-          _StatBarItem('Balance', '₹${report.financial.balance.toStringAsFixed(0)}', color: AppColors.bohoRed),
+          _StatBarItem('Monthly Fee', formatRupees(report.financial.monthlyFee)),
+          _StatBarItem('Paid', formatRupees(report.financial.totalPaid), color: AppColors.successGreen),
+          _StatBarItem('Balance', formatRupees(report.financial.balance), color: AppColors.bohoRed),
         ]),
         AppSpacing.v12,
         ...fees.map((fee) {
@@ -1198,14 +1199,14 @@ class StudentReportContent extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Total: ₹${fee.totalAmount.toStringAsFixed(0)}',
+                      'Total: ${formatRupees(fee.totalAmount)}',
                       style: AppTextStyles.outfit(
                         fontSize: 13,
                         color: AppColors.textSecondary,
                       ),
                     ),
                     Text(
-                      'Paid: ₹${fee.paidAmount.toStringAsFixed(0)}',
+                      'Paid: ${formatRupees(fee.paidAmount)}',
                       style: AppTextStyles.outfit(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -1217,7 +1218,7 @@ class StudentReportContent extends StatelessWidget {
                 if (fee.remaining > 0) ...[
                   AppSpacing.v6,
                   Text(
-                    'Remaining: ₹${fee.remaining.toStringAsFixed(0)}',
+                    'Remaining: ${formatRupees(fee.remaining)}',
                     style: AppTextStyles.outfit(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,

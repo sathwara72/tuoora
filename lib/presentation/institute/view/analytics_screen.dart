@@ -2,6 +2,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/core/widgets/app_empty_view.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
@@ -149,7 +150,7 @@ class AnalyticsScreen extends StatelessWidget {
       children: [
         AnalyticsStatCard(
           title: 'This Month Revenue',
-          value: '₹${data.revenue.currentMonthTotal.toStringAsFixed(0)}',
+          value: formatRupees(data.revenue.currentMonthTotal),
           trailingLabel:
               '${growthUp ? '▲' : '▼'} ${growth.abs().toStringAsFixed(1)}% vs last month',
           trailingColor: growthUp ? Colors.green : Colors.red,
@@ -197,7 +198,7 @@ class AnalyticsScreen extends StatelessWidget {
         barColor: AppColors.primaryBrand,
         valueFormatter: (v) => v >= 1000
             ? '₹${(v / 1000).toStringAsFixed(1)}k'
-            : '₹${v.toStringAsFixed(0)}',
+            : formatRupees(v),
       ),
     );
   }

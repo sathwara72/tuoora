@@ -26,7 +26,7 @@ class TeacherFee {
       status: json['status'] ?? '',
       date: json['date'],
       studentName: student is Map ? student['name'] : null,
-      enrollmentId: student is Map ? student['enrollment_id'] : null,
+      enrollmentId: student is Map ? student['enrollment_id']?.toString() : null,
     );
   }
 }

@@ -131,7 +131,9 @@ class ExamModel {
       id: json['id'].toString(),
       batchId: json['batch_id'].toString(),
       batchName: json['batch']?['name'],
-      classId: json['class_id'] != null ? int.tryParse(json['class_id'].toString()) : null,
+      classId: json['class_id'] != null
+          ? int.tryParse(json['class_id'].toString())
+          : null,
       className: json['school_class']?['name'] ?? json['class']?['name'],
       title: json['title'] ?? '',
       subject: json['subject'],
@@ -188,7 +190,7 @@ class ExamMarkRow {
       studentId: json['student_id'],
       studentName: json['student_name'] ?? 'Student',
       phone: json['phone'],
-      enrollmentId: json['enrollment_id'],
+      enrollmentId: json['enrollment_id']?.toString(),
       profileImage: json['profile_image'],
       marksObtained: json['marks_obtained'] != null
           ? (json['marks_obtained']).toDouble()
@@ -210,5 +212,9 @@ class ExamMarksData {
   final List<ExamMarkRow> students;
   final ExamStats stats;
 
-  ExamMarksData({required this.exam, required this.students, required this.stats});
+  ExamMarksData({
+    required this.exam,
+    required this.students,
+    required this.stats,
+  });
 }

@@ -91,6 +91,8 @@ class ApiConstants {
   static const String instituteWhatsAppTest =
       '/institute/whatsapp/test';
   static const String instituteFees = '/institute/fees';
+  static String instituteSyncInstallments(int feeId) =>
+      '/institute/fees/$feeId/installments';
   static String institutePayInstallment(int installmentId) =>
       '/institute/fees/installments/$installmentId/pay';
   static const String instituteFeesExport = '/institute/fees/export';
@@ -153,6 +155,8 @@ class ApiConstants {
       '/institute/batches/$batchId/students/$studentId/fee';
   static String instituteStudentPayments(int studentId) =>
       '/institute/payments/$studentId';
+  static String institutePaymentDelete(int paymentId) =>
+      '/institute/payments/$paymentId';
   static String instituteShareReceipt(int id) =>
       '/institute/fees/receipts/$id/share';
 
@@ -166,6 +170,10 @@ class ApiConstants {
       '/institute/batches/$batchId/close';
 
   // Reports Endpoints
+  static const String instituteReportProfitLoss =
+      '/institute/reports/profit-loss';
+  static const String instituteReportProfitLossExport =
+      '/institute/reports/profit-loss/export';
   static const String instituteReportFee = '/institute/reports/fee';
   static const String instituteReportFeeExport =
       '/institute/reports/fee/export';

@@ -164,6 +164,11 @@ class StaffListScreen extends GetView<StaffController> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: _roleBadge(staff.roleLabel, fontSize: 8.5),
+            ),
           ],
         ),
       ),
@@ -220,4 +225,25 @@ class StaffListScreen extends GetView<StaffController> {
     }
     return initials.toUpperCase();
   }
+}
+
+Widget _roleBadge(String label, {double fontSize = 10}) {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: AppColors.primaryBrandLight,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Text(
+      label.toUpperCase(),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyles.outfit(
+        fontSize: fontSize,
+        fontWeight: FontWeight.w700,
+        color: AppColors.primaryBrand,
+        letterSpacing: 0.6,
+      ),
+    ),
+  );
 }

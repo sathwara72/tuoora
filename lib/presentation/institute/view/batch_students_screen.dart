@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
@@ -336,7 +337,7 @@ class BatchStudentsScreen extends StatelessWidget {
           ),
         ),
         Text(
-          '₹${_formatAmount(fee)}',
+          formatRupees(fee),
           style: AppTextStyles.outfit(
             fontSize: 13,
             fontWeight: FontWeight.w700,

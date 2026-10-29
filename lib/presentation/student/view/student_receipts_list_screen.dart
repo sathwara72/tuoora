@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:get/get.dart';
@@ -136,7 +137,7 @@ class _ReceiptCard extends StatelessWidget {
               ),
               AppSpacing.h8,
               Text(
-                '₹${receipt.amount}',
+                formatRupees(receipt.amount),
                 style: AppTextStyles.outfit(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

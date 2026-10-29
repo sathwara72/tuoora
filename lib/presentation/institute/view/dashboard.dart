@@ -7,7 +7,8 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/data/models/menu_item.dart';
 import 'package:tuoora/presentation/institute/controllers/institute_profile_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/subscription_banner.dart';
-import 'package:tuoora/presentation/institute/widgets/todays_birthday_card.dart';
+import 'package:tuoora/presentation/institute/controllers/birthday_controller.dart';
+import 'package:tuoora/presentation/institute/controllers/chat_controller.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/services/branding_service.dart';
@@ -24,7 +25,13 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       body: RefreshIndicator(
-        onRefresh: () => controller.fetchProfile(),
+        onRefresh: () => Future.wait([
+          controller.fetchProfile(),
+          if (_auth.canModule('students'))
+            Get.find<BirthdayController>().fetchBirthdays(),
+          if (_auth.canModule('communication'))
+            Get.find<ChatController>().fetchChats(),
+        ]),
         color: AppColors.primaryBrand,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -34,7 +41,6 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
               _buildTopHeader(),
               // Subscription is owner-only.
               if (!_auth.isSubAccess) const SubscriptionBanner(),
-              const TodaysBirthdayCard(),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16.0,
@@ -225,6 +231,10 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
         'Chats',
         () => Get.toNamed(AppRoutes.instituteChats),
         AppImages.icModuleChat,
+        // Conversations with unread messages (updated live by the socket).
+        badgeCount: () => Get.find<ChatController>().chatsList
+            .where((c) => c.unreadCount > 0)
+            .length,
       ),
       if (_auth.can('reports.view'))
       ModuleItem(
@@ -261,6 +271,14 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
         'Birthdays',
         () => Get.toNamed(AppRoutes.instituteBirthdays),
         AppImages.icBirthdayCake,
+        // Today + next 30 days; red when someone's birthday is today.
+        badgeCount: () {
+          final b = Get.find<BirthdayController>();
+          return b.today.length + b.upcoming.length;
+        },
+        badgeColor: () => Get.find<BirthdayController>().today.isNotEmpty
+            ? AppColors.errorRed
+            : AppColors.primaryBrand,
       ),
     ];
 
@@ -292,6 +310,45 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
   ];
 
   Widget _buildGridItem(ModuleItem item, Color accent) {
+    final tile = _buildGridTile(item, accent);
+    if (item.badgeCount == null) return tile;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(child: tile),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Obx(() {
+            final count = item.badgeCount!();
+            if (count <= 0) return const SizedBox.shrink();
+            return IgnorePointer(
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 22),
+                height: 22,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: item.badgeColor?.call() ?? AppColors.primaryBrand,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Text(
+                  count > 99 ? '99+' : '$count',
+                  style: AppTextStyles.outfit(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.white,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGridTile(ModuleItem item, Color accent) {
     return GestureDetector(
       onTap: item.onTap,
       child: Container(

@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:typed_data';
@@ -69,7 +70,7 @@ class InstituteController extends GetxController {
     if (sharingReceiptChannel.value != null) return;
     // Prefer the payment id: the server matches payment ids first, so a fee
     // id could hit an unrelated payment with the same number.
-    final id = record.latestPayment?.id ?? record.id;
+    final id = record.transactionPaymentId ?? record.id;
     try {
       sharingReceiptChannel.value = channel;
       final message = await _instituteRepository.shareReceipt(
@@ -81,6 +82,28 @@ class InstituteController extends GetxController {
       AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
     } finally {
       sharingReceiptChannel.value = null;
+    }
+  }
+
+  final isDeletingTransaction = false.obs;
+
+  /// Deletes the payment behind [record], then reloads the fees list and the
+  /// pending dues. Returns true when the transaction is gone.
+  Future<bool> deleteTransaction(FeeRecord record) async {
+    final paymentId = record.transactionPaymentId;
+    if (paymentId == null || isDeletingTransaction.value) return false;
+    try {
+      isDeletingTransaction.value = true;
+      final message = await _instituteRepository.deletePayment(paymentId);
+      AppSnackBar.success(message);
+      fetchFees(reset: true);
+      fetchPendingFees();
+      return true;
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
+      return false;
+    } finally {
+      isDeletingTransaction.value = false;
     }
   }
 
@@ -156,11 +179,16 @@ class InstituteController extends GetxController {
     }
   }
 
-  Future<void> sendFeeReminderToStudent(int studentId, String studentName) async {
+  Future<void> sendFeeReminderToStudent(
+    int studentId,
+    String studentName,
+  ) async {
     if (sendingReminderStudentIds.contains(studentId)) return;
     try {
       sendingReminderStudentIds.add(studentId);
-      final res = await _instituteRepository.sendFeeReminders(studentId: studentId);
+      final res = await _instituteRepository.sendFeeReminders(
+        studentId: studentId,
+      );
       AppSnackBar.success(res['message']?.toString() ?? 'Reminder sent to ');
     } catch (e) {
       AppSnackBar.error('Failed to send reminder');
@@ -177,7 +205,10 @@ class InstituteController extends GetxController {
     try {
       isSendingReminders.value = true;
       final res = await _instituteRepository.sendFeeReminders(batchId: batchId);
-      AppSnackBar.success(res['message']?.toString() ?? 'Fee reminders sent successfully to all pending students!');
+      AppSnackBar.success(
+        res['message']?.toString() ??
+            'Fee reminders sent successfully to all pending students!',
+      );
       await fetchPendingFees(batchId: batchId);
     } catch (e) {
       AppSnackBar.error('Failed to send reminders');
@@ -257,8 +288,10 @@ class InstituteController extends GetxController {
   /// chat to send it to.
   Future<void> openReceiptOnWhatsApp(FeeRecord record) async {
     final student = record.student;
-    var digits = (student?.whatsappPhone ?? student?.phone ?? '')
-        .replaceAll(RegExp(r'[^0-9]'), '');
+    var digits = (student?.whatsappPhone ?? student?.phone ?? '').replaceAll(
+      RegExp(r'[^0-9]'),
+      '',
+    );
     if (digits.length == 10) digits = '91$digits';
     final text = Uri.encodeComponent(receiptShareText(record));
     final uri = Uri.parse(
@@ -274,13 +307,9 @@ class InstituteController extends GetxController {
     }
   }
 
-  String receiptNumber(FeeRecord r) =>
-      'REC-${r.id.toString().padLeft(4, '0')}';
+  String receiptNumber(FeeRecord r) => 'REC-${r.id.toString().padLeft(4, '0')}';
 
   String receiptShareText(FeeRecord r) {
-    final money = NumberFormat('#,##,###.##');
-    final paidAt = r.latestPayment?.paidAt ?? r.updatedAt;
-    final method = r.latestPayment?.paymentMethod ?? '';
     String institute = '';
     if (Get.isRegistered<AuthService>()) {
       institute = Get.find<AuthService>().currentUser?.instituteName ?? '';
@@ -288,9 +317,9 @@ class InstituteController extends GetxController {
     return [
       'Fee Receipt ${receiptNumber(r)}',
       if (r.student != null) 'Student: ${r.student!.name}',
-      'Amount Paid: ₹${money.format(r.paidAmount)}',
-      'Date: ${DateFormat('dd MMM yyyy').format(paidAt.toLocal())}',
-      if (method.isNotEmpty) 'Method: $method',
+      'Amount Paid: ${formatRupees(r.transactionAmount)}',
+      'Paid Date: ${DateFormat('dd MMM yyyy').format(r.transactionPaidAt)}',
+      'Method: ${r.transactionMethod}',
       '',
       'Thank you${institute.isNotEmpty ? ',\n$institute' : '.'}',
     ].join('\n');

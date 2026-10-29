@@ -13,6 +13,14 @@ abstract class StudentRepositoryImpl {
   Future<void> resetPassword(dynamic id, String password);
   Future<bool> toggleBlock(dynamic id, bool blocked);
   Future<bool> toggleFeeReminderMute(dynamic id, bool muted);
+  /// Replaces a fee's milestones: rows with an `id` are updated, rows
+  /// without one are added, missing ones are removed. Returns the message.
+  /// Deletes a fee record that has no payments (422 otherwise).
+  Future<String> deleteFee(int feeId);
+  Future<String> updateInstallments(
+    int feeId,
+    List<Map<String, dynamic>> installments,
+  );
   Future<void> payInstallment(
     int installmentId, {
     required double amount,

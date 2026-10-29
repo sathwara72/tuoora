@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -104,7 +106,6 @@ class _ReceiptCard extends StatelessWidget {
     final monthHeader =
         statement?.monthHeader ??
         (receipt.date.isNotEmpty ? receipt.date.toUpperCase() : 'RECEIPT');
-    final isPaid = statement?.isPaid ?? true;
     return Container(
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -133,22 +134,14 @@ class _ReceiptCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    '₹${receipt.amount}',
-                    style: AppTextStyles.outfit(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      height: 1,
-                    ),
-                  ),
-                ),
-                _StatusPill(isPaid: isPaid),
-              ],
+            Text(
+              formatRupees(receipt.amount),
+              style: AppTextStyles.outfit(
+                fontSize: 26,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                height: 1,
+              ),
             ),
             const SizedBox(height: AppSpacing.s16),
             _DashedDivider(color: AppColors.borderGrey.withValues(alpha: 0.8)),
@@ -169,12 +162,15 @@ class _ReceiptCard extends StatelessWidget {
               value: receipt.receiptNumber,
             ),
             _DetailRow(label: AppStrings.paymentMethod, value: receipt.paymentMethod),
-            _DetailRow(label: AppStrings.labelDate, value: receipt.date, isLast: true),
+            _DetailRow(label: 'Paid Date', value: receipt.date, isLast: true),
           ],
         ),
       ),
     );
   }
+
+  String _formatAmount(String raw) =>
+      formatRupees(raw, includeSymbol: false);
 
   String _resolveEnrollment() {
     if (receipt.enrollmentId.trim().isNotEmpty) {
@@ -278,35 +274,6 @@ class _DashedDivider extends StatelessWidget {
           }),
         );
       },
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  final bool isPaid;
-
-  const _StatusPill({required this.isPaid});
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = isPaid ? AppColors.successGreen : AppColors.bohoRed;
-    final label = isPaid
-        ? AppStrings.instStatusPaid
-        : AppStrings.studentAssignmentsTabPending;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.outfit(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: AppColors.white,
-        ),
-      ),
     );
   }
 }

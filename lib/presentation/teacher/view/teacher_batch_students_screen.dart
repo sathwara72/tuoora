@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_batch_students_controller.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_batch_model.dart';
@@ -338,14 +339,14 @@ class TeacherBatchStudentsScreen
                         _detailTile(
                           icon: Icons.money_off_outlined,
                           label: 'Total Due',
-                          value: '₹${student.totalDue}',
+                          value: formatRupees(student.totalDue),
                           valueColor: Colors.redAccent,
                         ),
                       if (student.totalPaid > 0)
                         _detailTile(
                           icon: Icons.attach_money_outlined,
                           label: 'Total Paid',
-                          value: '₹${student.totalPaid}',
+                          value: formatRupees(student.totalPaid),
                           valueColor: const Color(0xFF059669),
                         ),
                     ],

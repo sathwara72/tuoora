@@ -11,23 +11,29 @@ class SubscriptionSuccessDialog extends StatelessWidget {
   final int addedDays;
   final DateTime? expiresAt;
 
+  /// Lifetime plans show "Lifetime access" instead of added days and expiry.
+  final bool isLifetime;
+
   const SubscriptionSuccessDialog({
     super.key,
     required this.planName,
     required this.addedDays,
     this.expiresAt,
+    this.isLifetime = false,
   });
 
   static void show({
     required String planName,
     required int addedDays,
     DateTime? expiresAt,
+    bool isLifetime = false,
   }) {
     Get.dialog(
       SubscriptionSuccessDialog(
         planName: planName,
         addedDays: addedDays,
         expiresAt: expiresAt,
+        isLifetime: isLifetime,
       ),
       barrierDismissible: true,
     );
@@ -35,7 +41,7 @@ class SubscriptionSuccessDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final expiryStr = expiresAt != null
+    final expiryStr = expiresAt != null && !isLifetime
         ? DateFormat('dd MMM yyyy').format(expiresAt!)
         : null;
 
@@ -83,7 +89,7 @@ class SubscriptionSuccessDialog extends StatelessWidget {
             Divider(color: AppColors.fieldBorder, height: 1),
             AppSpacing.v20,
             Text(
-              '+$addedDays Days Extended',
+              isLifetime ? 'Lifetime access' : '+$addedDays Days Extended',
               style: AppTextStyles.outfit(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,

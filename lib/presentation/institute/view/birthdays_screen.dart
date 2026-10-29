@@ -66,7 +66,7 @@ class BirthdaysScreen extends GetView<BirthdayController> {
                         AppSpacing.v20,
                       ],
                       if (upcoming.isNotEmpty) ...[
-                        _sectionHeader('Upcoming'),
+                        _sectionHeader('Upcoming (next 30 days)'),
                         AppSpacing.v8,
                         ...upcoming.map(_buildCard),
                       ],
@@ -95,10 +95,13 @@ class BirthdaysScreen extends GetView<BirthdayController> {
 
   Widget _buildCard(BirthdayModel b) {
     final isToday = b.isBirthdayToday;
-    String dateLabel = '';
-    try {
-      dateLabel = DateFormat('d MMM').format(DateTime.parse(b.dob));
-    } catch (_) {}
+    final next = b.nextBirthday;
+    final dateLabel = next != null ? DateFormat('d MMM').format(next) : '';
+    final age = b.turningAge;
+    final subtitle = [
+      if (b.batchName != null && b.batchName!.isNotEmpty) b.batchName!,
+      if (age != null) 'turns $age',
+    ].join(' • ');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -118,7 +121,8 @@ class BirthdaysScreen extends GetView<BirthdayController> {
             child: SizedBox(
               width: 44,
               height: 44,
-              child: (b.profileImageUrl != null && b.profileImageUrl!.isNotEmpty)
+              child:
+                  (b.profileImageUrl != null && b.profileImageUrl!.isNotEmpty)
                   ? AppNetworkImage(url: b.profileImageUrl!, fit: BoxFit.cover)
                   : Container(
                       color: AppColors.primaryBrandLight,
@@ -142,18 +146,31 @@ class BirthdaysScreen extends GetView<BirthdayController> {
               children: [
                 Text(
                   b.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.outfit(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                 ),
-                if (b.batchName != null)
+                if (subtitle.isNotEmpty)
                   Text(
-                    b.batchName!,
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.outfit(
                       fontSize: 11,
                       color: AppColors.textMuted,
+                    ),
+                  ),
+                if (isToday && dateLabel.isNotEmpty)
+                  Text(
+                    'Today • $dateLabel',
+                    style: AppTextStyles.outfit(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryBrand,
                     ),
                   ),
               ],
@@ -167,7 +184,10 @@ class BirthdaysScreen extends GetView<BirthdayController> {
                 style: TextButton.styleFrom(
                   backgroundColor: AppColors.primaryBrand,
                   foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppSpacing.s8),
                   ),
@@ -192,13 +212,28 @@ class BirthdaysScreen extends GetView<BirthdayController> {
               );
             })
           else
-            Text(
-              dateLabel,
-              style: AppTextStyles.outfit(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textMuted,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  b.whenLabel,
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: b.daysUntil == 1
+                        ? AppColors.primaryBrand
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                if (dateLabel.isNotEmpty)
+                  Text(
+                    dateLabel,
+                    style: AppTextStyles.outfit(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+              ],
             ),
         ],
       ),

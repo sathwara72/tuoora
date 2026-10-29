@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 
-final NumberFormat _inr = NumberFormat.currency(
-  locale: 'en_IN',
-  symbol: '₹',
-  decimalDigits: 2,
-);
-
-String formatInr(num value) => _inr.format(value);
+String formatInr(num value) => formatRupees(value);
 
 /// Summary card: total spend, month and a few counts.
 class ExpenseHeroCard extends StatelessWidget {

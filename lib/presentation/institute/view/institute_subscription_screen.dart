@@ -85,7 +85,12 @@ class InstituteSubscriptionScreen
                               data.history,
                             ),
                             AppSpacing.v24,
-                            _buildIAPSection(data.plans),
+                            // Lifetime never needs renewing; the server
+                            // refuses purchases (422) anyway.
+                            if (data.subscription.isLifetime)
+                              _buildLifetimeNote()
+                            else
+                              _buildIAPSection(data.plans),
                             AppSpacing.v24,
                             _buildFeatureCards(),
                             AppSpacing.v24,
@@ -193,10 +198,12 @@ class InstituteSubscriptionScreen
               color: AppColors.white,
             ),
           ),
-          if (isActive && sub.expiresAt != null) ...[
+          if (isActive && (sub.isLifetime || sub.expiresAt != null)) ...[
             AppSpacing.v4,
             Text(
-              'Expires on ${DateFormat.yMMMd().format(sub.expiresAt!)}',
+              sub.isLifetime
+                  ? 'Lifetime plan — never expires'
+                  : 'Expires on ${DateFormat.yMMMd().format(sub.expiresAt!)}',
               style: AppTextStyles.outfit(fontSize: 14, color: Colors.white70),
             ),
           ],
@@ -225,6 +232,53 @@ class InstituteSubscriptionScreen
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLifetimeNote() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.successBg,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        border: Border.all(
+          color: AppColors.successGreen.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.all_inclusive_rounded,
+            color: AppColors.successGreen,
+            size: 26,
+          ),
+          AppSpacing.h12,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'You have a Lifetime plan',
+                  style: AppTextStyles.outfit(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                AppSpacing.v4,
+                Text(
+                  'It never expires, so there is nothing to renew or buy.',
+                  style: AppTextStyles.outfit(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -373,7 +427,7 @@ class InstituteSubscriptionScreen
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
-                '${plan.durationDays}d',
+                plan.isLifetime ? 'Lifetime' : '${plan.durationDays}d',
                 style: AppTextStyles.outfit(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,

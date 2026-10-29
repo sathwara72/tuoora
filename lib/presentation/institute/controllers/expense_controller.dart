@@ -1,3 +1,4 @@
+import 'package:tuoora/data/models/financial_period.dart';
 import 'package:tuoora/core/utils/validation_utils.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/widgets/app_pickers.dart';
@@ -43,8 +44,8 @@ class ExpenseController extends GetxController {
     searchQuery.value = '';
   }
 
-  // Expenses Month Filter State & Expanded Categories
-  final selectedExpensesMonth = DateTime.now().obs;
+  // Period filter (Financial Year by default) & expanded categories
+  final period = FinancialPeriod.financialYear().obs;
   final expandedCategoryIds = <int>{}.obs;
 
   // Pagination
@@ -82,8 +83,8 @@ class ExpenseController extends GetxController {
       if (triedToSave.value) validateForm();
     });
 
-    // Auto-refresh expenses when month changes
-    ever(selectedExpensesMonth, (_) => loadExpenses());
+    // Auto-refresh expenses when the period changes
+    ever(period, (_) => loadExpenses());
   }
 
   /// The salary setting decides whether salary rows are part of the list, so
@@ -122,24 +123,23 @@ class ExpenseController extends GetxController {
 
     try {
       if (page == 1) isLoading.value = true;
+      // A whole year can hold more than one page, so load it all at once
+      // (the screen groups everything by category).
       final response = await _repository.listExpenses(
         page: page,
-        month: selectedExpensesMonth.value.month,
-        year: selectedExpensesMonth.value.year,
-        perPage: 100,
+        period: period.value,
+        perPage: -1,
       );
 
       if (page == 1) {
+        serverExpenseTotal.value = response.totalAmount;
         final items = [...response.items];
         // Paid staff salaries live in their own table; show them as
         // "Staff Salary" expenses when the institute has that turned on.
         if (includeSalary.value) {
           try {
             items.addAll(
-              await _repository.listSalaryExpenses(
-                month: selectedExpensesMonth.value.month,
-                year: selectedExpensesMonth.value.year,
-              ),
+              await _repository.listSalaryExpenses(period: period.value),
             );
           } catch (e) {
             debugPrint('Error loading salary expenses: $e');
@@ -255,33 +255,27 @@ class ExpenseController extends GetxController {
     }
   }
 
-  bool get canGoToNextExpensesMonth {
-    final now = DateTime.now();
-    final currentView = selectedExpensesMonth.value;
-    if (currentView.year < now.year) return true;
-    if (currentView.year == now.year && currentView.month < now.month) {
-      return true;
+  void setPeriod(FinancialPeriod value) => period.value = value;
+
+  final deletingExpenseIds = <int>{}.obs;
+
+  /// Server's `total_amount` for the period (expenses only, no salaries).
+  final serverExpenseTotal = RxnDouble();
+
+  /// Deletes one expense entry. Salary rows are read-only and never sent.
+  Future<void> deleteExpense(ExpenseModel expense) async {
+    if (expense.isSalary || deletingExpenseIds.contains(expense.id)) return;
+    try {
+      deletingExpenseIds.add(expense.id);
+      final message = await _repository.deleteExpense(expense.id);
+      expenses.removeWhere((e) => !e.isSalary && e.id == expense.id);
+      AppSnackBar.success(message);
+      loadExpenses();
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      deletingExpenseIds.remove(expense.id);
     }
-    return false;
-  }
-
-  void nextExpensesMonth() {
-    if (!canGoToNextExpensesMonth) return;
-    selectedExpensesMonth.value = DateTime(
-      selectedExpensesMonth.value.year,
-      selectedExpensesMonth.value.month + 1,
-    );
-  }
-
-  void prevExpensesMonth() {
-    selectedExpensesMonth.value = DateTime(
-      selectedExpensesMonth.value.year,
-      selectedExpensesMonth.value.month - 1,
-    );
-  }
-
-  void setExpensesMonth(DateTime date) {
-    selectedExpensesMonth.value = DateTime(date.year, date.month);
   }
 
   void toggleCategoryExpanded(int categoryId) {
@@ -353,8 +347,17 @@ class ExpenseController extends GetxController {
     return groups;
   }
 
-  double get totalMonthlySpending {
-    return expenses.fold(0.0, (sum, item) => sum + item.amount);
+  /// Period total: the server's `total_amount` for expenses plus paid
+  /// salaries when they're included; summed locally on older servers.
+  double get totalSpending {
+    final server = serverExpenseTotal.value;
+    if (server == null) {
+      return expenses.fold(0.0, (sum, item) => sum + item.amount);
+    }
+    final salaries = expenses
+        .where((e) => e.isSalary)
+        .fold(0.0, (sum, item) => sum + item.amount);
+    return server + salaries;
   }
 
   void resetForm() {

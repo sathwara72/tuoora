@@ -627,7 +627,7 @@ class InstituteProfileViewScreen extends StatelessWidget {
       if (sub == null) return const SizedBox.shrink();
 
       final int daysLeft = sub.daysLeft;
-      final bool isExpiringSoon = sub.isExpireSoon;
+      final bool isExpiringSoon = sub.isExpireSoon && !sub.isLifetime;
       final dateFormat = DateFormat('dd MMM yyyy');
 
       Color statusColor = AppColors.successGreen;
@@ -660,7 +660,7 @@ class InstituteProfileViewScreen extends StatelessWidget {
               ],
             ),
             AppSpacing.v8,
-            if (sub.endDate != null) ...[
+            if (sub.endDate != null || sub.isLifetime) ...[
               Container(
                 padding: AppSpacing.cardPadding,
                 decoration: BoxDecoration(
@@ -690,7 +690,7 @@ class InstituteProfileViewScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'REMAINING',
+                            sub.isLifetime ? 'VALIDITY' : 'REMAINING',
                             style: AppTextStyles.outfit(
                               fontSize: 10,
                               fontWeight: FontWeight.w700,
@@ -700,7 +700,9 @@ class InstituteProfileViewScreen extends StatelessWidget {
                           ),
                           AppSpacing.v4,
                           Text(
-                            '$daysLeft days remaining — expires ${dateFormat.format(sub.endDate!)}',
+                            sub.isLifetime
+                                ? 'Lifetime plan — never expires'
+                                : '$daysLeft days remaining — expires ${dateFormat.format(sub.endDate!)}',
                             style: AppTextStyles.outfit(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,

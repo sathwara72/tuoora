@@ -8,6 +8,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'package:tuoora/core/widgets/common_dialog.dart';
 
 class AccountStatus {
   AccountStatus._();
@@ -29,14 +30,40 @@ class InstituteAccountStatusHandler extends GetxService {
 
   bool _dialogShowing = false;
 
-  void handleForbidden({required String status, required String message}) {
+  void handleForbidden({
+    required String status,
+    required String message,
+    String code = '',
+  }) {
     final authService = Get.find<AuthService>();
+
+    // A paid-plan feature (WhatsApp) on a free plan: not a permission or
+    // account problem.
+    // Own Meta number (White Label): Meta bills them, nothing to buy.
+    if (code == 'own_number_billing') {
+      _lastDeniedAt = DateTime.now();
+      AppSnackBar.info(
+        message.trim().isNotEmpty
+            ? message.trim()
+            : 'Your messages are billed by Meta, so credits are not needed.',
+        title: 'Credits not needed',
+      );
+      return;
+    }
+    if (code == 'plan_required') {
+      _showPlanRequired(
+        message,
+        isOwner: authService.currentUser?.isSubAccess != true,
+      );
+      return;
+    }
     final role = authService.currentUser?.role ?? 'STUDENT';
 
     final normalizedStatus = status.toLowerCase();
     final normalizedMessage = message.toLowerCase();
 
-    final isBlocked = normalizedStatus == AccountStatus.blocked ||
+    final isBlocked =
+        normalizedStatus == AccountStatus.blocked ||
         normalizedStatus == 'inactive' ||
         normalizedStatus == 'disabled' ||
         normalizedMessage.contains('block') ||
@@ -47,17 +74,54 @@ class InstituteAccountStatusHandler extends GetxService {
     if (isBlocked) {
       _showBlockedDialog(message, role: role);
     } else if (normalizedMessage.contains('permission') ||
-        normalizedMessage.contains('access denied')) {
+        normalizedMessage.contains('access denied') ||
+        authService.currentUser?.isSubAccess == true) {
+      // A sub-access user's 403 always means a missing permission.
       _showNoPermission(message);
     }
   }
 
   DateTime? _lastNoPermissionAt;
+  DateTime? _lastDeniedAt;
+  DateTime? _lastPlanPromptAt;
+
+  void _showPlanRequired(String message, {required bool isOwner}) {
+    final now = DateTime.now();
+    _lastDeniedAt = now;
+    if (_lastPlanPromptAt != null &&
+        now.difference(_lastPlanPromptAt!) < const Duration(seconds: 3)) {
+      return;
+    }
+    _lastPlanPromptAt = now;
+    CommonDialog.show(
+      title: 'Upgrade your plan',
+      description: message.trim().isNotEmpty
+          ? message.trim()
+          : 'This feature is available on paid plans.',
+      icon: Icons.workspace_premium_rounded,
+      iconColor: AppColors.primaryBrand,
+      iconBgColor: AppColors.primaryBrandLight,
+      confirmButtonColor: AppColors.primaryBrand,
+      confirmText: isOwner ? 'View Plans' : 'OK',
+      cancelText: isOwner ? 'Not now' : 'Close',
+      onConfirm: () {
+        if (isOwner) Get.toNamed(AppRoutes.instituteSubscription);
+      },
+    );
+  }
+
+  /// True for a moment after a permission 403, so the screen's own generic
+  /// "Failed to …" error for that same call is not shown on top of
+  /// "You don't have permission".
+  bool get recentlyDenied =>
+      _lastDeniedAt != null &&
+      DateTime.now().difference(_lastDeniedAt!) < const Duration(seconds: 3);
 
   /// A sub-access user tried something they aren't allowed to do. Shows the
   /// server's message; throttled so a screen firing several calls shows it once.
   void _showNoPermission(String message) {
     final now = DateTime.now();
+    _lastDeniedAt = now;
     if (_lastNoPermissionAt != null &&
         now.difference(_lastNoPermissionAt!) < const Duration(seconds: 3)) {
       return;
@@ -131,8 +195,8 @@ class _BlockedAccountDialog extends StatelessWidget {
     final title = role == 'STUDENT'
         ? 'Account Blocked'
         : (role == 'TEACHER'
-            ? 'Teacher Account Blocked'
-            : AppStrings.instituteAccountBlocked);
+              ? 'Teacher Account Blocked'
+              : AppStrings.instituteAccountBlocked);
     final blockedIndex = message.toUpperCase().indexOf('BLOCKED');
 
     return PopScope(

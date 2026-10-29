@@ -1,3 +1,5 @@
+import 'package:tuoora/presentation/institute/models/profit_loss_model.dart';
+import 'package:tuoora/data/models/financial_period.dart';
 import 'package:tuoora/data/models/institute_subscription_model.dart';
 import 'package:tuoora/data/models/batch_model.dart';
 import 'package:tuoora/data/models/institute_profile_model.dart';
@@ -107,6 +109,8 @@ abstract class InstituteRepositoryImpl {
   Future<FeeReportResponse> getFeeReport();
   Future<BatchFeeDetailResponse> getBatchFeeReport(int batchId);
   Future<List<int>> exportFeeReport({int? batchId});
+  Future<ProfitLossReport> getProfitLoss(FinancialPeriod period);
+  Future<List<int>> exportProfitLoss(FinancialPeriod period);
 
   // Attendance Reports
   Future<AttendanceReportResponse> getAttendanceReport();
@@ -191,15 +195,18 @@ abstract class InstituteRepositoryImpl {
     int? year,
     int? categoryId,
     int? perPage,
+    FinancialPeriod? period,
   });
   Future<List<ExpenseCategory>> getExpenseCategories();
   Future<ExpenseCategory> createExpenseCategory(Map<String, dynamic> data);
   Future<ExpenseCategory> updateExpenseCategory(int categoryId, Map<String, dynamic> data);
   Future<void> deleteExpenseCategory(int categoryId);
+
+  /// Deletes one expense entry (not salary rows); returns the server message.
+  Future<String> deleteExpense(int expenseId);
   Future<ExpenseModel> createExpense(Map<String, dynamic> data);
   Future<List<ExpenseModel>> listSalaryExpenses({
-    required int month,
-    required int year,
+    required FinancialPeriod period,
   });
   Future<bool> getIncludeSalaryInExpenses();
   Future<bool> setIncludeSalaryInExpenses(bool include);
@@ -208,6 +215,9 @@ abstract class InstituteRepositoryImpl {
   Future<StaffListResponse> listStaff({int page = 1, String? search});
   Future<void> deleteStaff(int id);
   Future<List<StaffRole>> getStaffRoles();
+
+  /// 422 with a message when the role is still assigned to staff.
+  Future<String> deleteStaffRole(int roleId);
   Future<List<StaffDepartment>> getStaffDepartments();
   Future<Staff> createStaff(Map<String, dynamic> data, String? imagePath);
   Future<Staff> updateStaff(
@@ -238,6 +248,8 @@ abstract class InstituteRepositoryImpl {
     String? year,
   });
   Future<void> logSalary(Map<String, dynamic> data);
+  Future<String> deleteSalary(int recordId);
+  Future<String> deleteStaffAttendance(int recordId);
   Future<void> deleteResource(int id);
   Future<void> deleteDeviceSession(int sessionId);
 
@@ -250,6 +262,9 @@ abstract class InstituteRepositoryImpl {
   });
   Future<List<FeePayment>> getStudentPayments(int studentId);
   Future<String> shareReceipt(int id, {required String channel});
+
+  /// Deletes one payment (transaction); returns the server message.
+  Future<String> deletePayment(int paymentId);
   Future<List<NotificationPreferenceModule>> getNotificationPreferences();
   Future<List<NotificationPreferenceModule>> updateNotificationPreferences(
     List<Map<String, dynamic>> modules,

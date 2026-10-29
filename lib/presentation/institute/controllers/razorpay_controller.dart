@@ -70,7 +70,9 @@ class RazorpayController extends GetxController {
         'currency': order['currency'] ?? 'INR',
         'order_id': order['order_id'],
         'name': 'Tuoora',
-        'description': '${plan.name} · ${plan.durationDays} days',
+        'description': plan.isLifetime
+            ? '${plan.name} · Lifetime'
+            : '${plan.name} · ${plan.durationDays} days',
         'theme': {'color': '#F97316'},
         'prefill': {
           'name': ?_prefillName,
@@ -118,6 +120,7 @@ class RazorpayController extends GetxController {
           planName: plan.name,
           addedDays: plan.durationDays,
           expiresAt: expiresAt,
+          isLifetime: plan.isLifetime,
         );
       } else if (!_disposed) {
         AppSnackBar.success(AppStrings.iapPurchaseSuccess);

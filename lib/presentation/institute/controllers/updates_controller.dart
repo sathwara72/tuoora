@@ -98,6 +98,26 @@ class UpdatesController extends GetxController {
     }
   }
 
+  final deletingUpdateIds = <int>{}.obs;
+
+  /// Owner-only: deletes a daily update and drops it from the list.
+  Future<bool> deleteUpdate(DailyUpdate update) async {
+    final id = update.id;
+    if (id == null || deletingUpdateIds.contains(id)) return false;
+    try {
+      deletingUpdateIds.add(id);
+      final message = await _updateRepository.deleteDailyUpdate(id);
+      updatesList.removeWhere((u) => u.id == id);
+      AppSnackBar.success(message);
+      return true;
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
+      return false;
+    } finally {
+      deletingUpdateIds.remove(id);
+    }
+  }
+
   Future<void> fetchUpdates() async {
     isLoading.value = true;
     try {

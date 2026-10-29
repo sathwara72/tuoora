@@ -2,6 +2,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:flutter/material.dart';
@@ -78,7 +79,7 @@ class BatchReportDetailScreen extends StatelessWidget {
     if (reportType == 'Fee') {
       final summary = controller.batchFeeDetail.value?.summary;
       title = 'Batch Collected Total';
-      value = '₹${summary?.paidAmount.toStringAsFixed(0) ?? '0'}';
+      value = formatRupees(summary?.paidAmount ?? 0);
     } else if (reportType == 'Attendance') {
       final summary = controller.batchAttendanceDetail.value?.summary;
       final total = summary?.total ?? 1;
@@ -107,7 +108,7 @@ class BatchReportDetailScreen extends StatelessWidget {
               name: f.student?.name ?? '',
               metric: 'Paid',
               metricColor: AppColors.successGreen,
-              subtitle: 'Collected: ₹${f.totalAmount.toStringAsFixed(0)}',
+              subtitle: 'Collected: ${formatRupees(f.totalAmount)}',
             ),
           ),
         );

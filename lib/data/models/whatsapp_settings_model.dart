@@ -129,6 +129,15 @@ class WhatsAppLogItem {
     this.createdAt,
   });
 
+  /// `sent` → `delivered` → `read`, or `failed` (see [errorMessage]).
+  String get normalizedStatus {
+    final s = status.toLowerCase();
+    if (s == 'delivered' || s == 'read' || s == 'failed') return s;
+    return isSent ? 'sent' : 'failed';
+  }
+
+  bool get isFailed => normalizedStatus == 'failed';
+
   factory WhatsAppLogItem.fromJson(Map<String, dynamic> json) {
     return WhatsAppLogItem(
       id: (json['id'] as num?)?.toInt() ?? 0,
@@ -136,7 +145,11 @@ class WhatsAppLogItem {
       parentName: json['parent_name']?.toString(),
       message: json['message']?.toString() ?? '',
       status: json['status']?.toString() ?? 'sent',
-      isSent: json['is_sent'] == true || json['status'] == 'sent',
+      isSent:
+          json['is_sent'] == true ||
+          const {'sent', 'delivered', 'read'}.contains(
+            json['status']?.toString().toLowerCase(),
+          ),
       metaMessageId: json['meta_message_id']?.toString(),
       errorMessage: json['error_message']?.toString(),
       sentAt: json['sent_at']?.toString(),
@@ -157,6 +170,15 @@ class WhatsAppOverviewData {
   final List<WhatsAppPackItem> packs;
   final List<WhatsAppLogItem> recentLogs;
 
+  /// WhatsApp needs a paid plan; when true the screen shows an upgrade
+  /// prompt instead of setup.
+  final bool planRequired;
+  final String planRequiredMessage;
+
+  /// Credit packs pay for the Tuoora number only, so they need a paid plan
+  /// (White Label on a free plan uses its own Meta-billed number).
+  final bool canBuyCredits;
+
   WhatsAppOverviewData({
     required this.wallet,
     required this.isWhiteLabel,
@@ -168,6 +190,9 @@ class WhatsAppOverviewData {
     this.settings,
     required this.packs,
     required this.recentLogs,
+    this.planRequired = false,
+    this.planRequiredMessage = '',
+    this.canBuyCredits = true,
   });
 
   factory WhatsAppOverviewData.fromJson(Map<String, dynamic> json) {
@@ -187,6 +212,12 @@ class WhatsAppOverviewData {
       recentLogs: (json['recent_logs'] as List<dynamic>? ?? [])
           .map((e) => WhatsAppLogItem.fromJson(e as Map<String, dynamic>))
           .toList(),
+      planRequired: json['plan_required'] == true,
+      planRequiredMessage: json['plan_required_message']?.toString() ?? '',
+      // Older servers don't send it: fall back to the plan check.
+      canBuyCredits: json['can_buy_credits'] is bool
+          ? json['can_buy_credits'] as bool
+          : json['plan_required'] != true,
     );
   }
 }

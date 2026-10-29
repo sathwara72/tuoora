@@ -550,6 +550,69 @@ class InstituteStudentController extends GetxController {
 
   final isPayingInstallment = false.obs;
 
+  final isDeletingFee = false.obs;
+
+  /// Deletes a fee record with no payments (the server answers 422 when it
+  /// has some) and reloads the profile.
+  Future<bool> deleteFee(int feeId) async {
+    if (isDeletingFee.value) return false;
+    try {
+      isDeletingFee.value = true;
+      final message = await _studentRepository.deleteFee(feeId);
+      AppSnackBar.success(message);
+      final student = currentStudent.value;
+      if (student != null) {
+        await fetchStudentDetails(
+          student.id,
+          batchId: selectedProfileBatchId.value,
+        );
+      }
+      return true;
+    } catch (e) {
+      AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
+      return false;
+    } finally {
+      isDeletingFee.value = false;
+    }
+  }
+
+  final isSavingMilestones = false.obs;
+
+  /// Saves edited milestones for [feeId] and reloads the profile.
+  Future<bool> saveMilestones(
+    int feeId,
+    List<Map<String, dynamic>> installments,
+  ) async {
+    if (isSavingMilestones.value) return false;
+    try {
+      isSavingMilestones.value = true;
+      final message = await _studentRepository.updateInstallments(
+        feeId,
+        installments,
+      );
+      AppSnackBar.success(message);
+      final student = currentStudent.value;
+      if (student != null) {
+        await fetchStudentDetails(
+          student.id,
+          batchId: selectedProfileBatchId.value,
+        );
+      }
+      return true;
+    } catch (e) {
+      AppSnackBar.error(
+        e is ValidationException
+            ? (e.errors.values.expand((v) => v is List ? v : [v]).firstOrNull
+                      ?.toString() ??
+                  'Please check the milestones')
+            : e.toString().replaceAll('Exception: ', ''),
+      );
+      return false;
+    } finally {
+      isSavingMilestones.value = false;
+    }
+  }
+
   Future<bool> payInstallment(
     int installmentId, {
     required double amount,
@@ -570,7 +633,7 @@ class InstituteStudentController extends GetxController {
       }
       return true;
     } catch (e) {
-      AppSnackBar.error('Payment failed: $e');
+      AppSnackBar.error(e.toString().replaceAll('Exception: ', ''));
       return false;
     } finally {
       isPayingInstallment.value = false;

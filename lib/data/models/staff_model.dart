@@ -42,6 +42,12 @@ class Staff {
       ? departments.map((d) => d.id).toList()
       : (staffDepartmentId != 0 ? [staffDepartmentId] : []);
 
+  /// Role badge text, as on web: the role name, or "Staff Member".
+  String get roleLabel {
+    final name = role?.name.trim() ?? '';
+    return name.isNotEmpty ? name : 'Staff Member';
+  }
+
   /// Comma-separated department names for display.
   String get departmentNames => departments.isNotEmpty
       ? departments.map((d) => d.name).join(', ')

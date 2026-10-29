@@ -89,7 +89,7 @@ class StudentProfileHeader {
       avatarUrl: json['avatar_url'] ?? '',
       batchName: json['batch_name'] ?? '',
       subject: json['subject'] ?? '',
-      rollNo: json['roll_no'] ?? '',
+      rollNo: json['roll_no']?.toString() ?? '',
       memberSince: json['member_since'] ?? '',
       enrollment: parsedEnrollment,
     );

@@ -2,6 +2,7 @@ import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/presentation/institute/controllers/reports_controller.dart';
 import 'package:tuoora/presentation/institute/models/report_models.dart';
 import 'package:tuoora/presentation/institute/widgets/export_report.dart';
@@ -57,8 +58,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                     children: [
                       ReportSummaryCard(
                         title: AppStrings.totalCollectionAcrossBatches,
-                        value:
-                            '₹${report.summary.paidAmount.toStringAsFixed(0)}',
+                        value: formatRupees(report.summary.paidAmount),
                       ),
                       AppSpacing.v20,
                       _buildViewToggle(report),
@@ -248,17 +248,17 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
                     children: [
                       _buildAmtCol(
                         'Total',
-                        '₹${stu.totalAmount.toStringAsFixed(0)}',
+                        formatRupees(stu.totalAmount),
                         AppColors.textPrimary,
                       ),
                       _buildAmtCol(
                         'Paid',
-                        '₹${stu.paidAmount.toStringAsFixed(0)}',
+                        formatRupees(stu.paidAmount),
                         AppColors.successGreen,
                       ),
                       _buildAmtCol(
                         'Due',
-                        '₹${stu.dueAmount.toStringAsFixed(0)}',
+                        formatRupees(stu.dueAmount),
                         isDue ? AppColors.error : AppColors.textTertiary,
                       ),
                     ],
@@ -317,7 +317,7 @@ class _FeeReportScreenState extends State<FeeReportScreen> {
             name: batch.batchName,
             strength: batch.studentsCount,
             metricLabel: 'Total Collected',
-            metricValue: '₹${batch.totalCollected.toStringAsFixed(0)}',
+            metricValue: formatRupees(batch.totalCollected),
             progress: batch.batchFees > 0
                 ? batch.totalCollected / batch.batchFees
                 : 0.0,

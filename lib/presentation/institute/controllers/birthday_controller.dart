@@ -33,8 +33,10 @@ class BirthdayController extends GetxController {
   List<BirthdayModel> get today =>
       birthdays.where((b) => b.isBirthdayToday).toList();
 
+  /// Next 30 days, soonest first.
   List<BirthdayModel> get upcoming =>
-      birthdays.where((b) => !b.isBirthdayToday).toList();
+      birthdays.where((b) => !b.isBirthdayToday && b.daysUntil <= 30).toList()
+        ..sort((a, b) => a.daysUntil.compareTo(b.daysUntil));
 
   Future<void> sendWish(BirthdayModel student) async {
     if (sendingWishFor.contains(student.id)) return;

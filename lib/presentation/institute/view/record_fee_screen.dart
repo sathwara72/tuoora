@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:intl/intl.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
@@ -359,7 +360,7 @@ class RecordFeeScreen extends GetView<RecordFeeController> {
             ),
           ),
           Text(
-            '₹${NumberFormat('#,##,###.##').format(p.amount)}',
+            formatRupees(p.amount),
             style: AppTextStyles.outfit(
               fontSize: 15,
               fontWeight: FontWeight.w700,
@@ -400,7 +401,7 @@ class RecordFeeScreen extends GetView<RecordFeeController> {
             ),
           ),
           Text(
-            '₹${NumberFormat('#,##,###.##').format(amount)}',
+            formatRupees(amount),
             style: AppTextStyles.outfit(
               fontSize: 14,
               fontWeight: FontWeight.w600,

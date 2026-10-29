@@ -141,15 +141,18 @@ class ApiClient extends GetConnect {
             final body = response.body;
             String status = '';
             String message = '';
+            String code = '';
             if (body is Map) {
               status = body['status']?.toString().toLowerCase() ?? '';
               message = body['message']?.toString() ?? '';
+              code = body['code']?.toString() ?? '';
             } else if (body is String) {
               message = body;
             }
             InstituteAccountStatusHandler.to.handleForbidden(
               status: status,
               message: message,
+              code: code,
             );
           }
         }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/pull_refresh.dart';
 import 'package:get/get.dart';
 
@@ -85,7 +86,7 @@ class TeacherFeesScreen extends GetView<TeacherFeesController> {
                                     ),
                                   ),
                                   Text(
-                                    '₹${paid.toStringAsFixed(0)} / ₹${total.toStringAsFixed(0)}',
+                                    '${formatRupees(paid)} / ${formatRupees(total)}',
                                     style: AppTextStyles.outfit(
                                       fontSize: 12,
                                       color: AppColors.textTertiary,

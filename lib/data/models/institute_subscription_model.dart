@@ -7,6 +7,10 @@ class SubscriptionPlan {
   final int durationDays;
   final int trialDays;
   final int status;
+  final bool isLifetime;
+
+  /// Server text such as "30 Days" or "Lifetime"; empty on older servers.
+  final String durationLabel;
 
   SubscriptionPlan({
     required this.id,
@@ -15,7 +19,16 @@ class SubscriptionPlan {
     required this.durationDays,
     required this.trialDays,
     required this.status,
+    this.isLifetime = false,
+    this.durationLabel = '',
   });
+
+  /// "Lifetime" or "30 Days".
+  String get durationText {
+    if (isLifetime) return 'Lifetime';
+    if (durationLabel.isNotEmpty) return durationLabel;
+    return '$durationDays Days';
+  }
 
   bool get isFree => (double.tryParse(price) ?? 0) == 0;
 
@@ -27,6 +40,8 @@ class SubscriptionPlan {
       durationDays: json['duration_days'] ?? 0,
       trialDays: json['trial_days'] ?? 0,
       status: json['status'] ?? 0,
+      isLifetime: json['is_lifetime'] == true || json['is_lifetime'] == 1,
+      durationLabel: json['duration_label']?.toString() ?? '',
     );
   }
 }
@@ -38,6 +53,7 @@ class SubscriptionDetails {
   final DateTime? expiresAt;
   final int studentsEnrolled;
   final int studentLimit;
+  final bool isLifetime;
 
   SubscriptionDetails({
     required this.planName,
@@ -46,6 +62,7 @@ class SubscriptionDetails {
     this.expiresAt,
     required this.studentsEnrolled,
     required this.studentLimit,
+    this.isLifetime = false,
   });
 
   factory SubscriptionDetails.fromJson(Map<String, dynamic> json) {
@@ -58,6 +75,7 @@ class SubscriptionDetails {
           : null,
       studentsEnrolled: json['students_enrolled'] ?? 0,
       studentLimit: json['student_limit'] ?? 0,
+      isLifetime: json['is_lifetime'] == true || json['is_lifetime'] == 1,
     );
   }
 }
