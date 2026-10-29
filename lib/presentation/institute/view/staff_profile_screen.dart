@@ -1,3 +1,5 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -19,6 +21,9 @@ import 'package:get/get.dart';
 class StaffProfileScreen extends GetView<StaffController> {
   const StaffProfileScreen({super.key});
 
+  /// Edit, delete and the account actions need "Manage Staff".
+  bool get _canManage => Get.find<AuthService>().can(AppPermissions.staffManage);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,7 +36,7 @@ class StaffProfileScreen extends GetView<StaffController> {
               return InstituteAppBar(
                 title: AppStrings.staffProfile,
                 actions: [
-                  if (staff != null) ...[
+                  if (staff != null && _canManage) ...[
                     IconButton(
                       onPressed: () {
                         controller.loadStaffForEdit(staff);
@@ -60,8 +65,10 @@ class StaffProfileScreen extends GetView<StaffController> {
                       _buildProfileHeader(staff),
                       const Divider(height: 1, color: AppColors.background),
                       _buildInfoSection(staff),
-                      AppSpacing.v24,
-                      _buildAccountActions(staff),
+                      if (_canManage) ...[
+                        AppSpacing.v24,
+                        _buildAccountActions(staff),
+                      ],
                       AppSpacing.v32,
                       _buildActionButtons(),
                     ],

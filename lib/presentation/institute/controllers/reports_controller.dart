@@ -1,3 +1,5 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/presentation/institute/controllers/batch_controller.dart';
@@ -62,11 +64,15 @@ class ReportsController extends GetxController {
     loadAllReports();
   }
 
+  // Only load the reports this user may open; the rest would fail with 403.
   void loadAllReports() {
-    loadPerformanceData();
-    loadFeeReport();
-    loadAttendanceReport();
-    loadPerformanceReport();
+    final auth = Get.find<AuthService>();
+    if (auth.can(AppPermissions.reportsPerformance)) {
+      loadPerformanceData();
+      loadPerformanceReport();
+    }
+    if (auth.can(AppPermissions.reportsFee)) loadFeeReport();
+    if (auth.can(AppPermissions.reportsAttendance)) loadAttendanceReport();
   }
 
   Future<void> loadFeeReport() async {

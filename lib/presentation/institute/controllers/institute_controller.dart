@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:intl/intl.dart';
 import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -48,7 +49,7 @@ class InstituteController extends GetxController {
   /// like the web) for sub-access users without `fees.totals`.
   final serverAllowsFeeTotals = true.obs;
   bool get canViewFeeTotals =>
-      serverAllowsFeeTotals.value && Get.find<AuthService>().can('fees.totals');
+      serverAllowsFeeTotals.value && Get.find<AuthService>().can(AppPermissions.feesTotals);
   final pendingStudents = <PendingFeeStudent>[].obs;
   final isLoadingPendingFees = false.obs;
   final selectedFeeTab = 'collected'.obs; // 'collected' or 'pending'

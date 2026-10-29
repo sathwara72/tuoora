@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -44,7 +45,9 @@ class FeeReceiptScreen extends GetView<InstituteController> {
                     _buildDownloadButton(r),
                     AppSpacing.v12,
                     _buildShareButtons(r),
-                    if (Get.find<AuthService>().can('fees.delete') &&
+                    if (Get.find<AuthService>().can(
+                          AppPermissions.feesDelete,
+                        ) &&
                         r.transactionPaymentId != null) ...[
                       AppSpacing.v12,
                       _buildDeleteButton(r),

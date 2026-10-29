@@ -1,3 +1,5 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -14,6 +16,7 @@ class ReportsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<ReportsController>();
+    final auth = Get.find<AuthService>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.loadAllReports();
@@ -29,60 +32,71 @@ class ReportsScreen extends StatelessWidget {
               child: ListView(
                 padding: AppSpacing.all16,
                 children: [
-                  _buildReportCard(
-                    title: AppStrings.attendanceReports,
-                    subtitle:
-                        AppStrings.comprehensiveAnalysisOfDailyWeeklyAnd,
-                    icon: Icons.calendar_today_rounded,
-                    color: AppColors.primaryBrand,
-                    onTap: () {
-                      Get.toNamed(AppRoutes.instituteAttendanceReport);
-                    },
-                  ),
-                  AppSpacing.v10,
-                  _buildReportCard(
-                    title: AppStrings.labelFeeCollectionReport,
-                    subtitle:
-                        AppStrings.deepDiveIntoExaminationResultsAssignment,
-                    icon: Icons.account_balance_wallet_rounded,
-                    color: AppColors.primaryBrand,
-                    onTap: () {
-                      Get.toNamed(AppRoutes.instituteFeeReport);
-                    },
-                  ),
-                  AppSpacing.v10,
-                  _buildReportCard(
-                    title: AppStrings.studentPerformanceReports,
-                    subtitle:
-                        AppStrings.academicProgressAverageGradesAndPerformance,
-                    icon: Icons.insights_rounded,
-                    color: AppColors.primaryBrand,
-                    onTap: () {
-                      Get.toNamed(AppRoutes.institutePerformanceReport);
-                    },
-                  ),
-                  AppSpacing.v10,
-                  _buildReportCard(
-                    title: 'Profit & Loss',
-                    subtitle:
-                        'Fee income against expenses for a financial year, '
-                        'calendar year or custom dates.',
-                    icon: Icons.account_balance_rounded,
-                    color: AppColors.primaryBrand,
-                    onTap: () {
-                      Get.toNamed(AppRoutes.instituteProfitLoss);
-                    },
-                  ),
-                  AppSpacing.v10,
-                  _buildReportCard(
-                    title: AppStrings.labelBusinessAnalytics,
-                    subtitle: AppStrings.revenueFeeCollectionAndDropoutTrends,
-                    icon: Icons.bar_chart_rounded,
-                    color: AppColors.primaryBrand,
-                    onTap: () {
-                      Get.toNamed(AppRoutes.instituteAnalytics);
-                    },
-                  ),
+                  if (auth.can(AppPermissions.reportsAttendance)) ...[
+                    _buildReportCard(
+                      title: AppStrings.attendanceReports,
+                      subtitle:
+                          AppStrings.comprehensiveAnalysisOfDailyWeeklyAnd,
+                      icon: Icons.calendar_today_rounded,
+                      color: AppColors.primaryBrand,
+                      onTap: () {
+                        Get.toNamed(AppRoutes.instituteAttendanceReport);
+                      },
+                    ),
+                    AppSpacing.v10,
+                  ],
+                  if (auth.can(AppPermissions.reportsFee)) ...[
+                    _buildReportCard(
+                      title: AppStrings.labelFeeCollectionReport,
+                      subtitle:
+                          AppStrings.deepDiveIntoExaminationResultsAssignment,
+                      icon: Icons.account_balance_wallet_rounded,
+                      color: AppColors.primaryBrand,
+                      onTap: () {
+                        Get.toNamed(AppRoutes.instituteFeeReport);
+                      },
+                    ),
+                    AppSpacing.v10,
+                  ],
+                  if (auth.can(AppPermissions.reportsPerformance)) ...[
+                    _buildReportCard(
+                      title: AppStrings.studentPerformanceReports,
+                      subtitle:
+                          AppStrings.academicProgressAverageGradesAndPerformance,
+                      icon: Icons.insights_rounded,
+                      color: AppColors.primaryBrand,
+                      onTap: () {
+                        Get.toNamed(AppRoutes.institutePerformanceReport);
+                      },
+                    ),
+                    AppSpacing.v10,
+                  ],
+                  if (auth.can(AppPermissions.reportsProfitLoss)) ...[
+                    _buildReportCard(
+                      title: 'Profit & Loss',
+                      subtitle:
+                          'Fee income against expenses for a financial year, '
+                          'calendar year or custom dates.',
+                      icon: Icons.account_balance_rounded,
+                      color: AppColors.primaryBrand,
+                      onTap: () {
+                        Get.toNamed(AppRoutes.instituteProfitLoss);
+                      },
+                    ),
+                    AppSpacing.v10,
+                  ],
+                  if (auth.can(AppPermissions.reportsAnalytics)) ...[
+                    _buildReportCard(
+                      title: AppStrings.labelBusinessAnalytics,
+                      subtitle: AppStrings.revenueFeeCollectionAndDropoutTrends,
+                      icon: Icons.bar_chart_rounded,
+                      color: AppColors.primaryBrand,
+                      onTap: () {
+                        Get.toNamed(AppRoutes.instituteAnalytics);
+                      },
+                    ),
+                    AppSpacing.v10,
+                  ],
                 ],
               ),
             ),

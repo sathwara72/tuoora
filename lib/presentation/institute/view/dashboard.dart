@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_images.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -27,9 +28,9 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
       body: RefreshIndicator(
         onRefresh: () => Future.wait([
           controller.fetchProfile(),
-          if (_auth.canModule('students'))
+          if (_auth.canModule(AppPermissions.students))
             Get.find<BirthdayController>().fetchBirthdays(),
-          if (_auth.canModule('communication'))
+          if (_auth.can(AppPermissions.chatAccess))
             Get.find<ChatController>().fetchChats(),
         ]),
         color: AppColors.primaryBrand,
@@ -196,37 +197,37 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
 
   Widget _buildModulesGrid() {
     final modules = [
-      if (_auth.can('academics.timetable'))
+      if (_auth.can(AppPermissions.academicsTimetable))
       ModuleItem(
         'Timetable',
         () => Get.toNamed(AppRoutes.instituteTimetable),
         AppImages.icBatchTimetable,
       ),
-      if (_auth.canModule('students'))
+      if (_auth.canModule(AppPermissions.students))
       ModuleItem(
         'Students',
         () => Get.toNamed(AppRoutes.instituteStudents),
         AppImages.icModuleStaff,
       ),
-      if (_auth.canModule('batches'))
+      if (_auth.canModule(AppPermissions.batches))
       ModuleItem(
         'Batches',
         () => Get.toNamed(AppRoutes.instituteBatches),
         AppImages.icModuleBatch,
       ),
-      if (_auth.canModule('fees'))
+      if (_auth.canModule(AppPermissions.fees))
       ModuleItem(
         'Fees',
         () => Get.toNamed(AppRoutes.instituteFees),
         AppImages.icModuleFees,
       ),
-      if (!_auth.isSubAccess)
+      if (_auth.canModule(AppPermissions.staff))
       ModuleItem(
         'Staffs',
         () => Get.toNamed(AppRoutes.instituteStaffs),
         AppImages.icModuleStaff,
       ),
-      if (_auth.canModule('communication'))
+      if (_auth.can(AppPermissions.chatAccess))
       ModuleItem(
         'Chats',
         () => Get.toNamed(AppRoutes.instituteChats),
@@ -236,7 +237,7 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
             .where((c) => c.unreadCount > 0)
             .length,
       ),
-      if (_auth.can('reports.view'))
+      if (_auth.canModule(AppPermissions.reports))
       ModuleItem(
         'Reports',
         () => Get.toNamed(AppRoutes.instituteReports),
@@ -248,13 +249,13 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
         () => Get.toNamed(AppRoutes.instituteLeads),
         AppImages.icModuleLead,
       ),
-      if (!_auth.isSubAccess)
+      if (_auth.can(AppPermissions.notesManage))
       ModuleItem(
         'Notes',
         () => Get.toNamed(AppRoutes.instituteNotes),
         AppImages.icModuleNotes,
       ),
-      if (_auth.can('expenses.manage'))
+      if (_auth.can(AppPermissions.expensesManage))
       ModuleItem(
         'Expenses',
         () => Get.toNamed(AppRoutes.instituteExpenses),
@@ -266,7 +267,7 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
         () => Get.toNamed(AppRoutes.instituteUpdates),
         AppImages.icModuleUpdates,
       ),
-      if (_auth.canModule('students'))
+      if (_auth.canModule(AppPermissions.students))
       ModuleItem(
         'Birthdays',
         () => Get.toNamed(AppRoutes.instituteBirthdays),

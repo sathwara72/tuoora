@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -50,7 +51,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
             InstituteAppBar(
               title: AppStrings.instBatchDetailsTitle,
               actions: [
-                if (_auth.can('batches.edit'))
+                if (_auth.can(AppPermissions.batchesEdit))
                 IconButton(
                   onPressed: () {
                     batchController.initEditMode(controller.batch);
@@ -58,7 +59,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                   },
                   icon: const AppActionIcon(asset: AppImages.icEdit),
                 ),
-                if (_auth.can('batches.delete'))
+                if (_auth.can(AppPermissions.batchesDelete))
                 IconButton(
                   onPressed: () => batchController.deleteBatchWithConfirmation(
                     controller.batch.id,
@@ -125,7 +126,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
                 ),
                 const Spacer(),
                 if (!controller.isStatusClosed.value &&
-                    _auth.can('batches.edit'))
+                    _auth.can(AppPermissions.batchesEdit))
                   GestureDetector(
                     onTap: () {
                       CommonDialog.show(
@@ -188,7 +189,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
             Row(
               children: [
                 // Fee amounts need "Display Total / Pending Fees".
-                if (_auth.can('fees.totals')) ...[
+                if (_auth.can(AppPermissions.feesTotals)) ...[
                 Expanded(
                   child: InstituteMetricCard(
                     label: AppStrings.instTotalCollectionLabel,
@@ -241,7 +242,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
             ),
           ],
           // Owners always have fees.edit.
-          if (_auth.can('fees.edit')) ...[
+          if (_auth.can(AppPermissions.feesEdit)) ...[
             AppSpacing.v16,
             _buildBatchFeeRow(batch),
           ],
@@ -413,25 +414,27 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
   }
 
   Widget _buildBatchReportsSection() {
-    // Report downloads need "View Financial Reports"; the Fee report also
+    // Each download needs its own report permission; the Fee report also
     // shows collection totals, so it needs "Display Total / Pending Fees".
-    if (!_auth.can('reports.view')) return const SizedBox.shrink();
     final reports = <(String, String, IconData, Color)>[
-      if (_auth.can('fees.totals'))
+      if (_auth.can(AppPermissions.reportsFee) && _auth.can(AppPermissions.feesTotals))
         ('Fee', 'Fee Report', Icons.payments_rounded, const Color(0xFF10B981)),
-      (
-        'Attendance',
-        'Attendance Report',
-        Icons.fact_check_rounded,
-        const Color(0xFFB45309),
-      ),
-      (
-        'Performance',
-        'Performance Report',
-        Icons.trending_up_rounded,
-        const Color(0xFF4F46E5),
-      ),
+      if (_auth.can(AppPermissions.reportsAttendance))
+        (
+          'Attendance',
+          'Attendance Report',
+          Icons.fact_check_rounded,
+          const Color(0xFFB45309),
+        ),
+      if (_auth.can(AppPermissions.reportsPerformance))
+        (
+          'Performance',
+          'Performance Report',
+          Icons.trending_up_rounded,
+          const Color(0xFF4F46E5),
+        ),
     ];
+    if (reports.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -485,7 +488,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
 
   Widget _buildCourseManagementSection() {
     final tiles = <_ManagementTileData>[
-      if (_auth.can('academics.timetable'))
+      if (_auth.can(AppPermissions.academicsTimetable))
       _ManagementTileData(
         svgAsset: AppImages.icBatchTimetable,
         title: AppStrings.timetable,
@@ -495,7 +498,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
-      if (_auth.canModule('students'))
+      if (_auth.canModule(AppPermissions.students))
       _ManagementTileData(
         svgAsset: AppImages.icBatchStudents,
         title: AppStrings.instNavStudents,
@@ -505,7 +508,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
-      if (_auth.canModule('batches'))
+      if (_auth.canModule(AppPermissions.batches))
       _ManagementTileData(
         icon: Icons.school_rounded,
         title: 'Subjects',
@@ -515,7 +518,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
-      if (_auth.can('academics.exams'))
+      if (_auth.can(AppPermissions.academicsExams))
       _ManagementTileData(
         svgAsset: AppImages.icBatchExam, // Clipboard with checkmark
         title: AppStrings.exams,
@@ -525,7 +528,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
-      if (_auth.can('academics.homework'))
+      if (_auth.can(AppPermissions.academicsHomework))
       _ManagementTileData(
         icon: Icons.menu_book_rounded,
         title: AppStrings.homework,
@@ -535,7 +538,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
-      if (_auth.canModule('attendance'))
+      if (_auth.canModule(AppPermissions.attendance))
       _ManagementTileData(
         svgAsset: AppImages.icBatchAttendance,
         title: AppStrings.instAttendanceTitle,
@@ -545,7 +548,7 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
           arguments: controller.batch,
         ),
       ),
-      if (_auth.canModule('batches'))
+      if (_auth.canModule(AppPermissions.batches))
       _ManagementTileData(
         svgAsset: AppImages.icBatchResource,
         title: 'Materials',

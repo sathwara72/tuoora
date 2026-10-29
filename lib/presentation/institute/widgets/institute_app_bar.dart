@@ -1,6 +1,8 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -108,15 +110,17 @@ class InstituteAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget _buildDefaultRootActions() {
     return Row(
       children: [
-        GestureDetector(
-          onTap: () => Get.toNamed(AppRoutes.instituteChats),
-          child: const Icon(
-            Icons.chat_bubble_outline_rounded,
-            color: AppColors.fieldLabel,
-            size: AppSpacing.s24,
+        if (Get.find<AuthService>().can(AppPermissions.chatAccess)) ...[
+          GestureDetector(
+            onTap: () => Get.toNamed(AppRoutes.instituteChats),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              color: AppColors.fieldLabel,
+              size: AppSpacing.s24,
+            ),
           ),
-        ),
-        AppSpacing.h16,
+          AppSpacing.h16,
+        ],
         GestureDetector(
           onTap: () => Get.toNamed(AppRoutes.instituteNotifications),
           child: const Icon(

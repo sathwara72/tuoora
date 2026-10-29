@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
@@ -131,7 +132,7 @@ class _BatchesScreenState extends State<BatchesScreen> {
         ],
       ),
       floatingActionButton: SubscriptionGuard.hideAddOnIOS ||
-              !Get.find<AuthService>().can('batches.create')
+              !Get.find<AuthService>().can(AppPermissions.batchesCreate)
           ? null
           : FloatingActionButton(
               onPressed: () => SubscriptionGuard.runAddAction(() {

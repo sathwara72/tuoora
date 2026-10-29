@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
@@ -174,7 +175,7 @@ class _StudentsRegistryScreenState extends State<StudentsRegistryScreen> {
         ],
       ),
       floatingActionButton: SubscriptionGuard.hideAddOnIOS ||
-              !Get.find<AuthService>().can('students.create')
+              !Get.find<AuthService>().can(AppPermissions.studentsCreate)
           ? null
           : FloatingActionButton(
               onPressed: () => SubscriptionGuard.runAddAction(

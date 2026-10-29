@@ -1,3 +1,5 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/common_dialog.dart';
 import 'package:tuoora/presentation/institute/controllers/expense_controller.dart';
 import 'package:tuoora/config/app_routes.dart';
@@ -38,6 +40,14 @@ class StaffController extends GetxController {
 
   // Tab index for bottom navigation
   final currentTabIndex = 0.obs;
+
+  /// Permissions (any one is enough) for each bottom tab: Staff,
+  /// Attendance, Salary.
+  static const tabPermissions = [
+    AppPermissions.staffList,
+    [AppPermissions.staffAttendance],
+    [AppPermissions.staffSalaries],
+  ];
 
   // Salary History State
   final salaryList = <StaffSalary>[].obs;
@@ -170,7 +180,13 @@ class StaffController extends GetxController {
   void onInit() {
     super.onInit();
     fetchMetadata();
-    fetchStaffs();
+    // Open on the first tab this user may see; the others would fail with 403.
+    final tab = tabPermissions.indexWhere(Get.find<AuthService>().canAny);
+    if (tab <= 0) {
+      fetchStaffs();
+    } else {
+      changeTab(tab);
+    }
     debounce(
       searchQuery,
       (_) => fetchStaffs(page: 1),

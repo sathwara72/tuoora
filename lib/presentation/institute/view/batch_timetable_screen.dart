@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/services/auth_service.dart';
@@ -100,7 +101,7 @@ class _BatchTimetableScreenState extends State<BatchTimetableScreen> {
 
   /// Add / edit / delete lectures needs the TimeTable permission (also
   /// reached from Batch Details, not only the dashboard tile).
-  bool get _canEdit => Get.find<AuthService>().can('academics.timetable');
+  bool get _canEdit => Get.find<AuthService>().can(AppPermissions.academicsTimetable);
 
   void _onAddScheduleTap() {
     SubscriptionGuard.runAddAction(() {

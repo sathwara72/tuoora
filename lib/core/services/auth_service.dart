@@ -31,6 +31,9 @@ class AuthService extends GetxService {
         user.permissions.contains(permission);
   }
 
+  /// Whether the signed-in user has at least one of [permissions].
+  bool canAny(Iterable<String> permissions) => permissions.any(can);
+
   /// Any permission in a module, e.g. `canModule('fees')` for `fees.*`.
   bool canModule(String module) {
     final user = _currentUser.value;

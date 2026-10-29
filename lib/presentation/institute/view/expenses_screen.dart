@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -31,7 +32,7 @@ class ExpensesScreen extends GetView<ExpenseController> {
             InstituteAppBar(
               title: AppStrings.expensesOverview,
               actions: [
-                if (Get.find<AuthService>().can('reports.view'))
+                if (Get.find<AuthService>().can(AppPermissions.reportsProfitLoss))
                   IconButton(
                     tooltip: 'Profit & Loss',
                     onPressed: () => Get.toNamed(AppRoutes.instituteProfitLoss),

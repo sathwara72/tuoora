@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
@@ -60,7 +61,7 @@ class BatchStudentsScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: SubscriptionGuard.hideAddOnIOS ||
-              !Get.find<AuthService>().can('batches.edit')
+              !Get.find<AuthService>().can(AppPermissions.batchesEdit)
           ? null
           : InstituteBottomButton(
               label: AppStrings.assignStudent,
@@ -307,7 +308,7 @@ class BatchStudentsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (Get.find<AuthService>().can('batches.edit'))
+                if (Get.find<AuthService>().can(AppPermissions.batchesEdit))
                 IconButton(
                   onPressed: () =>
                       _showRemoveConfirmation(context, controller, bs),
@@ -345,7 +346,7 @@ class BatchStudentsScreen extends StatelessWidget {
           ),
         ),
         // Owners always have fees.edit.
-        if (Get.find<AuthService>().can('fees.edit')) ...[
+        if (Get.find<AuthService>().can(AppPermissions.feesEdit)) ...[
         AppSpacing.h4,
         InkWell(
           onTap: () => _showEditFeeDialog(controller, bs, fee),

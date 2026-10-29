@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/utils/currency_utils.dart';
@@ -62,7 +63,7 @@ class InstituteFeesScreen extends GetView<InstituteController> {
       ),
       floatingActionButton:
           SubscriptionGuard.hideAddOnIOS ||
-              !Get.find<AuthService>().can('fees.collect')
+              !Get.find<AuthService>().can(AppPermissions.feesCollect)
           ? null
           : FloatingActionButton(
               heroTag: 'fees_fab_unique_tag',

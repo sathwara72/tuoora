@@ -1,3 +1,4 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:intl/intl.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -52,8 +53,8 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                           ),
                         ),
                       if (student != null &&
-                          (_auth.can('students.edit') ||
-                              _auth.can('students.delete')))
+                          (_auth.can(AppPermissions.studentsEdit) ||
+                              _auth.can(AppPermissions.studentsDelete)))
                         PopupMenuButton<String>(
                           icon: const Icon(
                             Icons.more_vert_rounded,
@@ -65,21 +66,21 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                           onSelected: (value) =>
                               _onMenuSelected(context, value, student),
                           itemBuilder: (_) => [
-                            if (_auth.can('students.edit'))
+                            if (_auth.can(AppPermissions.studentsEdit))
                             _menuItem('edit', Icons.edit_outlined, 'Edit'),
-                            if (_auth.can('students.edit'))
+                            if (_auth.can(AppPermissions.studentsEdit))
                             _menuItem(
                               'forgot',
                               Icons.email_outlined,
                               'Forgot Password',
                             ),
-                            if (_auth.can('students.edit'))
+                            if (_auth.can(AppPermissions.studentsEdit))
                             _menuItem(
                               'reset',
                               Icons.lock_outline_rounded,
                               'Reset Password',
                             ),
-                            if (_auth.can('students.edit'))
+                            if (_auth.can(AppPermissions.studentsEdit))
                             _menuItem(
                               'block',
                               student.isLoginBlocked
@@ -89,7 +90,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                                   ? 'Unblock Login'
                                   : 'Block Login',
                             ),
-                            if (_auth.can('students.delete'))
+                            if (_auth.can(AppPermissions.studentsDelete))
                             _menuItem(
                               'delete',
                               Icons.delete_outline_rounded,
@@ -443,8 +444,8 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
               ),
             ],
           ),
-          if (_auth.can('fees.edit') ||
-              (_auth.can('fees.delete') &&
+          if (_auth.can(AppPermissions.feesEdit) ||
+              (_auth.can(AppPermissions.feesDelete) &&
                   _deletableFees(student).isNotEmpty)) ...[
             const SizedBox(height: 10),
             Wrap(
@@ -452,7 +453,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (_auth.can('fees.delete') &&
+                if (_auth.can(AppPermissions.feesDelete) &&
                     _deletableFees(student).isNotEmpty)
                   _scheduleAction(
                     label: 'Delete Fee',
@@ -460,7 +461,7 @@ class StudentProfileScreen extends GetView<InstituteStudentController> {
                     color: AppColors.errorRed,
                     onPressed: () => _deleteFee(student),
                   ),
-                if (_auth.can('fees.edit'))
+                if (_auth.can(AppPermissions.feesEdit))
                   _scheduleAction(
                     label: 'Edit Milestones',
                     icon: Icons.edit_outlined,

@@ -1,3 +1,5 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
@@ -106,7 +108,8 @@ class StaffListScreen extends GetView<StaffController> {
           ],
         ),
       ),
-      floatingActionButton: SubscriptionGuard.hideAddOnIOS
+      floatingActionButton: SubscriptionGuard.hideAddOnIOS ||
+              !Get.find<AuthService>().can(AppPermissions.staffManage)
           ? null
           : FloatingActionButton(
               onPressed: () => SubscriptionGuard.runAddAction(() {

@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 
 import 'package:tuoora/config/app_routes.dart';
+import 'package:tuoora/core/constants/app_permissions.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/services/notifications/base_notification_handler.dart';
 import 'package:tuoora/core/services/notifications/notification_payload.dart';
 import 'package:tuoora/data/models/chat_model.dart';
@@ -49,6 +51,13 @@ class ChatNotificationHandler extends BaseNotificationHandler {
       // Never await Get.toNamed (its future resolves on pop, not push), and
       // never use offNamed (it replaces the dashboard and breaks back-nav).
       Get.toNamed<dynamic>(targetRoute);
+      return;
+    }
+
+    // A sub-access user without chat access would only get "Access Denied".
+    if (Get.isRegistered<AuthService>() &&
+        !Get.find<AuthService>().can(AppPermissions.chatAccess)) {
+      log('institute: no chat access — ignoring tap');
       return;
     }
 
