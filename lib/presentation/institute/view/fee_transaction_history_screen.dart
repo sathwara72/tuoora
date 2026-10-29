@@ -1,3 +1,4 @@
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
@@ -203,7 +204,7 @@ class FeeTransactionHistoryScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    tx['amount']!,
+                    formatRupees(tx['amount']),
                     style: AppTextStyles.outfit(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,

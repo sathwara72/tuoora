@@ -1,3 +1,4 @@
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'dart:io' show File, Platform;
 
 import 'package:flutter/material.dart';
@@ -147,7 +148,7 @@ class WhiteLabelScreen extends GetView<WhiteLabelController> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                addon.formattedPrice,
+                formatRupees(addon.price),
                 style: AppTextStyles.outfit(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,

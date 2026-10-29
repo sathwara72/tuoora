@@ -36,9 +36,11 @@ class ApiClient extends GetConnect {
       }
 
       final path = request.url.path;
-      final isAuthRefresh = path.endsWith(ApiConstants.authRefresh) ||
+      final isAuthRefresh =
+          path.endsWith(ApiConstants.authRefresh) ||
           path.endsWith('${ApiConstants.authRefresh}/');
-      final isLogin = path.endsWith(ApiConstants.instituteLogin) ||
+      final isLogin =
+          path.endsWith(ApiConstants.instituteLogin) ||
           path.endsWith(ApiConstants.studentLogin) ||
           path.endsWith(ApiConstants.teacherLogin);
 
@@ -78,10 +80,6 @@ class ApiClient extends GetConnect {
         return request;
       }
 
-      // Mark this as the post-refresh retry: a 401 on it means the session is
-      // really dead, and the response modifier logs the user out.
-      request.headers[_retryHeader] = '1';
-
       final outcome = await _tryRefresh();
       if (outcome == _RefreshOutcome.rejected) {
         // The refresh token itself is invalid or expired: sign in again.
@@ -91,6 +89,8 @@ class ApiClient extends GetConnect {
       if (outcome == _RefreshOutcome.unavailable) {
         return request;
       }
+      // Only a retry with refreshed credentials can prove the session invalid.
+      request.headers[_retryHeader] = '1';
       request.headers['Authorization'] = 'Bearer ${authService.token}';
       return request;
     });

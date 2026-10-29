@@ -1,3 +1,4 @@
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:tuoora/core/constants/app_colors.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -85,7 +86,7 @@ class PaymentItemTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                amount,
+                formatRupees(amount),
                 style: AppTextStyles.outfit(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

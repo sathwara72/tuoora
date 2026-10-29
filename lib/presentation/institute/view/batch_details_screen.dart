@@ -404,9 +404,6 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
     );
   }
 
-  String _formatAmount(double v) =>
-      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
-
   // Batches created after the time-slot field was removed have empty
   // start/end times, which [Batch.time] renders as a bare " - ". Hide the
   // row entirely rather than show that.

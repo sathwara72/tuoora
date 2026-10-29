@@ -1,3 +1,4 @@
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:tuoora/core/services/auth_service.dart';
@@ -522,7 +523,7 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '(${pack.costPerMessage}/msg)',
+                        '(${formatRupees(pack.costPerMessage)}/msg)',
                         style: AppTextStyles.outfit(
                           fontSize: 10,
                           color: AppColors.textTertiary,
@@ -558,7 +559,7 @@ class InstituteWhatsAppScreen extends GetView<WhatsAppController> {
                       ),
                     )
                   : Text(
-                      pack.priceFormatted,
+                      formatRupees(pack.priceFormatted),
                       style: AppTextStyles.outfit(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,

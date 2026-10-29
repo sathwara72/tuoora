@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:tuoora/core/utils/currency_utils.dart';
 
 import 'package:tuoora/config/app_routes.dart';
@@ -38,7 +37,9 @@ class StudentReceiptScreen extends GetView<FeesController> {
                 }
                 final receipt = controller.currentReceipt.value;
                 if (receipt == null) {
-                  return const Center(child: Text(AppStrings.noReceiptSelected));
+                  return const Center(
+                    child: Text(AppStrings.noReceiptSelected),
+                  );
                 }
                 return _Body(
                   receipt: receipt,
@@ -161,16 +162,16 @@ class _ReceiptCard extends StatelessWidget {
               label: AppStrings.studentReceiptInvoiceNo,
               value: receipt.receiptNumber,
             ),
-            _DetailRow(label: AppStrings.paymentMethod, value: receipt.paymentMethod),
+            _DetailRow(
+              label: AppStrings.paymentMethod,
+              value: receipt.paymentMethod,
+            ),
             _DetailRow(label: 'Paid Date', value: receipt.date, isLast: true),
           ],
         ),
       ),
     );
   }
-
-  String _formatAmount(String raw) =>
-      formatRupees(raw, includeSymbol: false);
 
   String _resolveEnrollment() {
     if (receipt.enrollmentId.trim().isNotEmpty) {

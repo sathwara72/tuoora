@@ -97,26 +97,24 @@ String formatRupees(
   bool includeSymbol = true,
   int? decimalDigits,
   bool trimZeroDecimals = true,
-}) =>
-    CurrencyUtils.format(
-      value,
-      includeSymbol: includeSymbol,
-      decimalDigits: decimalDigits,
-      trimZeroDecimals: trimZeroDecimals,
-    );
+}) => CurrencyUtils.format(
+  value,
+  includeSymbol: includeSymbol,
+  decimalDigits: decimalDigits,
+  trimZeroDecimals: trimZeroDecimals,
+);
 
 extension NumCurrencyExtension on num {
   String toRupees({
     bool includeSymbol = true,
     int? decimalDigits,
     bool trimZeroDecimals = true,
-  }) =>
-      CurrencyUtils.format(
-        this,
-        includeSymbol: includeSymbol,
-        decimalDigits: decimalDigits,
-        trimZeroDecimals: trimZeroDecimals,
-      );
+  }) => CurrencyUtils.format(
+    this,
+    includeSymbol: includeSymbol,
+    decimalDigits: decimalDigits,
+    trimZeroDecimals: trimZeroDecimals,
+  );
 }
 
 extension StringCurrencyExtension on String {
@@ -124,11 +122,10 @@ extension StringCurrencyExtension on String {
     bool includeSymbol = true,
     int? decimalDigits,
     bool trimZeroDecimals = true,
-  }) =>
-      CurrencyUtils.format(
-        this,
-        includeSymbol: includeSymbol,
-        decimalDigits: decimalDigits,
-        trimZeroDecimals: trimZeroDecimals,
-      );
+  }) => CurrencyUtils.format(
+    this,
+    includeSymbol: includeSymbol,
+    decimalDigits: decimalDigits,
+    trimZeroDecimals: trimZeroDecimals,
+  );
 }

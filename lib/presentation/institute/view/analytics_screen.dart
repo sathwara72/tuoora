@@ -28,10 +28,7 @@ class AnalyticsScreen extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const InstituteAppBar(
-              title: 'Business Analytics',
-              isRoot: false,
-            ),
+            const InstituteAppBar(title: 'Business Analytics', isRoot: false),
             Expanded(
               child: Obx(() {
                 if (controller.isAnalyticsLoading.value &&
@@ -71,7 +68,9 @@ class AnalyticsScreen extends StatelessWidget {
                         AppSpacing.v16,
                         ...data.attendance.batches.map(
                           (batch) => Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.s16),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.s16,
+                            ),
                             child: _buildAttendanceBatchCard(batch),
                           ),
                         ),
@@ -82,7 +81,9 @@ class AnalyticsScreen extends StatelessWidget {
                         AppSpacing.v16,
                         ...data.dropout.batches.map(
                           (batch) => Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.s12),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.s12,
+                            ),
                             child: _buildDropoutBatchCard(batch),
                           ),
                         ),
@@ -112,12 +113,17 @@ class AnalyticsScreen extends StatelessWidget {
             child: GestureDetector(
               onTap: () => controller.loadAnalytics(months: m),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primaryBrand : AppColors.white,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryBrand : AppColors.background,
+                    color: isSelected
+                        ? AppColors.primaryBrand
+                        : AppColors.background,
                   ),
                 ),
                 child: Text(
@@ -125,7 +131,9 @@ class AnalyticsScreen extends StatelessWidget {
                   style: AppTextStyles.outfit(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    color: isSelected ? AppColors.white : AppColors.textTertiary,
+                    color: isSelected
+                        ? AppColors.white
+                        : AppColors.textTertiary,
                   ),
                 ),
               ),
@@ -196,9 +204,7 @@ class AnalyticsScreen extends StatelessWidget {
         labels: trend.map((t) => t.month.split(' ').first).toList(),
         values: trend.map((t) => t.totalRevenue).toList(),
         barColor: AppColors.primaryBrand,
-        valueFormatter: (v) => v >= 1000
-            ? '₹${(v / 1000).toStringAsFixed(1)}k'
-            : formatRupees(v),
+        valueFormatter: (v) => formatRupees(v),
       ),
     );
   }

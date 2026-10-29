@@ -1,3 +1,4 @@
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -163,7 +164,7 @@ class _AddOnCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                addOn.formattedPrice,
+                formatRupees(addOn.price),
                 style: AppTextStyles.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,

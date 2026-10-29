@@ -306,7 +306,7 @@ class ProfitLossScreen extends GetView<ProfitLossController> {
                           ),
                         ),
                         Text(
-                          _compact(m.profit),
+                          formatInr(m.profit),
                           style: AppTextStyles.outfit(
                             fontSize: 9,
                             fontWeight: FontWeight.w700,
@@ -355,16 +355,6 @@ class ProfitLossScreen extends GetView<ProfitLossController> {
       ),
     ],
   );
-
-  /// "+₹1.2L" / "-₹45K" for the small labels under the bars.
-  String _compact(double v) {
-    final a = v.abs();
-    final sign = v < 0 ? '-' : '';
-    if (a >= 10000000) return '$sign₹${(a / 10000000).toStringAsFixed(1)}Cr';
-    if (a >= 100000) return '$sign₹${(a / 100000).toStringAsFixed(1)}L';
-    if (a >= 1000) return '$sign₹${(a / 1000).toStringAsFixed(0)}K';
-    return '$sign₹${a.toStringAsFixed(0)}';
-  }
 
   Widget _buildExpenseBreakdown(ProfitLossReport r) {
     if (r.expenseBreakdown.isEmpty) {
@@ -456,7 +446,7 @@ class ProfitLossScreen extends GetView<ProfitLossController> {
             _kv(
               r.incomeByMethod[i].method,
               '${r.incomeByMethod[i].count} '
-                  '${r.incomeByMethod[i].count == 1 ? 'payment' : 'payments'}',
+              '${r.incomeByMethod[i].count == 1 ? 'payment' : 'payments'}',
               r.incomeByMethod[i].amount,
             ),
           ],

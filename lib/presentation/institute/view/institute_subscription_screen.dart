@@ -1,3 +1,4 @@
+import 'package:tuoora/core/utils/currency_utils.dart';
 import 'dart:io' show Platform;
 
 import 'package:tuoora/core/constants/app_colors.dart';
@@ -526,14 +527,7 @@ class InstituteSubscriptionScreen
     );
   }
 
-  String _formatPrice(String raw) {
-    final clean = raw.replaceAll(',', '').trim();
-    final value = double.tryParse(clean);
-    if (value == null) return '₹$raw';
-    final intVal = value.truncate();
-    final formatter = NumberFormat.decimalPattern('en_IN');
-    return '₹${formatter.format(intVal)}';
-  }
+  String _formatPrice(String raw) => formatRupees(raw);
 
   Widget _buildFeatureCards() {
     const items = [
