@@ -1458,6 +1458,19 @@ class InstituteRepository implements InstituteRepositoryImpl {
   }
 
   @override
+  Future<List<Staff>> listAllStaff() async {
+    final response = await _apiClient.get(
+      ApiConstants.instituteStaff,
+      query: {'all': '1'},
+    );
+    if (response.status.hasError) {
+      throw Exception('Failed to fetch staff: ${response.statusText}');
+    }
+    final items = response.body['data'] as List? ?? [];
+    return items.map((i) => Staff.fromJson(i)).toList();
+  }
+
+  @override
   Future<void> deleteStaff(int id) async {
     final response = await _apiClient.delete(
       '${ApiConstants.instituteStaff}/$id',
@@ -1603,10 +1616,15 @@ class InstituteRepository implements InstituteRepositoryImpl {
   Future<SalaryListResponse> getStaffSalaries(
     int staffId, {
     int page = 1,
+    FinancialPeriod? period,
   }) async {
     final response = await _apiClient.get(
       '${ApiConstants.instituteSalaries}/$staffId',
-      query: {'page': page.toString()},
+      query: {
+        'page': page.toString(),
+        'per_page': '100',
+        ...?period?.toQuery(),
+      },
     );
     if (response.status.hasError) {
       throw Exception('Failed to fetch salary history');

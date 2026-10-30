@@ -76,8 +76,7 @@ class BatchClassesController extends GetxController {
     if (Get.find<AuthService>().isSubAccess) return;
     try {
       isLoadingStaff.value = true;
-      final response = await _repository.listStaff();
-      staffList.assignAll(response.items);
+      staffList.assignAll(await _repository.listAllStaff());
     } catch (e) {
       AppSnackBar.error('Failed to load staff: $e');
     } finally {

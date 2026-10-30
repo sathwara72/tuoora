@@ -64,7 +64,8 @@ class StaffAttendanceScreen extends GetView<StaffController> {
       onTap: () {
         final staff = controller.selectedStaff.value;
         if (staff == null) return;
-        controller.selectLogStaffById(staff.id);
+        controller.setLogStaff(staff);
+        controller.fetchAllStaff();
         Get.toNamed(AppRoutes.instituteLogStaffAttendance);
       },
       child: Container(

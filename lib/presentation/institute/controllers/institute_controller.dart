@@ -326,14 +326,20 @@ class InstituteController extends GetxController {
     ].join('\n');
   }
 
+  int _studentsRequestId = 0;
+
   Future<void> fetchStudents({bool reset = false}) async {
     if (reset) {
       currentPage.value = 1;
       hasMore.value = true;
     }
 
-    if (isLoadingStudents.value || (!hasMore.value && !reset)) return;
+    if (!reset &&
+        (isLoadingStudents.value || isLoadMore.value || !hasMore.value)) {
+      return;
+    }
 
+    final requestId = ++_studentsRequestId;
     try {
       if (reset || students.isEmpty) {
         isLoadingStudents.value = true;
@@ -346,10 +352,15 @@ class InstituteController extends GetxController {
         page: currentPage.value,
       );
 
+      // A newer search or refresh has replaced the list; drop this response.
+      if (requestId != _studentsRequestId) return;
+
       if (reset) {
         students.assignAll(result);
       } else {
-        students.addAll(result);
+        // Page offsets shift when students are added, so skip rows already shown.
+        final loadedIds = students.map((s) => s.id).toSet();
+        students.addAll(result.where((s) => loadedIds.add(s.id)));
       }
 
       if (result.isEmpty || result.length < 10) {
@@ -358,10 +369,14 @@ class InstituteController extends GetxController {
         currentPage.value++;
       }
     } catch (e) {
-      AppSnackBar.error(AppStrings.failedToLoadStudents);
+      if (requestId == _studentsRequestId) {
+        AppSnackBar.error(AppStrings.failedToLoadStudents);
+      }
     } finally {
-      isLoadingStudents.value = false;
-      isLoadMore.value = false;
+      if (requestId == _studentsRequestId) {
+        isLoadingStudents.value = false;
+        isLoadMore.value = false;
+      }
     }
   }
 

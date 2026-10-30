@@ -73,7 +73,11 @@ class NotesController extends GetxController {
     }
   }
 
+  bool _isLoadingMore = false;
+  int _requestId = 0;
+
   Future<void> fetchNotes({int page = 1}) async {
+    final requestId = ++_requestId;
     try {
       if (page == 1) isLoading.value = true;
 
@@ -82,25 +86,40 @@ class NotesController extends GetxController {
         isBookmarked: isBookmarkView.value ? true : null,
       );
 
+      // A newer search or refresh has replaced the list; drop this response.
+      if (requestId != _requestId) return;
+
       if (page == 1) {
         notesList.assignAll(response.data);
       } else {
-        notesList.addAll(response.data);
+        // Page offsets shift when items are added, so skip rows already shown.
+        final loadedIds = notesList.map((item) => item.id).toSet();
+        notesList.addAll(response.data.where((item) => loadedIds.add(item.id)));
       }
 
       currentPage.value = response.currentPage;
       lastPage.value = response.lastPage;
       totalItems.value = response.total;
     } catch (e) {
-      AppSnackBar.error('Failed to load notes: $e');
+      if (requestId == _requestId) {
+        AppSnackBar.error('Failed to load notes: $e');
+      }
     } finally {
-      if (page == 1) isLoading.value = false;
+      if (page == 1 && requestId == _requestId) isLoading.value = false;
     }
   }
 
   Future<void> loadMoreNotes() async {
-    if (currentPage.value < lastPage.value && !isLoading.value) {
+    if (_isLoadingMore ||
+        isLoading.value ||
+        currentPage.value >= lastPage.value) {
+      return;
+    }
+    _isLoadingMore = true;
+    try {
       await fetchNotes(page: currentPage.value + 1);
+    } finally {
+      _isLoadingMore = false;
     }
   }
 

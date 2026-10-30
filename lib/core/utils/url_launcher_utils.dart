@@ -21,4 +21,18 @@ class UrlLauncherUtils {
       AppSnackBar.error(AppStrings.errFailedOpenLink);
     }
   }
+
+  /// Opens the phone dialer with [phone] filled in. Launches directly because
+  /// `canLaunchUrl` reports false for `tel:` unless the scheme is declared.
+  static Future<void> callPhone(String phone) async {
+    final number = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    try {
+      final ok = await launchUrl(Uri(scheme: 'tel', path: number));
+      if (!ok) {
+        AppSnackBar.error('Could not open the dialer for $phone');
+      }
+    } catch (_) {
+      AppSnackBar.error('Could not open the dialer for $phone');
+    }
+  }
 }

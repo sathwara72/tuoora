@@ -35,7 +35,7 @@ class BatchController extends GetxController {
     batchFeeController.addListener(() => _clearError(feeError));
     debounce(
       batchSearchQuery,
-      (_) => loadBatches(isRefresh: true),
+      (_) => loadBatches(isRefresh: true, force: true),
       time: const Duration(milliseconds: 500),
     );
   }
@@ -103,6 +103,8 @@ class BatchController extends GetxController {
     return isValid;
   }
 
+  int _batchesRequestId = 0;
+
   Future<void> loadBatches({bool isRefresh = true, bool force = false}) async {
     if (!force && (isLoading.value || isMoreLoading.value)) return;
 
@@ -116,6 +118,7 @@ class BatchController extends GetxController {
       isMoreLoading.value = true;
     }
 
+    final requestId = ++_batchesRequestId;
     try {
       final response = await _repository.listBatches(
         page: currentPage.value,
@@ -123,21 +126,29 @@ class BatchController extends GetxController {
             ? null
             : batchSearchQuery.value.trim(),
       );
+      // A newer search or refresh has replaced the list; drop this response.
+      if (requestId != _batchesRequestId) return;
       final uiBatches = response.items.map((b) => b.toUIModel()).toList();
 
       if (isRefresh) {
         batchesList.assignAll(uiBatches);
       } else {
-        batchesList.addAll(uiBatches);
+        // Page offsets shift when batches are added, so skip rows already shown.
+        final loadedIds = batchesList.map((b) => b.id).toSet();
+        batchesList.addAll(uiBatches.where((b) => loadedIds.add(b.id)));
       }
 
       lastPage.value = response.lastPage;
       currentPage.value++;
     } catch (e) {
-      AppSnackBar.error('Failed to load batches: ${e.toString()}');
+      if (requestId == _batchesRequestId) {
+        AppSnackBar.error('Failed to load batches: ${e.toString()}');
+      }
     } finally {
-      isLoading.value = false;
-      isMoreLoading.value = false;
+      if (requestId == _batchesRequestId) {
+        isLoading.value = false;
+        isMoreLoading.value = false;
+      }
     }
   }
 

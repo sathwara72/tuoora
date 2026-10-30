@@ -657,6 +657,8 @@ class AppStrings {
       'Are you sure you want to delete this resource?';
   static const String salaryHistory = 'Salary History';
   static const String noSalaryRecords = 'No Salary Records';
+  static const String noPaymentsInThisPeriod = 'No payments in this period';
+  static const String totalPaid = 'Total Paid';
   static const String noSalaryPaymentsFoundForThis =
       'No salary payments found for this staff member.';
   static const String salaryManagement = 'Salary Management';

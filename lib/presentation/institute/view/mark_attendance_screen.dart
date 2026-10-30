@@ -9,6 +9,7 @@ import 'package:tuoora/presentation/institute/controllers/attendance_controller.
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_bottom_button.dart';
 import 'package:tuoora/core/widgets/app_search_field.dart';
+import 'package:tuoora/core/widgets/call_icon_button.dart';
 import 'package:tuoora/presentation/institute/widgets/common_state_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -277,14 +278,16 @@ class MarkAttendanceScreen extends GetView<AttendanceController> {
                               color: AppColors.textTertiary,
                             ),
                             AppSpacing.h4,
-                            Text(
-                              student.phone != null && student.phone!.trim().isNotEmpty
-                                  ? student.phone!.trim()
-                                  : 'No mobile',
-                              style: AppTextStyles.outfit(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textTertiary,
+                            Flexible(
+                              child: Text(
+                                student.phone != null && student.phone!.trim().isNotEmpty
+                                    ? student.phone!.trim()
+                                    : 'No mobile',
+                                style: AppTextStyles.outfit(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.textTertiary,
+                                ),
                               ),
                             ),
                           ],
@@ -339,6 +342,7 @@ class MarkAttendanceScreen extends GetView<AttendanceController> {
             ),
           ),
           AppSpacing.h8,
+          CallIconButton(phone: student.phone),
           _buildStatusToggle(controller, student),
         ],
       ),

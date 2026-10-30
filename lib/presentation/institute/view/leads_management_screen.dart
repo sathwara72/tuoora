@@ -52,8 +52,8 @@ class LeadsManagementScreen extends GetView<LeadsController> {
                           child: NotificationListener<ScrollNotification>(
                             onNotification: (ScrollNotification scrollInfo) {
                               if (!controller.isLoading.value &&
-                                  scrollInfo.metrics.pixels ==
-                                      scrollInfo.metrics.maxScrollExtent) {
+                                  scrollInfo.metrics.pixels >=
+                                      scrollInfo.metrics.maxScrollExtent - 200) {
                                 controller.loadMoreLeads();
                               }
                               return false;

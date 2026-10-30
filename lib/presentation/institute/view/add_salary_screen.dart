@@ -31,10 +31,12 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
     // (e.g. the dotted-background CustomPaint from GetMaterialApp.builder)
     // are still building. The primary reset happens at the launch site —
     // this is a safety net for any other entry path into this route.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       controller.initAddSalaryMode();
       final args = Get.arguments;
+      await controller.fetchAllStaff();
+      if (!mounted) return;
       if (args is Map && args['staffId'] != null) {
         controller.selectSalaryStaffById(args['staffId'] as int);
       }
@@ -117,8 +119,8 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
   Widget _buildStaffDropdown() {
     return Obx(() {
       final selectedId = controller.selectedAddSalaryStaff.value?.id;
-      final isValueInList = controller.staffList.any((s) => s.id == selectedId);
-      final isStaffEmpty = controller.staffList.isEmpty;
+      final isValueInList = controller.allStaff.any((s) => s.id == selectedId);
+      final isStaffEmpty = controller.allStaff.isEmpty;
       return Container(
         constraints: const BoxConstraints(minHeight: 48),
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -132,7 +134,9 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
             value: isValueInList ? selectedId : null,
             isExpanded: true,
             hint: Text(
-              isStaffEmpty ? 'Loading staff...' : 'Select Staff',
+              controller.isLoadingAllStaff.value && isStaffEmpty
+                  ? 'Loading staff...'
+                  : 'Select Staff',
               style: AppTextStyles.outfit(
                 fontSize: 14,
                 color: AppColors.fieldLabel,
@@ -148,7 +152,7 @@ class _AddSalaryScreenState extends State<AddSalaryScreen> {
               fontWeight: FontWeight.w500,
             ),
             dropdownColor: AppColors.white,
-            items: controller.staffList
+            items: controller.allStaff
                 .map(
                   (staff) => DropdownMenuItem<int>(
                     value: staff.id,

@@ -215,6 +215,12 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
         () => Get.toNamed(AppRoutes.instituteBatches),
         AppImages.icModuleBatch,
       ),
+      if (_auth.canModule(AppPermissions.attendance))
+      ModuleItem(
+        AppStrings.instAttendanceTitle,
+        () => Get.toNamed(AppRoutes.instituteAttendance),
+        AppImages.icBatchAttendance,
+      ),
       if (_auth.canModule(AppPermissions.fees))
       ModuleItem(
         'Fees',
@@ -272,14 +278,9 @@ class InstituteDashboard extends GetView<InstituteProfileController> {
         'Birthdays',
         () => Get.toNamed(AppRoutes.instituteBirthdays),
         AppImages.icBirthdayCake,
-        // Today + next 30 days; red when someone's birthday is today.
-        badgeCount: () {
-          final b = Get.find<BirthdayController>();
-          return b.today.length + b.upcoming.length;
-        },
-        badgeColor: () => Get.find<BirthdayController>().today.isNotEmpty
-            ? AppColors.errorRed
-            : AppColors.primaryBrand,
+        // Today's birthdays only.
+        badgeCount: () => Get.find<BirthdayController>().today.length,
+        badgeColor: () => AppColors.errorRed,
       ),
     ];
 

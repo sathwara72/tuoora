@@ -8,6 +8,7 @@ import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/widgets/app_button.dart';
 import 'package:tuoora/core/widgets/app_search_field.dart';
+import 'package:tuoora/core/widgets/call_icon_button.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
 import 'package:tuoora/presentation/teacher/controllers/teacher_mark_attendance_controller.dart';
 import 'package:tuoora/presentation/teacher/models/teacher_attendance_model.dart';
@@ -518,6 +519,7 @@ class _StudentRow extends StatelessWidget {
             ),
           ),
           AppSpacing.h8,
+          CallIconButton(phone: row.phone),
           _quickToggle(
             statusKey: 'present',
             label: 'P',

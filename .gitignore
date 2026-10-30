@@ -38,3 +38,6 @@ ios/Flutter/Flutter.podspec
 test/
 tool/
 tools/
+
+# Signing keys and API credentials
+keys/

@@ -225,27 +225,32 @@ class StaffProfileScreen extends GetView<StaffController> {
   }
 
   Widget _buildActionButtons() {
+    final auth = Get.find<AuthService>();
+    final canViewAttendance = auth.can(AppPermissions.staffAttendance);
+    final canViewSalaries = auth.can(AppPermissions.staffSalaries);
     return Padding(
       padding: AppSpacing.x16,
       child: Row(
         children: [
-          Expanded(
-            child: _buildLargeButton(
-              Icons.calendar_today,
-              'Attendance',
-              true,
-              onTap: () => Get.toNamed(AppRoutes.instituteStaffAttendance),
+          if (canViewAttendance)
+            Expanded(
+              child: _buildLargeButton(
+                Icons.calendar_today,
+                'Attendance',
+                true,
+                onTap: () => Get.toNamed(AppRoutes.instituteStaffAttendance),
+              ),
             ),
-          ),
-          AppSpacing.h16,
-          Expanded(
-            child: _buildLargeButton(
-              Icons.payments,
-              'Salary',
-              false,
-              onTap: () => Get.toNamed(AppRoutes.instituteSalaryHistory),
+          if (canViewAttendance && canViewSalaries) AppSpacing.h16,
+          if (canViewSalaries)
+            Expanded(
+              child: _buildLargeButton(
+                Icons.payments,
+                'Salary',
+                false,
+                onTap: () => Get.toNamed(AppRoutes.instituteSalaryHistory),
+              ),
             ),
-          ),
         ],
       ),
     );

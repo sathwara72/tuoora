@@ -213,6 +213,9 @@ abstract class InstituteRepositoryImpl {
 
   // Staff
   Future<StaffListResponse> listStaff({int page = 1, String? search});
+
+  /// Every staff member, unpaged, for pickers and dropdowns.
+  Future<List<Staff>> listAllStaff();
   Future<void> deleteStaff(int id);
   Future<List<StaffRole>> getStaffRoles();
 
@@ -228,7 +231,11 @@ abstract class InstituteRepositoryImpl {
   Future<String> sendStaffPassword(int id);
   Future<Staff> changeStaffEmail(int id, String email);
   Future<Staff> toggleStaffBlock(int id, bool blocked);
-  Future<SalaryListResponse> getStaffSalaries(int staffId, {int page = 1});
+  Future<SalaryListResponse> getStaffSalaries(
+    int staffId, {
+    int page = 1,
+    FinancialPeriod? period,
+  });
   Future<SalaryPreview> getSalaryPreview(int staffId);
   Future<AttendanceListResponse> getStaffAttendance(
     int staffId, {

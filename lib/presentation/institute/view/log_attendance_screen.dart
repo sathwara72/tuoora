@@ -91,8 +91,8 @@ class LogAttendanceScreen extends GetView<StaffController> {
   Widget _buildStaffDropdown() {
     return Obx(() {
       final selectedId = controller.selectedLogStaff.value?.id;
-      final isValueInList = controller.staffList.any((s) => s.id == selectedId);
-      final isStaffEmpty = controller.staffList.isEmpty;
+      final isValueInList = controller.allStaff.any((s) => s.id == selectedId);
+      final isStaffEmpty = controller.allStaff.isEmpty;
       return Container(
         constraints: const BoxConstraints(minHeight: 48),
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -106,7 +106,9 @@ class LogAttendanceScreen extends GetView<StaffController> {
             value: isValueInList ? selectedId : null,
             isExpanded: true,
             hint: Text(
-              isStaffEmpty ? 'Loading staff...' : 'Select Staff',
+              controller.isLoadingAllStaff.value && isStaffEmpty
+                  ? 'Loading staff...'
+                  : 'Select Staff',
               style: AppTextStyles.outfit(
                 fontSize: 14,
                 color: AppColors.fieldLabel,
@@ -122,7 +124,7 @@ class LogAttendanceScreen extends GetView<StaffController> {
               fontWeight: FontWeight.w500,
             ),
             dropdownColor: AppColors.white,
-            items: controller.staffList
+            items: controller.allStaff
                 .map(
                   (staff) => DropdownMenuItem<int>(
                     value: staff.id,

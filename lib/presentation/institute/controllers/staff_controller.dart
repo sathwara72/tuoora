@@ -6,6 +6,7 @@ import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/utils/validation_utils.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
+import 'package:tuoora/data/models/financial_period.dart';
 import 'package:tuoora/data/models/staff_model.dart';
 import 'package:tuoora/data/repositories_impl/institute_repository_impl.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,9 @@ class StaffController extends GetxController {
   final isLoading = false.obs;
   final isSaving = false.obs;
   final staffList = <Staff>[].obs;
+  // Every staff member for the pickers; staffList is paged and search-filtered.
+  final allStaff = <Staff>[].obs;
+  final isLoadingAllStaff = false.obs;
   final searchQuery = ''.obs;
   final selectedStaff = Rxn<Staff>();
   final selectedImagePath = Rxn<String>();
@@ -37,6 +41,9 @@ class StaffController extends GetxController {
   final currentPage = 1.obs;
   final lastPage = 1.obs;
   final totalItems = 0.obs;
+  bool _isLoadingMoreStaff = false;
+  int _staffRequestId = 0;
+  int _attendanceRequestId = 0;
 
   // Tab index for bottom navigation
   final currentTabIndex = 0.obs;
@@ -55,6 +62,8 @@ class StaffController extends GetxController {
   final totalSalaryAmount = '0.00'.obs;
   final salaryCurrentPage = 1.obs;
   final salaryLastPage = 1.obs;
+  final salaryPeriod = FinancialPeriod.financialYear().obs;
+  int _salaryRequestId = 0;
 
   // Attendance History State
   final attendanceList = <StaffAttendance>[].obs;
@@ -261,24 +270,42 @@ class StaffController extends GetxController {
   }
 
   Future<void> fetchStaffs({int page = 1}) async {
+    final requestId = ++_staffRequestId;
     try {
       if (page == 1) isLoading.value = true;
       final response = await _repository.listStaff(
         page: page,
         search: searchQuery.value,
       );
+      // A newer search or refresh has replaced the list; drop this response.
+      if (requestId != _staffRequestId) return;
       if (page == 1) {
         staffList.assignAll(response.items);
       } else {
-        staffList.addAll(response.items);
+        // Page offsets shift when staff are added, so skip rows already shown.
+        final loadedIds = staffList.map((s) => s.id).toSet();
+        staffList.addAll(response.items.where((s) => loadedIds.add(s.id)));
       }
       currentPage.value = response.currentPage;
       lastPage.value = response.lastPage;
       totalItems.value = response.total;
     } catch (e) {
+      if (requestId == _staffRequestId) {
+        AppSnackBar.error('Failed to load staff: $e');
+      }
+    } finally {
+      if (page == 1 && requestId == _staffRequestId) isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchAllStaff() async {
+    try {
+      isLoadingAllStaff.value = true;
+      allStaff.assignAll(await _repository.listAllStaff());
+    } catch (e) {
       AppSnackBar.error('Failed to load staff: $e');
     } finally {
-      if (page == 1) isLoading.value = false;
+      isLoadingAllStaff.value = false;
     }
   }
 
@@ -344,14 +371,29 @@ class StaffController extends GetxController {
     }
   }
 
+  /// Clears the old rows and total first so a failed load can't show them
+  /// under the new period.
+  void setSalaryPeriod(FinancialPeriod period) {
+    salaryPeriod.value = period;
+    salaryList.clear();
+    totalSalaryAmount.value = '0.00';
+    fetchSalaryHistory(page: 1);
+  }
+
   Future<void> fetchSalaryHistory({int page = 1}) async {
     if (selectedStaff.value == null) return;
+    // Later pages belong to the same load, so only page 1 starts a new one.
+    if (page == 1) _salaryRequestId++;
+    final requestId = _salaryRequestId;
     try {
       if (page == 1) isLoadingSalary.value = true;
       final response = await _repository.getStaffSalaries(
         selectedStaff.value!.id,
         page: page,
+        period: salaryPeriod.value,
       );
+      // The period or staff changed while this was loading; drop it.
+      if (requestId != _salaryRequestId) return;
       if (page == 1) {
         final items = response.items;
         items.sort((a, b) => b.paymentDate.compareTo(a.paymentDate));
@@ -363,15 +405,26 @@ class StaffController extends GetxController {
       totalSalaryAmount.value = response.totalAmount;
       salaryCurrentPage.value = response.currentPage;
       salaryLastPage.value = response.lastPage;
+      // The rows must add up to Total Paid, including later API pages.
+      if (response.currentPage < response.lastPage) {
+        await fetchSalaryHistory(page: response.currentPage + 1);
+      }
     } catch (e) {
-      AppSnackBar.error('Failed to load salary history: $e');
+      if (requestId == _salaryRequestId) {
+        AppSnackBar.error('Failed to load salary history: $e');
+      }
     } finally {
-      if (page == 1) isLoadingSalary.value = false;
+      if (page == 1 && requestId == _salaryRequestId) {
+        isLoadingSalary.value = false;
+      }
     }
   }
 
   Future<void> fetchAttendanceHistory({int page = 1}) async {
     if (selectedStaff.value == null) return;
+    // Later pages belong to the same load, so only page 1 starts a new one.
+    if (page == 1) _attendanceRequestId++;
+    final requestId = _attendanceRequestId;
     try {
       if (page == 1) isLoadingAttendance.value = true;
       final response = await _repository.getStaffAttendance(
@@ -380,6 +433,8 @@ class StaffController extends GetxController {
         month: DateFormat('MM').format(selectedAttendanceMonth.value),
         year: DateFormat('yyyy').format(selectedAttendanceMonth.value),
       );
+      // The month or staff changed while this was loading; drop it.
+      if (requestId != _attendanceRequestId) return;
       if (page == 1) {
         final items = response.items;
         items.sort((a, b) => b.date.compareTo(a.date));
@@ -397,9 +452,13 @@ class StaffController extends GetxController {
         await fetchAttendanceHistory(page: response.currentPage + 1);
       }
     } catch (e) {
-      AppSnackBar.error('Failed to load attendance history: $e');
+      if (requestId == _attendanceRequestId) {
+        AppSnackBar.error('Failed to load attendance history: $e');
+      }
     } finally {
-      if (page == 1) isLoadingAttendance.value = false;
+      if (page == 1 && requestId == _attendanceRequestId) {
+        isLoadingAttendance.value = false;
+      }
     }
   }
 
@@ -577,7 +636,7 @@ class StaffController extends GetxController {
       filteredLogStaffs.clear();
     } else {
       filteredLogStaffs.assignAll(
-        staffList.where(
+        allStaff.where(
           (s) =>
               s.fullName.toLowerCase().contains(query.toLowerCase()) ||
               (s.role?.name ?? "").toLowerCase().contains(query.toLowerCase()),
@@ -592,7 +651,7 @@ class StaffController extends GetxController {
       filteredSalaryStaffs.clear();
     } else {
       filteredSalaryStaffs.assignAll(
-        staffList.where(
+        allStaff.where(
           (s) =>
               s.fullName.toLowerCase().contains(query.toLowerCase()) ||
               (s.role?.name ?? "").toLowerCase().contains(query.toLowerCase()),
@@ -614,7 +673,7 @@ class StaffController extends GetxController {
       removeLogStaff();
       return;
     }
-    final staff = staffList.firstWhereOrNull((s) => s.id == id);
+    final staff = allStaff.firstWhereOrNull((s) => s.id == id);
     if (staff != null) setLogStaff(staff);
   }
 
@@ -630,7 +689,7 @@ class StaffController extends GetxController {
     fetchSalaryPreview(staff.id);
   }
 
-  /// Dropdown helper — looks up the [Staff] in [staffList] by id and
+  /// Dropdown helper — looks up the [Staff] in [allStaff] by id and
   /// delegates to [setSalaryStaff] so the same selection side-effects
   /// (preview fetch, amount prefill) fire regardless of entry path.
   void selectSalaryStaffById(int? id) {
@@ -638,7 +697,7 @@ class StaffController extends GetxController {
       removeSalaryStaff();
       return;
     }
-    final staff = staffList.firstWhereOrNull((s) => s.id == id);
+    final staff = allStaff.firstWhereOrNull((s) => s.id == id);
     if (staff != null) setSalaryStaff(staff);
   }
 
@@ -666,8 +725,16 @@ class StaffController extends GetxController {
   void togglePaymentMethod(bool isOnline) => isOnlinePayment.value = isOnline;
 
   Future<void> loadMoreStaff() async {
-    if (currentPage.value < lastPage.value && !isLoading.value) {
+    if (_isLoadingMoreStaff ||
+        isLoading.value ||
+        currentPage.value >= lastPage.value) {
+      return;
+    }
+    _isLoadingMoreStaff = true;
+    try {
       await fetchStaffs(page: currentPage.value + 1);
+    } finally {
+      _isLoadingMoreStaff = false;
     }
   }
 
@@ -895,8 +962,13 @@ class StaffController extends GetxController {
 
   void selectStaff(Staff staff) {
     selectedStaff.value = staff;
-    fetchSalaryHistory(page: 1);
-    fetchAttendanceHistory(page: 1);
+    final auth = Get.find<AuthService>();
+    if (auth.can(AppPermissions.staffSalaries)) {
+      setSalaryPeriod(FinancialPeriod.financialYear());
+    }
+    if (auth.can(AppPermissions.staffAttendance)) {
+      fetchAttendanceHistory(page: 1);
+    }
   }
 
   void prepareForAdd() => clearStaffForm();

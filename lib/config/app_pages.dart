@@ -4,6 +4,7 @@ import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/config/app_routes.dart';
 import 'package:tuoora/presentation/institute/bindings/institute_binding.dart';
 import 'package:tuoora/presentation/institute/view/batches_screen.dart';
+import 'package:tuoora/presentation/institute/view/attendance_batches_screen.dart';
 import 'package:tuoora/presentation/institute/view/birthdays_screen.dart';
 import 'package:tuoora/presentation/institute/view/fee_transaction_history_screen.dart';
 import 'package:tuoora/presentation/institute/view/fees_screen.dart';
@@ -481,6 +482,11 @@ class AppPages {
     GetPage(
       name: AppRoutes.instituteBirthdays,
       page: () => const BirthdaysScreen(),
+      binding: InstituteBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.instituteAttendance,
+      page: () => const AttendanceBatchesScreen(),
       binding: InstituteBinding(),
     ),
     GetPage(

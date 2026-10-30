@@ -37,6 +37,7 @@ class AssignToBatchController extends GetxController {
   final isLoadingMore = false.obs;
   final hasMore = true.obs;
   int _page = 1;
+  int _requestId = 0;
   Timer? _debounce;
 
   AssignToBatchController(this.batch, this.batchDetailsController);
@@ -64,6 +65,7 @@ class AssignToBatchController extends GetxController {
       isFetching.value = true;
     }
 
+    final requestId = ++_requestId;
     try {
       final query = searchController.text.trim();
       final result = await _studentRepository.listStudents(
@@ -72,11 +74,14 @@ class AssignToBatchController extends GetxController {
         unassigned: true,
       );
       // The box was cleared or changed while this was loading: drop it.
-      if (searchController.text.trim() != query) return;
+      if (requestId != _requestId || searchController.text.trim() != query) {
+        return;
+      }
       final excluded = _excludedIds;
       final fresh = result.where((s) => !excluded.contains(s.id)).toList();
       if (loadMore) {
-        searchResults.addAll(fresh);
+        final loadedIds = searchResults.map((s) => s.id).toSet();
+        searchResults.addAll(fresh.where((s) => loadedIds.add(s.id)));
       } else {
         searchResults.assignAll(fresh);
       }
@@ -86,10 +91,14 @@ class AssignToBatchController extends GetxController {
         _page++;
       }
     } catch (e) {
-      AppSnackBar.error(AppStrings.failedToLoadStudents);
+      if (requestId == _requestId) {
+        AppSnackBar.error(AppStrings.failedToLoadStudents);
+      }
     } finally {
-      isFetching.value = false;
-      isLoadingMore.value = false;
+      if (requestId == _requestId) {
+        isFetching.value = false;
+        isLoadingMore.value = false;
+      }
     }
   }
 

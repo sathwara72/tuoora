@@ -40,7 +40,10 @@ class TeacherBatchExamsController extends GetxController {
     fetchExams();
   }
 
+  int _requestId = 0;
+
   Future<void> fetchExams() async {
+    final requestId = ++_requestId;
     try {
       isLoading.value = true;
       final page = await _repository.getExams(
@@ -48,19 +51,24 @@ class TeacherBatchExamsController extends GetxController {
         status: filter.value == 'all' ? null : filter.value,
         search: searchQuery.value.trim(),
       );
+      // A newer filter or search has replaced the list; drop this response.
+      if (requestId != _requestId) return;
       exams.value = page.items;
       total.value = page.total;
       _page = page.currentPage;
       _lastPage = page.lastPage;
     } catch (e) {
-      AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      if (requestId == _requestId) {
+        AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
-      isLoading.value = false;
+      if (requestId == _requestId) isLoading.value = false;
     }
   }
 
   Future<void> loadMore() async {
-    if (isLoadingMore.value || !hasMore) return;
+    if (isLoadingMore.value || isLoading.value || !hasMore) return;
+    final requestId = ++_requestId;
     try {
       isLoadingMore.value = true;
       final page = await _repository.getExams(
@@ -69,11 +77,15 @@ class TeacherBatchExamsController extends GetxController {
         search: searchQuery.value.trim(),
         page: _page + 1,
       );
-      exams.addAll(page.items);
+      if (requestId != _requestId) return;
+      final loadedIds = exams.map((e) => e.id).toSet();
+      exams.addAll(page.items.where((e) => loadedIds.add(e.id)));
       _page = page.currentPage;
       _lastPage = page.lastPage;
     } catch (e) {
-      AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      if (requestId == _requestId) {
+        AppSnackBar.error(e.toString().replaceFirst('Exception: ', ''));
+      }
     } finally {
       isLoadingMore.value = false;
     }

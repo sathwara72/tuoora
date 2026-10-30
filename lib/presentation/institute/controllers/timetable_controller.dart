@@ -96,13 +96,15 @@ class TimetableController extends GetxController {
     try {
       isLoadingBatches.value = true;
       final response = await _repository.listBatches(page: 1);
-      batchesList.assignAll(response.items.map((b) => b.toUIModel()));
+      final batches = response.items.map((b) => b.toUIModel()).toList();
       if (response.lastPage > 1) {
         for (int p = 2; p <= response.lastPage && p <= 5; p++) {
           final nextRes = await _repository.listBatches(page: p);
-          batchesList.addAll(nextRes.items.map((b) => b.toUIModel()));
+          batches.addAll(nextRes.items.map((b) => b.toUIModel()));
         }
       }
+      // Assign once so overlapping calls can't append to each other's list.
+      batchesList.assignAll(batches);
     } catch (_) {
       // Non-fatal
     } finally {
@@ -118,8 +120,7 @@ class TimetableController extends GetxController {
     if (Get.find<AuthService>().isSubAccess) return;
     try {
       isLoadingStaff.value = true;
-      final response = await _repository.listStaff();
-      staffList.assignAll(response.items);
+      staffList.assignAll(await _repository.listAllStaff());
     } catch (_) {
       // Non-fatal
     } finally {

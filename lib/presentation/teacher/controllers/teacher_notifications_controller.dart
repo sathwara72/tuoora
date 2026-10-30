@@ -17,6 +17,7 @@ class TeacherNotificationsController extends GetxController {
   final error = RxnString();
   int _page = 1;
   int _lastPage = 1;
+  int _requestId = 0;
 
   bool get hasMore => _page < _lastPage;
 
@@ -27,25 +28,34 @@ class TeacherNotificationsController extends GetxController {
   }
 
   Future<void> fetch() async {
+    final requestId = ++_requestId;
     try {
       isLoading.value = true;
       error.value = null;
       _page = 1;
-      notifications.assignAll(await _load(1));
+      final items = await _load(1);
+      if (requestId != _requestId) return;
+      notifications.assignAll(items);
     } catch (e) {
-      error.value = e.toString().replaceAll('Exception: ', '');
+      if (requestId == _requestId) {
+        error.value = e.toString().replaceAll('Exception: ', '');
+      }
     } finally {
-      isLoading.value = false;
+      if (requestId == _requestId) isLoading.value = false;
     }
   }
 
   Future<void> loadMore() async {
     if (!hasMore || isLoadingMore.value || isLoading.value) return;
+    final requestId = ++_requestId;
     try {
       isLoadingMore.value = true;
       final items = await _load(_page + 1);
+      if (requestId != _requestId) return;
       _page++;
-      notifications.addAll(items);
+      // New notifications shift the pages, so skip rows already shown.
+      final loadedIds = notifications.map((n) => n.id).toSet();
+      notifications.addAll(items.where((n) => loadedIds.add(n.id)));
     } catch (_) {
       // Keep what is already shown; the next scroll retries.
     } finally {

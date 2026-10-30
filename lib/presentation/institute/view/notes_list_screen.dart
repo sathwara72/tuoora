@@ -74,8 +74,8 @@ class NotesListScreen extends GetView<NotesController> {
                           child: NotificationListener<ScrollNotification>(
                             onNotification: (ScrollNotification scrollInfo) {
                               if (!controller.isLoading.value &&
-                                  scrollInfo.metrics.pixels ==
-                                      scrollInfo.metrics.maxScrollExtent) {
+                                  scrollInfo.metrics.pixels >=
+                                      scrollInfo.metrics.maxScrollExtent - 200) {
                                 controller.loadMoreNotes();
                               }
                               return false;

@@ -149,6 +149,7 @@ class AttendanceHistoryScreen extends GetView<StaffController> {
   Widget _buildLogAttendanceButton() {
     return FloatingActionButton(
       onPressed: () => SubscriptionGuard.runAddAction(() {
+        controller.fetchAllStaff();
         Get.toNamed(AppRoutes.instituteLogStaffAttendance);
       }),
       backgroundColor: SubscriptionGuard.blocksAdd

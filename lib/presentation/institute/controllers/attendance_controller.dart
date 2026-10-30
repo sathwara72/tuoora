@@ -1,3 +1,5 @@
+import 'package:tuoora/core/constants/app_permissions.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
@@ -70,8 +72,10 @@ class AttendanceController extends GetxController {
     return selected.isBefore(today);
   }
 
-  // Attendance is only editable for today. Past dates are read-only.
-  bool get isEditable => isToday;
+  // Attendance is only editable for today. Past dates are read-only, and so
+  // is every date for users who may view attendance but not mark it.
+  bool get isEditable =>
+      isToday && Get.find<AuthService>().can(AppPermissions.attendanceMark);
 
   @override
   void onInit() {

@@ -1,5 +1,6 @@
 import 'package:tuoora/core/api/api_exception.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
+import 'package:tuoora/core/utils/url_launcher_utils.dart';
 import 'package:tuoora/core/utils/validation_utils.dart';
 import 'package:tuoora/core/widgets/app_snack_bar.dart';
 import 'package:tuoora/core/widgets/common_loading.dart';
@@ -7,7 +8,6 @@ import 'package:tuoora/data/models/lead_model.dart';
 import 'package:tuoora/data/repositories_impl/leads_repository_impl.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class LeadsController extends GetxController {
   final LeadsRepositoryImpl _leadsRepository = Get.find<LeadsRepositoryImpl>();
@@ -73,7 +73,11 @@ class LeadsController extends GetxController {
     }
   }
 
+  bool _isLoadingMore = false;
+  int _requestId = 0;
+
   Future<void> fetchLeads({int page = 1}) async {
+    final requestId = ++_requestId;
     try {
       if (page == 1) isLoading.value = true;
       final response = await _leadsRepository.getLeads(
@@ -81,25 +85,40 @@ class LeadsController extends GetxController {
         search: searchQuery.value,
       );
 
+      // A newer search or refresh has replaced the list; drop this response.
+      if (requestId != _requestId) return;
+
       if (page == 1) {
         leadsList.assignAll(response.data);
       } else {
-        leadsList.addAll(response.data);
+        // Page offsets shift when items are added, so skip rows already shown.
+        final loadedIds = leadsList.map((item) => item.id).toSet();
+        leadsList.addAll(response.data.where((item) => loadedIds.add(item.id)));
       }
 
       currentPage.value = response.currentPage;
       lastPage.value = response.lastPage;
       totalItems.value = response.total;
     } catch (e) {
-      AppSnackBar.error('Failed to load leads: $e');
+      if (requestId == _requestId) {
+        AppSnackBar.error('Failed to load leads: $e');
+      }
     } finally {
-      if (page == 1) isLoading.value = false;
+      if (page == 1 && requestId == _requestId) isLoading.value = false;
     }
   }
 
   Future<void> loadMoreLeads() async {
-    if (currentPage.value < lastPage.value && !isLoading.value) {
+    if (_isLoadingMore ||
+        isLoading.value ||
+        currentPage.value >= lastPage.value) {
+      return;
+    }
+    _isLoadingMore = true;
+    try {
       await fetchLeads(page: currentPage.value + 1);
+    } finally {
+      _isLoadingMore = false;
     }
   }
 
@@ -292,14 +311,7 @@ class LeadsController extends GetxController {
     }
   }
 
-  Future<void> callLead(String phone) async {
-    final Uri launchUri = Uri(scheme: 'tel', path: phone);
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    } else {
-      AppSnackBar.error('Could not launch dialer for $phone');
-    }
-  }
+  Future<void> callLead(String phone) => UrlLauncherUtils.callPhone(phone);
 
   Future<void> addLeadNote() async {
     if (selectedLead.value == null) return;

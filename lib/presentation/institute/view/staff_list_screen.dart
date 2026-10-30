@@ -51,8 +51,8 @@ class StaffListScreen extends GetView<StaffController> {
                           child: NotificationListener<ScrollNotification>(
                             onNotification: (ScrollNotification scrollInfo) {
                               if (!controller.isLoading.value &&
-                                  scrollInfo.metrics.pixels ==
-                                      scrollInfo.metrics.maxScrollExtent) {
+                                  scrollInfo.metrics.pixels >=
+                                      scrollInfo.metrics.maxScrollExtent - 200) {
                                 controller.loadMoreStaff();
                               }
                               return false;

@@ -1,9 +1,12 @@
 import 'package:tuoora/core/constants/app_colors.dart';
+import 'package:tuoora/core/constants/app_permissions.dart';
 import 'package:tuoora/core/constants/app_text_styles.dart';
 import 'package:tuoora/core/constants/app_strings.dart';
+import 'package:tuoora/core/services/auth_service.dart';
 import 'package:tuoora/core/theme/app_spacing.dart';
 import 'package:tuoora/core/utils/currency_utils.dart';
 import 'package:tuoora/core/utils/subscription_guard.dart';
+import 'package:tuoora/core/widgets/period_filter_bar.dart';
 import 'package:tuoora/presentation/institute/controllers/staff_controller.dart';
 import 'package:tuoora/presentation/institute/widgets/institute_app_bar.dart';
 import 'package:tuoora/data/models/staff_model.dart';
@@ -16,6 +19,9 @@ import 'package:intl/intl.dart';
 class SalaryHistoryScreen extends GetView<StaffController> {
   const SalaryHistoryScreen({super.key});
 
+  bool get _canViewSalaries =>
+      Get.find<AuthService>().can(AppPermissions.staffSalaries);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,6 +33,10 @@ class SalaryHistoryScreen extends GetView<StaffController> {
               title: AppStrings.salaryHistory,
               actions: [_buildAddSalaryButton()],
             ),
+            if (_canViewSalaries) ...[
+              _buildPeriodFilter(),
+              _buildTotalPaidCard(),
+            ],
             Expanded(
               child: Obx(() {
                 final salaries = controller.salaryList;
@@ -34,7 +44,7 @@ class SalaryHistoryScreen extends GetView<StaffController> {
                   isLoading:
                       controller.isLoadingSalary.value && salaries.isEmpty,
                   isEmpty: salaries.isEmpty,
-                  emptyTitle: AppStrings.noSalaryRecords,
+                  emptyTitle: AppStrings.noPaymentsInThisPeriod,
                   emptySubtitle: AppStrings.noSalaryPaymentsFoundForThis,
                   emptyIcon: Icons.payments_outlined,
                   child: ListView.separated(
@@ -51,6 +61,61 @@ class SalaryHistoryScreen extends GetView<StaffController> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPeriodFilter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Obx(
+        () => PeriodFilterBar(
+          period: controller.salaryPeriod.value,
+          onChanged: controller.setSalaryPeriod,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTotalPaidCard() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: AppSpacing.cardPadding,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppSpacing.cardRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              AppStrings.totalPaid,
+              style: AppTextStyles.outfit(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ),
+          Obx(
+            () => Text(
+              formatRupees(controller.totalSalaryAmount.value),
+              style: AppTextStyles.outfit(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
